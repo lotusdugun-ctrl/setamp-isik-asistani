@@ -475,7 +475,7 @@
       <div class="hero-head">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
           <span class="status-pill">${esc(ev.verdict.badge)}</span>
-          <span style="font-weight:700; font-size:14px;">${esc(ev.verdict.headline)}</span>
+          <span class="hero-verdict-title" style="font-weight:700; font-size:14px;">${esc(ev.verdict.headline)}</span>
         </div>
         <button id="toggleCableSettingsBtn" class="cable-settings-toggle mono ${ui.cableSettingsOpen ? 'open' : ''}">
           ${state.cableLength}m • ${sectionPrefix}${state.cableSection}mm²
@@ -1745,7 +1745,7 @@
     setTab(state.activeTab);
 
     if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
-      navigator.serviceWorker.register('./sw.js?v=8').then((reg) => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=9').then((reg) => reg.update()).catch(() => {});
     }
   });
 })();

@@ -524,14 +524,6 @@ button { cursor: pointer; border: none; background: none; padding: 0; }
   overflow: hidden;
 }
 
-@media (max-width: 760px) {
-  .cable-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-
-@media (max-width: 460px) {
-  .cable-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-
 .cable-card-btn {
   padding: 12px 14px;
   text-align: left;
@@ -720,8 +712,9 @@ button { cursor: pointer; border: none; background: none; padding: 0; }
 .strip-item + .strip-item { padding-left: 14px; border-left: 1px solid var(--border); }
 
 @media (max-width: 600px) {
-  .hero-strip { grid-template-columns: 1fr; }
-  .strip-item + .strip-item { padding-left: 0; border-left: none; border-top: 1px solid var(--border); padding-bottom: 2px; }
+  .hero-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .strip-k { font-size: 11px; color: var(--text-dim); font-weight: 500; }
@@ -1330,6 +1323,296 @@ body.night-red .lightbox-img {
 }
 .lightbox-spec-box { padding: 8px 10px; text-align: center; }
 .lightbox-spec-box + .lightbox-spec-box { border-left: 1px solid var(--border); }
+
+/* ==================== MOBİL TEK EKRAN YERLEŞİMİ (≤ 720px) ==================== */
+@media (max-width: 720px) {
+  :root {
+    --topbar-h: 46px;
+    --bottomnav-h: 54px;
+  }
+
+  .mobile-topbar {
+    padding: 0 10px;
+  }
+
+  .mobile-brand .brand-mark {
+    width: 22px;
+    height: 22px;
+  }
+
+  .mobile-brand .brand-name {
+    font-size: 13px;
+  }
+
+  .live-chip {
+    height: 27px;
+    padding: 0 7px;
+    font-size: 10.5px;
+    gap: 5px;
+  }
+
+  .icon-pill-btn {
+    height: 27px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
+
+  .main-stage {
+    padding: calc(var(--topbar-h) + 8px) 10px calc(var(--bottomnav-h) + 12px);
+  }
+
+  .page-header {
+    align-items: center;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+    gap: 6px;
+  }
+
+  .page-title {
+    font-size: 16px;
+  }
+
+  .page-sub {
+    display: none;
+  }
+
+  .btn-sm {
+    height: 27px;
+    padding: 0 9px;
+    font-size: 11.5px;
+  }
+
+  /* 5 kablo tek yatay şeritte, boş kutu yok */
+  .cable-strip {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    margin-bottom: 8px;
+  }
+
+  .cable-card-btn {
+    padding: 7px 3px 8px;
+    align-items: center;
+    text-align: center;
+    gap: 1px;
+  }
+
+  .cc-top {
+    justify-content: center;
+  }
+
+  .cc-phase,
+  .cc-safe {
+    display: none;
+  }
+
+  .cc-amp {
+    font-size: 13.5px;
+    line-height: 1.1;
+  }
+
+  .cc-kw {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    white-space: nowrap;
+  }
+
+  /* Ana güç göstergesi kompakt: her şey ilk ekranda */
+  .hero-card {
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+
+  .hero-verdict-title {
+    display: none;
+  }
+
+  .status-pill {
+    padding: 2px 8px;
+    font-size: 10.5px;
+  }
+
+  .cable-settings-toggle {
+    height: 25px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
+
+  .hero-readout {
+    margin-top: 8px;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+
+  .dual-big {
+    gap: 14px;
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+
+  .big-label {
+    font-size: 9.5px;
+  }
+
+  .big-num {
+    font-size: 20px;
+    gap: 3px;
+    white-space: nowrap;
+  }
+
+  .big-sub {
+    font-size: 11px;
+  }
+
+  .big-divider {
+    display: none;
+  }
+
+  .pct-chip {
+    font-size: 14px;
+    padding: 3px 7px;
+    flex-shrink: 0;
+  }
+
+  .gauge-wrap {
+    margin-top: 8px;
+  }
+
+  .bar-track {
+    height: 6px;
+  }
+
+  .gauge-scale {
+    font-size: 10px;
+    margin-top: 4px;
+  }
+
+  .hero-strip {
+    margin-top: 8px;
+    gap: 0;
+  }
+
+  .strip-item {
+    padding: 7px 6px 0 0;
+    min-width: 0;
+  }
+
+  .strip-item + .strip-item {
+    padding-left: 7px;
+  }
+
+  .strip-k {
+    font-size: 9.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .strip-v {
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .hero-actions {
+    margin-top: 8px;
+  }
+
+  .mobile-add-bar {
+    margin-bottom: 8px;
+  }
+
+  .mobile-add-bar .btn {
+    min-height: 36px !important;
+    height: 36px;
+    font-size: 13px !important;
+  }
+
+  .warning-stack {
+    margin-bottom: 8px;
+    gap: 6px;
+  }
+
+  .warn-row {
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+
+  .warn-desc {
+    font-size: 11px;
+  }
+
+  .section-card {
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+
+  .section-head {
+    margin-bottom: 8px;
+  }
+
+  .section-title {
+    font-size: 13px;
+  }
+
+  .lamp-row {
+    padding: 7px 0;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+
+  .lamp-row-info {
+    min-width: 0;
+  }
+
+  .lamp-row-title {
+    font-size: 12.5px;
+    gap: 4px;
+  }
+
+  .lamp-row-sub {
+    font-size: 10.5px;
+  }
+
+  .lamp-thumb-sm {
+    width: 34px;
+    height: 34px;
+  }
+
+  .power-readout {
+    min-width: 54px;
+  }
+
+  .power-readout-a {
+    font-size: 12px;
+  }
+
+  .power-readout-kw {
+    font-size: 10px;
+  }
+
+  .stepper button {
+    width: 26px;
+    height: 26px;
+    font-size: 14px;
+  }
+
+  .stepper span {
+    min-width: 22px;
+    font-size: 12px;
+  }
+
+  .bnav-btn {
+    font-size: 10px;
+    gap: 2px;
+  }
+
+  .bnav-btn svg {
+    width: 17px;
+    height: 17px;
+  }
+}
 
 /* ==================== YAZDIR ==================== */
 @media print {
