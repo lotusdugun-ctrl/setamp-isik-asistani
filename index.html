@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1e222b" />
+  <title>SetAmp — Işık Ekibi</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="stylesheet" href="./css/styles.css?v=8" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- ==================== DESKTOP SIDEBAR ==================== -->
+    <aside class="sidebar" aria-label="Ana Menü">
+      <div>
+        <div class="sidebar-brand">
+          <div class="brand-left">
+            <div class="brand-mark" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/>
+              </svg>
+            </div>
+            <div style="min-width:0;">
+              <span class="brand-name">SetAmp</span>
+              <span class="brand-tagline">Işık &amp; Güç Yönetimi</span>
+            </div>
+          </div>
+          <span class="brand-volt-tag mono">230V</span>
+        </div>
+
+        <nav class="sidebar-nav">
+          <div class="nav-group-label">Elektrik</div>
+
+          <button class="side-nav-btn active" data-tab="calc">
+            <span class="side-nav-left">
+              <span class="nav-icon-box">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                </svg>
+              </span>
+              <span>
+                Hat Yükü
+                <span class="side-nav-sub">Amper, kW ve risk</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="side-nav-btn" data-tab="catalog">
+            <span class="side-nav-left">
+              <span class="nav-icon-box">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="10" r="5"/>
+                  <path d="M9 18h6M10 21h4M12 15v3"/>
+                </svg>
+              </span>
+              <span>
+                Lambalar
+                <span class="side-nav-sub">Kapasite ve kablolar</span>
+              </span>
+            </span>
+            <span id="sideLampCountPill" class="count-pill count-pill-soft mono">114</span>
+          </button>
+
+          <div class="nav-group-label">Ekipman</div>
+
+          <button class="side-nav-btn" data-tab="truck">
+            <span class="side-nav-left">
+              <span class="nav-icon-box">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="1" y="4" width="15" height="12" rx="2"/>
+                  <path d="M16 8h4l3 4v4h-7V8z"/>
+                  <circle cx="6" cy="18" r="2"/>
+                  <circle cx="18" cy="18" r="2"/>
+                </svg>
+              </span>
+              <span>
+                Kamyon
+                <span class="side-nav-sub">Envanter ve paydos</span>
+              </span>
+            </span>
+            <span id="sideTruckBadge" class="count-pill" style="display:none;">0</span>
+          </button>
+
+          <button class="side-nav-btn" data-tab="expendables">
+            <span class="side-nav-left">
+              <span class="nav-icon-box">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+              </span>
+              <span>
+                Sarf Stok
+                <span class="side-nav-sub">Jelatin, difüzyon, bant</span>
+              </span>
+            </span>
+            <span id="sideExpBadge" class="count-pill" style="display:none;">0</span>
+          </button>
+        </nav>
+      </div>
+
+      <div class="sidebar-footer">
+        <button id="sidebarLiveCard" class="sidebar-live-card" title="Aktif hat özetine git">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
+            <span style="font-size:10.5px; color:var(--text-dim); font-weight:700; letter-spacing:0.06em; text-transform:uppercase;">Aktif Hat</span>
+            <span id="sideLiveBadge" class="tag mono" style="font-size:10.5px;">YÜK YOK</span>
+          </div>
+          <div id="sideLiveCable" class="mono" style="font-size:13px; font-weight:700;">16A Kablo</div>
+          <div id="sideLiveStats" class="mono" style="font-size:12px; color:var(--text-muted); margin-top:2px;">0.0A • 0.0 kW</div>
+          <div class="side-live-bar-track">
+            <div id="sideLiveBarFill" class="side-live-bar-fill" style="width:0%;"></div>
+          </div>
+        </button>
+
+        <div class="theme-switcher" role="group" aria-label="Görünüm Modu">
+          <button class="theme-btn active" data-theme="studio" title="Dengeli stüdyo grafit teması">Stüdyo</button>
+          <button class="theme-btn" data-theme="light" title="Dış çekim ve gün ışığı için açık tema">Açık</button>
+          <button class="theme-btn" data-theme="night" title="Karanlık sette ışık sızdırmayan kırmızı gece modu">Gece</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ==================== MOBILE TOPBAR ==================== -->
+    <header class="mobile-topbar">
+      <div class="mobile-brand">
+        <div class="brand-mark">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/>
+          </svg>
+        </div>
+        <span class="brand-name">SetAmp</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <button id="mobileLiveChip" class="live-chip mono">
+          <span class="live-dot"></span>
+          <span id="mobileLiveText">16A • 0A / 0 kW</span>
+        </button>
+        <button id="mobileThemeBtn" class="icon-pill-btn" aria-label="Tema Değiştir">Stüdyo</button>
+      </div>
+    </header>
+
+    <!-- ==================== MAIN STAGE ==================== -->
+    <main class="main-stage">
+      <div class="main-inner">
+      <!-- =========================================================
+           TAB 1: HESAPLAYICI (KABLO, AMPER/kW & RİSK)
+           ========================================================= -->
+      <section id="tab-calc" class="tab-panel active">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Hat yükü</h1>
+            <p class="page-sub">Kabloyu seç, bağladığın lambaları ekle.</p>
+          </div>
+          <div style="display:flex; gap:7px; flex-wrap:wrap;">
+            <button id="exportLoadReportBtn" class="btn btn-soft btn-sm">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Rapor
+            </button>
+            <button id="sendLoadToTruckBtn" class="btn btn-soft btn-sm">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="15" height="12" rx="2"/><path d="M16 8h4l3 4v4h-7V8z"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+              Kamyona Aktar
+            </button>
+          </div>
+        </div>
+
+        <!-- 1. Temiz Kablo Şeridi (Amper + kW birlikte) -->
+        <div id="calcCableSelector" class="cable-strip" role="listbox" aria-label="Kablo Seçimi"></div>
+
+        <!-- 2. Ana Güç & Risk Göstergesi (Hero) -->
+        <div id="riskBanner" class="hero-card">
+          <!-- JS tarafından doldurulur -->
+        </div>
+
+        <!-- 3. Çalışma Alanı (Sol: Fazlar + Uyarılar + Bağlı Lambalar | Sağ: Lamba Seçici) -->
+        <div class="calc-workspace">
+          <div>
+            <!-- 3 Faz R-S-T Kartı (Sadece trifaze kabloda görünür!) -->
+            <div id="phaseSectionCard" class="section-card" style="display:none;">
+              <div class="section-head">
+                <h2 class="section-title">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                  Faz Dağılımı (R / S / T)
+                </h2>
+                <button id="autoBalanceBtn" class="btn btn-soft btn-sm">Fazları Dengele</button>
+              </div>
+              <div id="phaseBarsContainer" class="phase-stack"></div>
+            </div>
+
+            <!-- Uyarılar (Sadece aktif uyarı varsa görünür!) -->
+            <div id="warningsContainer" class="warning-stack" style="display:none;"></div>
+
+            <!-- Mobilde Lamba Ekle Çekmecesini Açan Temiz Buton -->
+            <div class="mobile-add-bar">
+              <button id="openMobilePickerBtn" class="btn btn-primary" style="width:100%; min-height:44px; font-size:14px;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Lamba ekle
+              </button>
+            </div>
+
+            <!-- Bağlı Lambalar -->
+            <div class="section-card">
+              <div class="section-head">
+                <h2 class="section-title">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="5"/><path d="M9 18h6M10 21h4M12 15v3"/></svg>
+                  Hatta Bağlı Lambalar <span id="connectedCount" class="tag mono">0</span>
+                </h2>
+                <button id="clearLoadBtn" class="btn btn-danger-soft btn-sm">Temizle</button>
+              </div>
+              <div id="connectedList" class="clean-list"></div>
+            </div>
+          </div>
+
+          <!-- Sağ Panel (Desktop'ta sabit / Mobilde temiz alt çekmece) -->
+          <div id="pickerDrawerWrap" class="picker-drawer-wrap">
+            <div class="section-card picker-card">
+              <div class="section-head">
+                <h2 class="section-title">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Lamba Ekle
+                </h2>
+                <div style="display:flex; gap:6px; align-items:center;">
+                  <button id="openCustomLampBtn1" class="btn btn-soft btn-sm">+ Özel</button>
+                  <button id="closeMobilePickerBtn" class="icon-pill-btn picker-close-mobile">Kapat</button>
+                </div>
+              </div>
+              <input id="quickLampSearch" class="input" type="search" placeholder="Lamba ara (M18, 600d, MG2400, SkyPanel)..." style="margin-bottom:10px;" />
+              <div id="quickBrandPills" class="chip-row" style="margin-bottom:10px;"></div>
+              <div id="quickPickerList" class="picker-scroll"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+           TAB 2: KAÇ ADET? (LAMBA & KABLO REHBERİ)
+           ========================================================= -->
+      <section id="tab-catalog" class="tab-panel">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Lambalar</h1>
+            <p class="page-sub">Seçtiğin kabloda her lambadan kaç tane güvenle yakabileceğin.</p>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <div class="segmented">
+              <button class="seg-btn active" data-subtab="lamps">Lambalar (<span id="catalogLampCount">114</span>)</button>
+              <button class="seg-btn" data-subtab="cables">Kablolar (5)</button>
+            </div>
+            <button id="openCustomLampBtn2" class="btn btn-primary btn-sm">+ Özel Lamba</button>
+          </div>
+        </div>
+
+        <!-- Alt Sekme: Lambalar -->
+        <div id="subtab-lamps">
+          <div id="catalogCableSelector" class="cable-strip"></div>
+
+          <div class="section-card" style="padding:14px 16px;">
+            <div class="filter-bar">
+              <input id="catalogSearch" class="input" type="search" placeholder="Marka, model veya güç ara (ör. Godox, M40, XT26, 2.4 kW)..." />
+              <select id="catalogTypeSelect" class="select"></select>
+            </div>
+            <div id="catalogBrandPills" class="chip-row"></div>
+          </div>
+
+          <div id="catalogGrid" class="cards-grid"></div>
+        </div>
+
+        <!-- Alt Sekme: Kablo Standartları -->
+        <div id="subtab-cables" style="display:none;">
+          <div id="cableGuideGrid" class="cards-grid"></div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+           TAB 3: KAMYON ENVANTERİ & PAYDOS SAYIMI (MODÜL 3)
+           ========================================================= -->
+      <section id="tab-truck" class="tab-panel">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title" id="truckProjectHeading">Kamyon &amp; Paydos</h1>
+            <p class="page-sub" id="truckRentalSubtitle">Standart Işık Kamyonu</p>
+          </div>
+          <div style="display:flex; gap:7px; flex-wrap:wrap;">
+            <button id="toggleTruckSettingsBtn" class="btn btn-soft btn-sm">Proje &amp; Şablon</button>
+            <button id="truckToCalcBtn" class="btn btn-primary btn-sm">Yük Hesabına Aktar</button>
+            <button id="exportTruckReportBtn" class="btn btn-soft btn-sm">Rapor</button>
+          </div>
+        </div>
+
+        <!-- Açılır Proje & Şablon Ayarı (Ekranı kalabalıklaştırmaz) -->
+        <div id="truckSettingsCard" class="section-card collapsible-box" style="margin-top:0;">
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap:10px;">
+            <div>
+              <label class="field-label" for="projectNameInput">Proje / Set Adı</label>
+              <input id="projectNameInput" class="input" type="text" placeholder="Ör. X Dizisi - 14. Bölüm" />
+            </div>
+            <div>
+              <label class="field-label" for="rentalHouseInput">Kamyon / Kiralama Notu</label>
+              <input id="rentalHouseInput" class="input" type="text" placeholder="Ör. 34 ABC 123 / Kiralama Listesi" />
+            </div>
+            <div>
+              <label class="field-label" for="templateSelect">Hazır Kamyon Şablonu</label>
+              <div style="display:flex; gap:6px;">
+                <select id="templateSelect" class="select"></select>
+                <button id="applyTemplateBtn" class="btn btn-primary btn-sm" style="white-space:nowrap;">Yükle</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Paydos Özeti & Liste -->
+        <div class="section-card">
+          <div class="section-head">
+            <div>
+              <h2 class="section-title">Paydos İlerleme <span id="wrapProgressText" class="tag tag-safe mono">%0</span></h2>
+              <div id="wrapProgressSub" style="font-size:12px; color:var(--text-muted); margin-top:2px;"></div>
+            </div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              <button id="openAddTruckItemBtn" class="btn btn-primary btn-sm">+ Ekipman</button>
+              <button id="resetWrapBtn" class="btn btn-soft btn-sm">Sayımı Sıfırla</button>
+            </div>
+          </div>
+
+          <div class="bar-track" style="margin-bottom:14px;">
+            <div id="wrapProgressBar" class="bar-fill SAFE" style="width:0%;"></div>
+          </div>
+
+          <div id="wrapStatusCounters" class="stat-tabs"></div>
+
+          <div style="display:grid; grid-template-columns: 1fr; gap:10px; margin-bottom:12px;">
+            <input id="truckSearch" class="input" type="search" placeholder="Ekipman ara (M18, 63A, C-Stand, Floppy)..." />
+            <div id="truckCategoryPills" class="chip-row"></div>
+          </div>
+
+          <div id="truckList"></div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+           TAB 4: SARF STOK (JELATİN, DİFÜZYON & BANT)
+           ========================================================= -->
+      <section id="tab-expendables" class="tab-panel">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Sarf stok</h1>
+            <p class="page-sub">Jelatin, difüzyon ve bant. Azalanlar sipariş listesine düşer.</p>
+          </div>
+          <div style="display:flex; gap:7px; flex-wrap:wrap;">
+            <button id="exportOrderListBtn" class="btn btn-primary btn-sm">Sipariş Listesi</button>
+            <button id="openAddExpBtn" class="btn btn-soft btn-sm">+ Sarf Ekle</button>
+          </div>
+        </div>
+
+        <div id="lowStockBanner" class="hero-card status-CAUTION" style="display:none; padding:14px 16px;"></div>
+
+        <div class="section-card">
+          <div id="expCategoryPills" class="chip-row" style="margin-bottom:12px;"></div>
+          <div id="expendablesList"></div>
+        </div>
+      </section>
+      </div>
+    </main>
+
+    <!-- ==================== MOBILE BOTTOM NAV ==================== -->
+    <nav class="bottom-nav" aria-label="Alt Menü">
+      <button class="bnav-btn active" data-tab="calc">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        <span>Hat Yükü</span>
+      </button>
+      <button class="bnav-btn" data-tab="catalog">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="5"/><path d="M9 18h6M10 21h4M12 15v3"/></svg>
+        <span>Lambalar</span>
+      </button>
+      <button class="bnav-btn" data-tab="truck">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="15" height="12" rx="2"/><path d="M16 8h4l3 4v4h-7V8z"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+        <span>Kamyon</span>
+        <span id="mobileTruckBadge" class="bnav-badge" style="display:none;">0</span>
+      </button>
+      <button class="bnav-btn" data-tab="expendables">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        <span>Sarf Stok</span>
+        <span id="mobileExpBadge" class="bnav-badge" style="display:none;">0</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ==================== MODAL: LAMBA GÖRSEL ÖNİZLEME (LIGHTBOX) ==================== -->
+  <div id="lampLightboxModal" class="modal-backdrop">
+    <div class="modal" style="max-width:440px;">
+      <div class="section-head" style="margin-bottom:10px;">
+        <div>
+          <span id="lbBrandTag" class="tag tag-brand">ARRI</span>
+          <span id="lbTypeTag" class="tag" style="margin-left:4px;">HMI</span>
+          <h3 id="lbTitle" class="section-title" style="margin-top:4px; font-size:17px;">M18</h3>
+        </div>
+        <button class="icon-pill-btn" data-close-modal="lampLightboxModal">✕</button>
+      </div>
+      <div class="lightbox-stage">
+        <img id="lbImage" class="lightbox-img" src="./assets/lamps/arri-hmi.jpg" alt="Lamba görseli" />
+      </div>
+      <div id="lbSpecs" class="lightbox-specs mono"></div>
+      <p id="lbNote" style="font-size:12.5px; color:var(--text-muted); margin:0 0 14px;"></p>
+      <div style="display:flex; gap:8px;">
+        <button id="lbAddLoadBtn" class="btn btn-primary" style="flex:1;">Hata Ekle</button>
+        <button id="lbAddTruckBtn" class="btn btn-soft" style="flex:1;">Kamyona Ekle</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: ÖZEL LAMBA EKLE ==================== -->
+  <div id="customLampModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="section-head">
+        <h3 class="section-title">Özel Lamba Ekle</h3>
+        <button class="icon-pill-btn" data-close-modal="customLampModal">✕</button>
+      </div>
+      <form id="customLampForm" class="modal-form">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <div>
+            <label class="field-label">Marka</label>
+            <input name="brand" class="input" required placeholder="Ör. ARRI, Godox, Kino Flo" />
+          </div>
+          <div>
+            <label class="field-label">Tip</label>
+            <select name="type" class="select">
+              <option value="LED COB">LED COB</option>
+              <option value="LED Panel">LED Panel</option>
+              <option value="LED Tüp">LED Tüp</option>
+              <option value="HMI">HMI</option>
+              <option value="Tungsten">Tungsten</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="field-label">Model Adı</label>
+          <input name="model" class="input" required placeholder="Ör. M8 / Forza 500B / SkyPanel S30" />
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+          <div>
+            <label class="field-label">Güç (Watt)</label>
+            <input name="watts" class="input mono" type="number" min="10" max="25000" required placeholder="1200" />
+          </div>
+          <div>
+            <label class="field-label">Power Factor</label>
+            <input name="pf" class="input mono" type="number" min="0.5" max="1" step="0.01" value="0.95" />
+          </div>
+          <div>
+            <label class="field-label">Min Soket</label>
+            <select name="minSocketAmps" class="select mono">
+              <option value="16">16A</option>
+              <option value="32">32A</option>
+              <option value="63">63A</option>
+              <option value="125">125A</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="field-label">Lamba Fotoğrafı (Opsiyonel — boşsa otomatik görsel atanır)</label>
+          <input id="customLampPhotoInput" type="file" accept="image/*" class="input" style="padding:6px 10px;" />
+        </div>
+        <div>
+          <label class="field-label">Set Notu (Opsiyonel)</label>
+          <input name="notes" class="input" placeholder="Ör. Balastla 9.5A / 2.0 kW çeker" />
+        </div>
+        <button type="submit" class="btn btn-primary">Kaydet ve Kataloğa Ekle</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: KAMYONA EKİPMAN EKLE ==================== -->
+  <div id="addTruckItemModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="section-head">
+        <h3 class="section-title">Kamyona Ekipman Ekle</h3>
+        <button class="icon-pill-btn" data-close-modal="addTruckItemModal">✕</button>
+      </div>
+      <form id="addTruckItemForm" class="modal-form">
+        <div>
+          <label class="field-label">Kategori</label>
+          <select name="category" id="truckItemCategorySelect" class="select">
+            <option value="Lamba">Lamba</option>
+            <option value="Kablo">Kablo</option>
+            <option value="Stand & Grip">Stand &amp; Grip</option>
+            <option value="Aksesuar">Aksesuar</option>
+          </select>
+        </div>
+        <div id="truckPresetLampWrap">
+          <label class="field-label">Katalogdan Hızlı Seç (Opsiyonel)</label>
+          <select id="truckPresetLampSelect" class="select"></select>
+        </div>
+        <div>
+          <label class="field-label">Ekipman Adı</label>
+          <input name="name" id="truckItemNameInput" class="input" required placeholder="Ör. 32A Trifaze Kablo (25m) veya C-Stand" />
+        </div>
+        <div>
+          <label class="field-label">Adet</label>
+          <input name="qty" class="input mono" type="number" min="1" max="500" value="1" required />
+        </div>
+        <button type="submit" class="btn btn-primary">Kamyon Listesine Ekle</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: SARF MALZEME EKLE ==================== -->
+  <div id="addExpModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="section-head">
+        <h3 class="section-title">Yeni Sarf Malzeme Ekle</h3>
+        <button class="icon-pill-btn" data-close-modal="addExpModal">✕</button>
+      </div>
+      <form id="addExpForm" class="modal-form">
+        <div>
+          <label class="field-label">Malzeme Adı</label>
+          <input name="name" class="input" required placeholder="Ör. 1/4 Grid Cloth veya Beyaz Gaffer" />
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <div>
+            <label class="field-label">Kategori</label>
+            <select name="category" class="select">
+              <option value="Bant">Bant</option>
+              <option value="Difüzyon">Difüzyon</option>
+              <option value="Renk Jelatini">Renk Jelatini</option>
+              <option value="Kontrol">Kontrol</option>
+              <option value="Aksesuar">Aksesuar</option>
+              <option value="Güvenlik">Güvenlik</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">Birim</label>
+            <select name="unit" class="select">
+              <option value="Rulo">Rulo</option>
+              <option value="Metre">Metre</option>
+              <option value="Adet">Adet</option>
+              <option value="Paket">Paket</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <div>
+            <label class="field-label">Mevcut Stok</label>
+            <input name="qty" class="input mono" type="number" min="0" step="0.5" value="2" required />
+          </div>
+          <div>
+            <label class="field-label">Kritik Alt Sınır</label>
+            <input name="minQty" class="input mono" type="number" min="0" step="0.5" value="1" required />
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Sarf Listesine Ekle</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: RAPOR ÖNİZLEME ==================== -->
+  <div id="reportModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="section-head">
+        <h3 id="reportModalTitle" class="section-title">Rapor</h3>
+        <button class="icon-pill-btn" data-close-modal="reportModal">✕</button>
+      </div>
+      <pre id="reportPreviewText" class="report-preview mono"></pre>
+      <div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
+        <button id="copyReportBtn" class="btn btn-primary" style="flex:1;">WhatsApp İçin Kopyala</button>
+        <button id="printReportBtn" class="btn btn-soft">PDF / Yazdır</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="./js/data-cables.js?v=8"></script>
+  <script src="./js/data-fixtures.js?v=8"></script>
+  <script src="./js/data-templates.js?v=8"></script>
+  <script src="./js/calc.js?v=8"></script>
+  <script src="./js/app.js?v=8"></script>
+</body>
+</html>

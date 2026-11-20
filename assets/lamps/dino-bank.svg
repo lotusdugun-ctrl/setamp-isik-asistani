@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="48%" r="68%">
+      <stop offset="0%" stop-color="#2c1d10"/>
+      <stop offset="100%" stop-color="#0d1118"/>
+    </radialGradient>
+    <radialGradient id="parGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="35%" stop-color="#fde68a"/>
+      <stop offset="72%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#78350f"/>
+    </radialGradient>
+    <filter id="g" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="240" height="240" fill="url(#bg)"/>
+  <!-- Yoke -->
+  <path d="M26 112 L26 184 Q26 198 42 198 L198 198 Q214 198 214 184 L214 112" fill="none" stroke="#1f2937" stroke-width="10" stroke-linecap="round"/>
+  <rect x="112" y="200" width="16" height="24" rx="3" fill="#334155"/>
+  <!-- 6-Lite Housing -->
+  <rect x="34" y="48" width="172" height="122" rx="12" fill="#141923" stroke="#475569" stroke-width="2.5"/>
+  <!-- Ambient warm halo -->
+  <rect x="44" y="58" width="152" height="102" rx="8" fill="#f59e0b" opacity="0.2" filter="url(#g)"/>
+  <!-- 2x3 Par64 Lamps -->
+  <g stroke="#94a3b8" stroke-width="2">
+    <circle cx="72" cy="84" r="22" fill="url(#parGlow)"/>
+    <circle cx="120" cy="84" r="22" fill="url(#parGlow)"/>
+    <circle cx="168" cy="84" r="22" fill="url(#parGlow)"/>
+    <circle cx="72" cy="134" r="22" fill="url(#parGlow)"/>
+    <circle cx="120" cy="134" r="22" fill="url(#parGlow)"/>
+    <circle cx="168" cy="134" r="22" fill="url(#parGlow)"/>
+  </g>
+  <g fill="#fffbeb" opacity="0.9">
+    <circle cx="72" cy="84" r="7"/>
+    <circle cx="120" cy="84" r="7"/>
+    <circle cx="168" cy="84" r="7"/>
+    <circle cx="72" cy="134" r="7"/>
+    <circle cx="120" cy="134" r="7"/>
+    <circle cx="168" cy="134" r="7"/>
+  </g>
+</svg>

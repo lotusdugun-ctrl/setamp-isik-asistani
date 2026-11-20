@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#1b2232"/>
+      <stop offset="100%" stop-color="#0d1118"/>
+    </radialGradient>
+    <radialGradient id="matGlow" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="65%" stop-color="#e2e8f0"/>
+      <stop offset="100%" stop-color="#94a3b8"/>
+    </radialGradient>
+    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="240" height="240" fill="url(#bg)"/>
+  <!-- X-Frame Arms behind -->
+  <line x1="34" y1="42" x2="206" y2="188" stroke="#334155" stroke-width="5" stroke-linecap="round"/>
+  <line x1="206" y1="42" x2="34" y2="188" stroke="#334155" stroke-width="5" stroke-linecap="round"/>
+  <!-- Stand Spigot -->
+  <rect x="114" y="180" width="12" height="36" rx="3" fill="#334155"/>
+  <!-- Outer Softbox Black Trim -->
+  <rect x="34" y="42" width="172" height="142" rx="10" fill="#131822" stroke="#475569" stroke-width="2.5"/>
+  <!-- Ambient Glow -->
+  <rect x="48" y="54" width="144" height="118" rx="6" fill="#e0f2fe" opacity="0.25" filter="url(#softGlow)"/>
+  <!-- Glowing Diffusion Surface -->
+  <rect x="46" y="54" width="148" height="118" rx="6" fill="url(#matGlow)"/>
+  <!-- Subtle Eggcrate / Softbox Grid -->
+  <g stroke="#1e293b" stroke-opacity="0.32" stroke-width="1.4">
+    <line x1="76" y1="54" x2="76" y2="172"/>
+    <line x1="106" y1="54" x2="106" y2="172"/>
+    <line x1="136" y1="54" x2="136" y2="172"/>
+    <line x1="166" y1="54" x2="166" y2="172"/>
+    <line x1="46" y1="84" x2="194" y2="84"/>
+    <line x1="46" y1="114" x2="194" y2="114"/>
+    <line x1="46" y1="144" x2="194" y2="144"/>
+  </g>
+  <!-- Corner Clips -->
+  <rect x="32" y="40" width="12" height="12" rx="2" fill="#f59e0b"/>
+  <rect x="196" y="40" width="12" height="12" rx="2" fill="#f59e0b"/>
+  <rect x="32" y="174" width="12" height="12" rx="2" fill="#f59e0b"/>
+  <rect x="196" y="174" width="12" height="12" rx="2" fill="#f59e0b"/>
+</svg>
