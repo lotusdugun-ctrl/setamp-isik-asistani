@@ -22,6 +22,8 @@ window.TRUCK_TEMPLATES = [
       { category: 'Kablo', name: '63A Kablo (25m - 3×16mm²)', cableId: '63a-mono', qty: 3, status: 'pending', note: '' },
       { category: 'Kablo', name: '63A -> 32A/16A Dağıtım Kutusu (Distro)', cableId: '63a-mono', qty: 1, status: 'pending', note: '' },
       { category: 'Kablo', name: '32A -> 16A Ara Distro Kutusu', cableId: '32a-mono', qty: 2, status: 'pending', note: '' },
+      { category: 'Kablo', name: '32A -> 16A / 63A -> 32A Adaptör / Çevirici', cableId: '32a-mono', qty: 4, status: 'pending', note: '' },
+      { category: 'Kablo', name: 'Kablo Yolu (Ramp / Yellow Jacket)', qty: 6, status: 'pending', note: '' },
       // Grip & Stand
       { category: 'Stand & Grip', name: 'C-Stand (40" + Kol + Grip Head)', qty: 14, status: 'pending', note: '' },
       { category: 'Stand & Grip', name: 'Combo Stand (3 Kademeli)', qty: 6, status: 'pending', note: '' },

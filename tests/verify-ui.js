@@ -25,7 +25,8 @@ const dynamicIds = new Set([
   'ctExitCloud',
   'ctReset',
   'ctClearHist',
-  'fetchWeatherBtnInline'
+  'fetchWeatherBtnInline',
+  'distroToggleNewDeptBtn'
 ]);
 const missingIds = [...new Set(ids)].filter((id) => !dynamicIds.has(id) && !html.includes(`id="${id}"`));
 assert.strictEqual(missingIds.length, 0, `Eksik HTML ID'leri bulundu: ${missingIds.join(', ')}`);

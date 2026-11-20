@@ -368,13 +368,18 @@
               <div>
                 <div class="field-label">1. Hangi Birim İstiyor?</div>
                 <div id="distroDeptPicker" class="brand-grid" style="margin-bottom:0;"></div>
+                <div id="distroNewDeptWrap" style="display:none; gap:6px; margin-top:8px;">
+                  <input id="distroNewDeptInput" class="input" placeholder="Yeni birim adı (ör. VFX, 2. Ünite, Güvenlik, Oyuncu Karavanı)..." />
+                  <button type="button" id="distroSaveNewDeptBtn" class="btn btn-primary btn-sm" style="height:37px;">Ekle</button>
+                </div>
               </div>
               <div>
-                <div class="field-label">2. Hızlı Kablo / Aksesuar Seç (veya aşağıya yaz)</div>
-                <div id="distroQuickItemPicker" class="len-chips" style="margin-top:0;"></div>
+                <div class="field-label">2. Verilen Malzeme (Hızlı seç, kamyondan seç veya kendin yaz)</div>
+                <div id="distroQuickItemPicker" class="len-chips" style="margin-top:0; margin-bottom:8px;"></div>
+                <select id="distroFromTruckSelect" class="select" aria-label="Kamyon envanterinden seç" style="margin-bottom:8px;"></select>
               </div>
               <div class="distro-form-row">
-                <input id="distroCustomItemInput" class="input" required placeholder="Malzeme adı (ör. 16A Uzatma, Türk Kablo)..." />
+                <input id="distroCustomItemInput" class="input" required placeholder="Malzeme adı (ör. Kablo Yolu, 16A Uzatma, Türk Kablo)..." />
                 <input id="distroQtyInput" class="input mono" type="number" min="1" max="100" value="1" required aria-label="Adet" />
                 <input id="distroNoteInput" class="input" placeholder="Kişi / yer notu (opsiyonel)" />
                 <button type="submit" class="btn btn-primary">Ver</button>
@@ -726,11 +731,11 @@
 
   <script src="./js/data-cables.js?v=11"></script>
   <script src="./js/data-fixtures.js?v=11"></script>
-  <script src="./js/data-templates.js?v=11"></script>
-  <script src="./js/calc.js?v=11"></script>
-  <script src="./js/solar.js?v=12"></script>
-  <script src="./js/solar-ui.js?v=12"></script>
-  <script src="./js/distro-ui.js?v=12"></script>
-  <script src="./js/app.js?v=12"></script>
+  <script src="./js/data-templates.js?v=13"></script>
+  <script src="./js/calc.js?v=13"></script>
+  <script src="./js/solar.js?v=13"></script>
+  <script src="./js/solar-ui.js?v=13"></script>
+  <script src="./js/distro-ui.js?v=13"></script>
+  <script src="./js/app.js?v=13"></script>
 </body>
 </html>
