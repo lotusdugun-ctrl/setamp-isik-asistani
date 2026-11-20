@@ -6,16 +6,26 @@ const vm = require('vm');
 const rootDir = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(rootDir, 'index.html'), 'utf8');
 const appJs = fs.readFileSync(path.join(rootDir, 'js/app.js'), 'utf8');
+const solarUiJs = fs.readFileSync(path.join(rootDir, 'js/solar-ui.js'), 'utf8');
+const distroUiJs = fs.readFileSync(path.join(rootDir, 'js/distro-ui.js'), 'utf8');
 
 // 1. Tüm getElementById çağrılarının index.html içinde karşılığı olduğunu doğrula
-const ids = [...appJs.matchAll(/getElementById\(['"]([^'"]+)['"]\)/g)].map((m) => m[1]);
+const ids = [...(appJs + '\n' + solarUiJs + '\n' + distroUiJs).matchAll(/getElementById\(['"]([^'"]+)['"]\)/g)].map((m) => m[1]);
 const dynamicIds = new Set([
   'bannerRebalanceBtn',
   'bannerUpgradeBtn',
   'toggleCableSettingsBtn',
   'cableLengthInput',
   'cableSectionSelect',
-  'cableSettingsPanel'
+  'cableSettingsPanel',
+  'ctApproachStart',
+  'ctApproachHalf',
+  'ctEnterCloud',
+  'ctCloudHalf',
+  'ctExitCloud',
+  'ctReset',
+  'ctClearHist',
+  'fetchWeatherBtnInline'
 ]);
 const missingIds = [...new Set(ids)].filter((id) => !dynamicIds.has(id) && !html.includes(`id="${id}"`));
 assert.strictEqual(missingIds.length, 0, `Eksik HTML ID'leri bulundu: ${missingIds.join(', ')}`);

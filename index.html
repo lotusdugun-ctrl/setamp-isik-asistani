@@ -7,7 +7,7 @@
   <title>SetAmp — Işık Ekibi</title>
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
-  <link rel="stylesheet" href="./css/styles.css?v=10" />
+  <link rel="stylesheet" href="./css/styles.css?v=11" />
 </head>
 <body>
   <div class="app-shell">
@@ -60,6 +60,21 @@
               </span>
             </span>
             <span id="sideLampCountPill" class="count-pill count-pill-soft mono">114</span>
+          </button>
+
+          <button class="side-nav-btn" data-tab="solar">
+            <span class="side-nav-left">
+              <span class="nav-icon-box">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="4"/>
+                  <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+                </svg>
+              </span>
+              <span>
+                Güneş &amp; Bulut
+                <span class="side-nav-sub">Pusula, saat ve bulut</span>
+              </span>
+            </span>
           </button>
 
           <div class="nav-group-label">Ekipman</div>
@@ -281,9 +296,13 @@
             <h1 class="page-title" id="truckProjectHeading">Kamyon &amp; Paydos</h1>
             <p class="page-sub" id="truckRentalSubtitle">Standart Işık Kamyonu</p>
           </div>
-          <div style="display:flex; gap:7px; flex-wrap:wrap;">
+          <div style="display:flex; gap:7px; flex-wrap:wrap; align-items:center;">
+            <div class="segmented">
+              <button class="seg-btn active" data-truck-subtab="inventory">Envanter</button>
+              <button class="seg-btn" data-truck-subtab="distro">Birim Dağıtım (<span id="distroSubtabCount" class="mono">0</span>)</button>
+            </div>
             <button id="toggleTruckSettingsBtn" class="btn btn-soft btn-sm">Proje &amp; Şablon</button>
-            <button id="truckToCalcBtn" class="btn btn-primary btn-sm">Yük Hesabına Aktar</button>
+            <button id="truckToCalcBtn" class="btn btn-primary btn-sm">Yük Hesabına</button>
             <button id="exportTruckReportBtn" class="btn btn-soft btn-sm">Rapor</button>
           </div>
         </div>
@@ -309,31 +328,75 @@
           </div>
         </div>
 
-        <!-- Paydos Özeti & Liste -->
-        <div class="section-card">
-          <div class="section-head">
-            <div>
-              <h2 class="section-title">Paydos İlerleme <span id="wrapProgressText" class="tag tag-safe mono">%0</span></h2>
-              <div id="wrapProgressSub" style="font-size:12px; color:var(--text-muted); margin-top:2px;"></div>
+        <!-- ALT SEKME 1: KAMYON ENVANTER & PAYDOS -->
+        <div id="truck-subtab-inventory">
+          <div class="section-card">
+            <div class="section-head">
+              <div>
+                <h2 class="section-title">Paydos İlerleme <span id="wrapProgressText" class="tag tag-safe mono">%0</span></h2>
+                <div id="wrapProgressSub" style="font-size:12px; color:var(--text-muted); margin-top:2px;"></div>
+              </div>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button id="openAddTruckItemBtn" class="btn btn-primary btn-sm">+ Ekipman</button>
+                <button id="resetWrapBtn" class="btn btn-soft btn-sm">Sayımı Sıfırla</button>
+              </div>
             </div>
-            <div style="display:flex; gap:6px; flex-wrap:wrap;">
-              <button id="openAddTruckItemBtn" class="btn btn-primary btn-sm">+ Ekipman</button>
-              <button id="resetWrapBtn" class="btn btn-soft btn-sm">Sayımı Sıfırla</button>
+
+            <div class="bar-track" style="margin-bottom:14px;">
+              <div id="wrapProgressBar" class="bar-fill SAFE" style="width:0%;"></div>
             </div>
+
+            <div id="wrapStatusCounters" class="stat-tabs"></div>
+
+            <div style="display:grid; grid-template-columns: 1fr; gap:10px; margin-bottom:12px;">
+              <input id="truckSearch" class="input" type="search" placeholder="Ekipman ara (M18, 63A, C-Stand, Floppy)..." />
+              <div id="truckCategoryPills" class="chip-row"></div>
+            </div>
+
+            <div id="truckList"></div>
+          </div>
+        </div>
+
+        <!-- ALT SEKME 2: DİĞER BİRİMLERE DAĞITILAN KABLO & AKSESUAR -->
+        <div id="truck-subtab-distro" style="display:none;">
+          <div class="section-card">
+            <div class="section-head" style="margin-bottom:10px;">
+              <h2 class="section-title">Diğer Birime Ekipman Ver</h2>
+              <span style="font-size:11.5px; color:var(--text-dim);">Kamyon stoğundan otomatik düşer</span>
+            </div>
+            <form id="distroAddForm" style="display:flex; flex-direction:column; gap:10px;">
+              <div>
+                <div class="field-label">1. Hangi Birim İstiyor?</div>
+                <div id="distroDeptPicker" class="brand-grid" style="margin-bottom:0;"></div>
+              </div>
+              <div>
+                <div class="field-label">2. Hızlı Kablo / Aksesuar Seç (veya aşağıya yaz)</div>
+                <div id="distroQuickItemPicker" class="len-chips" style="margin-top:0;"></div>
+              </div>
+              <div class="distro-form-row">
+                <input id="distroCustomItemInput" class="input" required placeholder="Malzeme adı (ör. 16A Uzatma, Türk Kablo)..." />
+                <input id="distroQtyInput" class="input mono" type="number" min="1" max="100" value="1" required aria-label="Adet" />
+                <input id="distroNoteInput" class="input" placeholder="Kişi / yer notu (opsiyonel)" />
+                <button type="submit" class="btn btn-primary">Ver</button>
+              </div>
+            </form>
           </div>
 
-          <div class="bar-track" style="margin-bottom:14px;">
-            <div id="wrapProgressBar" class="bar-fill SAFE" style="width:0%;"></div>
+          <div class="section-card">
+            <div class="section-head" style="margin-bottom:10px;">
+              <h2 class="section-title">Birimlerdeki Toplam Dağılım</h2>
+              <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                <div class="segmented">
+                  <button class="seg-btn active" data-dview="byItem">Malzemeye Göre</button>
+                  <button class="seg-btn" data-dview="byDept">Birime Göre</button>
+                </div>
+                <button id="exportDistroReportBtn" class="btn btn-soft btn-sm">Dağıtım Raporu</button>
+                <button id="clearAllDistroBtn" class="btn btn-danger-soft btn-sm">Hepsi Geldi</button>
+              </div>
+            </div>
+            <div id="distroDeptFilterRow" class="brand-grid"></div>
+            <div id="distroSummaryList" class="clean-list" style="gap:10px;"></div>
           </div>
-
-          <div id="wrapStatusCounters" class="stat-tabs"></div>
-
-          <div style="display:grid; grid-template-columns: 1fr; gap:10px; margin-bottom:12px;">
-            <input id="truckSearch" class="input" type="search" placeholder="Ekipman ara (M18, 63A, C-Stand, Floppy)..." />
-            <div id="truckCategoryPills" class="chip-row"></div>
-          </div>
-
-          <div id="truckList"></div>
         </div>
       </section>
 
@@ -359,6 +422,95 @@
           <div id="expendablesList"></div>
         </div>
       </section>
+
+      <!-- =========================================================
+           TAB 5: GÜNEŞ PUSULASI, ALTIN SAAT & BULUT ZAMANLAYICI
+           ========================================================= -->
+      <section id="tab-solar" class="tab-panel">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Güneş &amp; Bulut</h1>
+            <p class="page-sub">360° güneş pusulası, pencere cephe saatleri ve saniyelik bulut giriş/çıkış geri sayımı.</p>
+          </div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button id="solarGpsBtn" class="btn btn-soft btn-sm">GPS</button>
+            <button id="solarNowBtn" class="btn btn-soft btn-sm">Şimdi</button>
+            <button id="exportSolarReportBtn" class="btn btn-soft btn-sm">Rapor</button>
+          </div>
+        </div>
+
+        <!-- Konum & Tarih Şeridi -->
+        <div class="solar-controls-bar">
+          <select id="solarCitySelect" class="select" aria-label="Şehir Seç"></select>
+          <input id="solarDateInput" class="input mono" type="date" aria-label="Tarih" />
+          <button id="solarCompassLockBtn" class="btn btn-soft" style="height:37px;">Canlı Pusula</button>
+        </div>
+
+        <div class="solar-main-grid">
+          <!-- Sol: 360° Güneş Pusulası + Saat Kaydırıcı + Anlık Metrikler -->
+          <div class="section-card" style="margin-bottom:0;">
+            <div class="section-head" style="margin-bottom:10px;">
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <span id="solarSelectedTime" class="mono" style="font-size:20px; font-weight:700;">12:00</span>
+                <span id="solarPhaseBadge" class="status-pill">Gün Işığı</span>
+              </div>
+              <span id="solarNextCountdown" class="mono" style="font-size:11.5px; color:var(--text-muted);"></span>
+            </div>
+
+            <div id="solarCompassWrap" class="solar-compass-wrap"></div>
+
+            <div class="solar-slider-wrap">
+              <div style="display:flex; justify-content:space-between; font-size:10.5px; color:var(--text-dim); margin-bottom:4px;" class="mono">
+                <span>05:00</span>
+                <span>Saat Kaydırıcı (Günü Canlandır)</span>
+                <span>22:00</span>
+              </div>
+              <input id="solarTimeSlider" class="solar-slider" type="range" min="300" max="1320" step="5" value="720" />
+            </div>
+
+            <div id="solarLiveMetrics" class="solar-metrics-grid"></div>
+            <div id="solarSetTip" style="font-size:12px; color:var(--text-muted); margin-top:10px; padding-top:10px; border-top:1px solid var(--border);"></div>
+          </div>
+
+          <!-- Sağ: Bulut Giriş/Çıkış Saniye Zamanlayıcısı + Canlı Bulut Katmanları -->
+          <div style="display:flex; flex-direction:column; gap:16px; min-width:0;">
+            <div class="section-card" style="margin-bottom:0;">
+              <div class="section-head" style="margin-bottom:10px;">
+                <h2 class="section-title">Bulut Giriş / Çıkış Geri Sayımı</h2>
+                <span class="tag mono">Yarı Yol Kuralı</span>
+              </div>
+              <div id="cloudTimerBody"></div>
+            </div>
+
+            <div class="section-card" style="margin-bottom:0;">
+              <div class="section-head" style="margin-bottom:10px;">
+                <h2 class="section-title">Canlı Bulut &amp; Rüzgar (850hPa)</h2>
+                <button id="solarRefreshWeatherBtn" class="btn btn-soft btn-sm">Güncelle</button>
+              </div>
+              <div id="cloudWeatherBody"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alt 1: Günün Kritik Işık Saatleri -->
+        <div class="section-card" style="margin-top:16px;">
+          <div class="section-head" style="margin-bottom:10px;">
+            <h2 class="section-title">Gün Işığı Takvimi</h2>
+            <span style="font-size:11.5px; color:var(--text-dim);">Saatlere tıklayıp pusulayı o ana alabilirsin</span>
+          </div>
+          <div id="solarTimelineGrid" class="solar-timeline-grid"></div>
+        </div>
+
+        <!-- Alt 2: Pencere / Cephe Direkt Güneş Kontrolü -->
+        <div class="section-card">
+          <div class="section-head" style="margin-bottom:10px;">
+            <h2 class="section-title">Pencere / Cephe Direkt Güneş Saati</h2>
+            <span style="font-size:11.5px; color:var(--text-dim);">Mekanın baktığı yönü seç</span>
+          </div>
+          <div id="windowDirButtons" class="brand-grid"></div>
+          <div id="windowSunSummary" class="cap-banner" style="margin-top:8px;"></div>
+        </div>
+      </section>
       </div>
     </main>
 
@@ -372,6 +524,10 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="5"/><path d="M9 18h6M10 21h4M12 15v3"/></svg>
         <span>Lambalar</span>
       </button>
+      <button class="bnav-btn" data-tab="solar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        <span>Güneş</span>
+      </button>
       <button class="bnav-btn" data-tab="truck">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="15" height="12" rx="2"/><path d="M16 8h4l3 4v4h-7V8z"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>
         <span>Kamyon</span>
@@ -379,7 +535,7 @@
       </button>
       <button class="bnav-btn" data-tab="expendables">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-        <span>Sarf Stok</span>
+        <span>Sarf</span>
         <span id="mobileExpBadge" class="bnav-badge" style="display:none;">0</span>
       </button>
     </nav>
@@ -568,10 +724,13 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script src="./js/data-cables.js?v=10"></script>
-  <script src="./js/data-fixtures.js?v=10"></script>
-  <script src="./js/data-templates.js?v=10"></script>
-  <script src="./js/calc.js?v=10"></script>
-  <script src="./js/app.js?v=10"></script>
+  <script src="./js/data-cables.js?v=11"></script>
+  <script src="./js/data-fixtures.js?v=11"></script>
+  <script src="./js/data-templates.js?v=11"></script>
+  <script src="./js/calc.js?v=11"></script>
+  <script src="./js/solar.js?v=11"></script>
+  <script src="./js/solar-ui.js?v=11"></script>
+  <script src="./js/distro-ui.js?v=11"></script>
+  <script src="./js/app.js?v=11"></script>
 </body>
 </html>

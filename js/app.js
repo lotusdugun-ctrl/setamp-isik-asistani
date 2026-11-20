@@ -413,11 +413,13 @@
     }
 
     const issues = state.truckItems.filter((i) => i.status === 'missing' || i.status === 'faulty').length;
+    const outLoans = window.SetDistroUI ? window.SetDistroUI.getTotalOutCount() : 0;
+    const truckTotalBadge = issues + outLoans;
     ['sideTruckBadge', 'mobileTruckBadge'].forEach((id) => {
       const b = document.getElementById(id);
       if (b) {
-        b.textContent = issues;
-        b.style.display = issues > 0 ? 'grid' : 'none';
+        b.textContent = truckTotalBadge;
+        b.style.display = truckTotalBadge > 0 ? 'grid' : 'none';
       }
     });
 
@@ -1550,7 +1552,17 @@
       closeModal('lampLightboxModal');
     });
 
-    // Kamyon kontrolleri
+    // Kamyon kontrolleri & Alt Sekme (Envanter / Birim Dağıtım)
+    document.querySelectorAll('[data-truck-subtab]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const sub = btn.dataset.truckSubtab;
+        document.querySelectorAll('[data-truck-subtab]').forEach((b) => b.classList.toggle('active', b.dataset.truckSubtab === sub));
+        document.getElementById('truck-subtab-inventory').style.display = sub === 'inventory' ? 'block' : 'none';
+        document.getElementById('truck-subtab-distro').style.display = sub === 'distro' ? 'block' : 'none';
+        if (sub === 'distro' && window.SetDistroUI) window.SetDistroUI.render();
+      });
+    });
+
     document.getElementById('toggleTruckSettingsBtn').addEventListener('click', () => {
       ui.truckSettingsOpen = !ui.truckSettingsOpen;
       renderTruckTab();
@@ -1751,15 +1763,24 @@
     renderCatalogTab();
     renderTruckTab();
     renderExpendablesTab();
+    if (window.SetSolarUI) window.SetSolarUI.render();
+    if (window.SetDistroUI) window.SetDistroUI.render();
   }
+
+  window.SetAppToast = showToast;
+  window.SetAppOpenReport = openReportModal;
+  window.SetAppGetTruckItems = () => state.truckItems;
+  window.SetAppRefreshBadges = renderLiveBadges;
 
   document.addEventListener('DOMContentLoaded', () => {
     setTheme(state.theme);
     bindStaticEvents();
+    if (window.SetSolarUI) window.SetSolarUI.init();
+    if (window.SetDistroUI) window.SetDistroUI.init();
     setTab(state.activeTab);
 
     if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
-      navigator.serviceWorker.register('./sw.js?v=10').then((reg) => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=11').then((reg) => reg.update()).catch(() => {});
     }
   });
 })();

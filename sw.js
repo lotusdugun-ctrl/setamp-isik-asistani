@@ -1,4 +1,4 @@
-const CACHE_NAME = 'setamp-pro-v10';
+const CACHE_NAME = 'setamp-pro-v11';
 const ASSETS = [
   './',
   './index.html',
@@ -7,6 +7,9 @@ const ASSETS = [
   './js/data-fixtures.js',
   './js/data-templates.js',
   './js/calc.js',
+  './js/solar.js',
+  './js/solar-ui.js',
+  './js/distro-ui.js',
   './js/app.js',
   './manifest.json',
   './assets/icon.svg',
