@@ -1620,23 +1620,300 @@ body.night-red .lightbox-img {
   color: var(--accent);
 }
 
-/* ==================== BİRİMLERE DAĞITIM (ZİMMET) ==================== */
-.distro-form-row {
+/* ==================== CANLI AR KAMERA GÜNEŞ YOLU ==================== */
+.solar-subtab-bar {
   display: grid;
-  grid-template-columns: 1.4fr 76px 1fr auto;
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.solar-subtab-bar .seg-btn {
+  padding: 0 8px;
+  text-align: center;
+}
+
+.solar-quick-4col {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  margin-bottom: 6px;
+}
+
+.solar-quick-4col .len-chip {
+  width: 100%;
+  padding: 0 4px;
+  font-size: 10.5px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.solar-bottom-card {
+  margin-top: 8px;
+}
+
+.ar-stage {
+  position: relative;
+  width: 100%;
+  height: 380px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: #0c1526;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.ar-stage.ar-fullscreen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  max-height: none;
+  border-radius: 0;
+  border: none;
+  z-index: 220;
+  background: #000;
+}
+
+.ar-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 1;
+}
+
+.ar-stage.camera-live .ar-video {
+  opacity: 1;
+}
+
+.ar-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  touch-action: none;
+  cursor: grab;
+}
+
+.ar-canvas:active {
+  cursor: grabbing;
+}
+
+.ar-hud-top {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: wrap;
+  pointer-events: none;
+}
+
+.ar-hud-left,
+.ar-hud-right {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  pointer-events: auto;
+}
+
+.ar-pill {
+  height: 26px;
+  padding: 0 9px;
+  border-radius: var(--radius-sm);
+  background: rgba(10, 14, 22, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #e2e8f0;
+  font-size: 10.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  letter-spacing: 0.03em;
+}
+
+.ar-pill.live-on {
+  border-color: rgba(245, 183, 26, 0.7);
+  color: #f5b71a;
+}
+
+.ar-pill-sub {
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.ar-hud-btn {
+  height: 28px;
+  padding: 0 9px;
+  border-radius: var(--radius-sm);
+  background: rgba(10, 14, 22, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  color: #f8fafc;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ar-hud-btn:hover {
+  background: rgba(30, 41, 59, 0.92);
+  border-color: #f5b71a;
+}
+
+.ar-hud-bottom {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.ar-fs-timebar {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(10, 14, 22, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  pointer-events: auto;
+}
+
+.ar-stage.ar-fullscreen .ar-fs-timebar {
+  display: flex;
+}
+
+.ar-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: wrap;
+  pointer-events: auto;
+}
+
+.ar-dir-jumps {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+/* ==================== SADE LİSTE & BİRİM DAĞITIM ==================== */
+.quick-list-card {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
-@media (max-width: 680px) {
-  .distro-form-row {
-    grid-template-columns: 1fr 74px;
-  }
-  .distro-form-row > :nth-child(3) {
-    grid-column: span 2;
-  }
-  .distro-form-row > :nth-child(4) {
-    grid-column: span 2;
-  }
+.quick-add-row {
+  display: grid;
+  grid-template-columns: 1fr 64px auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.quick-strip-scroll {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.quick-strip-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.quick-strip-chip {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  background: var(--input-bg);
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.quick-strip-chip:hover {
+  color: var(--text);
+  border-color: var(--accent-border);
+}
+
+.quick-strip-chip.active {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+.quick-tools-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.truck-filter-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.distro-simple-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.distro-dept-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px;
+}
+
+.distro-action-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.distro-qty-stepper {
+  height: 37px;
+}
+
+.distro-qty-stepper button {
+  height: 35px;
+  width: 30px;
+}
+
+.distro-note-toggle {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+  padding: 2px 0;
+}
+
+.distro-note-toggle:hover {
+  color: var(--accent);
 }
 
 .distro-group-card {
@@ -1656,7 +1933,7 @@ body.night-red .lightbox-img {
   justify-content: space-between;
   gap: 8px;
   flex-wrap: wrap;
-  padding: 10px 12px;
+  padding: 9px 12px;
   background: var(--surface-2);
   border-bottom: 1px solid var(--border);
 }
@@ -1671,13 +1948,101 @@ body.night-red .lightbox-img {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  flex-wrap: wrap;
-  padding: 9px 12px;
+  flex-wrap: nowrap;
+  padding: 8px 12px;
   border-top: 1px solid var(--border);
 }
 
 .distro-entry-row:first-child {
   border-top: none;
+}
+
+@media (max-width: 720px) {
+  .ar-stage {
+    height: 39vh;
+    min-height: 245px;
+    max-height: 300px;
+  }
+
+  .ar-hud-top {
+    top: 6px;
+    left: 6px;
+    right: 6px;
+    flex-wrap: nowrap;
+  }
+
+  .ar-hud-bottom {
+    left: 6px;
+    right: 6px;
+    bottom: 6px;
+  }
+
+  .ar-pill {
+    height: 23px;
+    padding: 0 6px;
+    font-size: 9.5px;
+  }
+
+  .ar-hud-btn {
+    height: 24px;
+    padding: 0 7px;
+    font-size: 10px;
+  }
+
+  .solar-controls-bar {
+    grid-template-columns: 1fr 120px 58px;
+    gap: 5px;
+    margin-bottom: 6px;
+  }
+
+  .solar-controls-bar .select,
+  .solar-controls-bar .input,
+  .solar-controls-bar .btn {
+    height: 33px !important;
+    font-size: 12px;
+  }
+
+  .solar-subtab-bar .seg-btn {
+    height: 29px;
+    font-size: 12px;
+  }
+
+  .solar-quick-4col .len-chip {
+    height: 23px;
+    font-size: 9.5px;
+  }
+
+  .solar-controls-bar > :last-child {
+    grid-column: auto;
+  }
+
+  .solar-metrics-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  .solar-stat {
+    padding: 5px 4px;
+    text-align: center;
+  }
+
+  .solar-stat strong {
+    font-size: 11px;
+  }
+
+  .quick-list-card {
+    padding: 10px;
+    gap: 7px;
+  }
+
+  .distro-action-row {
+    grid-template-columns: 1fr auto auto;
+  }
+
+  .inv-item {
+    padding: 8px 0 8px 10px;
+  }
 }
 
 /* ==================== MOBİL TEK EKRAN YERLEŞİMİ (≤ 720px) ==================== */

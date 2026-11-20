@@ -200,6 +200,7 @@
 
   // ==================== NAVIGATION & THEME ====================
   function setTab(tabId) {
+    const prevTab = state.activeTab;
     state.activeTab = tabId;
     saveState();
     document.querySelectorAll('.tab-panel').forEach((sec) => {
@@ -208,8 +209,14 @@
     document.querySelectorAll('.side-nav-btn, .bnav-btn').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.tab === tabId);
     });
+    if (prevTab === 'solar' && tabId !== 'solar' && window.SetSolarUI?.onTabHide) {
+      window.SetSolarUI.onTabHide();
+    }
     window.scrollTo({ top: 0, behavior: 'instant' });
     renderAll();
+    if (tabId === 'solar' && window.SetSolarUI?.onTabShow) {
+      window.SetSolarUI.onTabShow();
+    }
   }
 
   function setTheme(themeName) {
@@ -1004,6 +1011,69 @@
   }
 
   // ==================== RENDER: TAB 3 (KAMYON & PAYDOS) ====================
+  const TRUCK_QUICK_CHIPS = [
+    { label: '+ 16A Kablo', name: '16A Uzatma Kablo (20m)', category: 'Kablo', cableId: '16a-mono' },
+    { label: '+ Üçlü Priz', name: 'Türk Kablo (Üçlü Grup Priz - 5m)', category: 'Kablo', cableId: 'turk-uclu' },
+    { label: '+ Kablo Yolu', name: 'Kablo Yolu (Ramp / Yellow Jacket)', category: 'Aksesuar' },
+    { label: '+ 32A Kablo', name: '32A Kablo (25m)', category: 'Kablo', cableId: '32a-mono' },
+    { label: '+ 63A Kablo', name: '63A Kablo (25m)', category: 'Kablo', cableId: '63a-mono' },
+    { label: '+ Distro', name: 'Distro Kutusu', category: 'Kablo' },
+    { label: '+ Adaptör', name: 'Adaptör / Çevirici', category: 'Kablo' },
+    { label: '+ C-Stand', name: 'C-Stand (40" Komple)', category: 'Stand & Grip' },
+    { label: '+ Kum Torbası', name: 'Kum Torbası (10kg)', category: 'Stand & Grip' },
+    { label: '+ Floppy', name: '4x4 Floppy (Siyah Bayrak)', category: 'Stand & Grip' },
+    { label: '+ M18', name: 'ARRI M18 (1.8K HMI)', category: 'Lamba', fixtureId: 'arri-m18' },
+    { label: '+ 600d', name: 'Aputure LS 600d Pro', category: 'Lamba', fixtureId: 'aputure-600d-pro' },
+    { label: '+ SkyPanel', name: 'ARRI SkyPanel S60-C', category: 'Lamba', fixtureId: 'arri-skypanel-s60' },
+    { label: '+ Titan Tüp', name: 'Astera Titan Tube (8li Set)', category: 'Lamba', fixtureId: 'astera-titan-case' }
+  ];
+
+  function detectTruckCategory(name) {
+    const n = name.toLowerCase();
+    const matchedFix = getAllFixtures().find((f) => `${f.brand} ${f.model}`.toLowerCase() === n || f.model.toLowerCase() === n);
+    if (matchedFix) return { category: 'Lamba', fixtureId: matchedFix.id, cableId: null };
+    if (/kablo yolu|ramp|yellow jacket/.test(n)) return { category: 'Aksesuar', fixtureId: null, cableId: null };
+    if (/kablo|priz|üçlü|distro|adaptör|çevirici|dmx|16a|32a|63a|125a/.test(n)) return { category: 'Kablo', fixtureId: null, cableId: null };
+    if (/stand|kum|floppy|klemp|cardellini|maşa|apple|kafa|butterfly|çerçeve|ayak/.test(n)) return { category: 'Stand & Grip', fixtureId: null, cableId: null };
+    if (/arri|aputure|godox|nanlux|nanlite|astera|skypanel|hmi|led|tungsten|fresnel|kafa/.test(n)) return { category: 'Lamba', fixtureId: null, cableId: null };
+    return { category: 'Aksesuar', fixtureId: null, cableId: null };
+  }
+
+  function populateTruckQuickHelpers() {
+    const dl = document.getElementById('truckQuickDatalist');
+    if (dl && dl.options.length === 0) {
+      const defaults = [
+        '16A Uzatma Kablo (20m)', 'Türk Kablo (Üçlü Grup Priz - 5m)', 'Kablo Yolu (Ramp / Yellow Jacket)',
+        '32A Kablo (25m)', '63A Kablo (25m)', '125A Ana Kablo (25m)', 'Distro Kutusu', 'Adaptör / Çevirici',
+        'C-Stand (40" Komple)', 'Combo Stand', 'Kum Torbası (10kg)', '4x4 Floppy (Siyah Bayrak)',
+        'Cardellini / Klemp', 'DMX Kablosu', 'Apple Box Seti', '12x12 Butterfly Çerçeve'
+      ];
+      const fixNames = getAllFixtures().map((f) => `${f.brand} ${f.model}`);
+      const allOpts = [...new Set([...defaults, ...fixNames])];
+      dl.innerHTML = allOpts.map((n) => `<option value="${esc(n)}"></option>`).join('');
+    }
+
+    const chipBox = document.getElementById('truckQuickChips');
+    if (chipBox && chipBox.childElementCount === 0) {
+      chipBox.innerHTML = TRUCK_QUICK_CHIPS.map((c, idx) =>
+        `<button type="button" class="quick-strip-chip" data-tquick="${idx}">${esc(c.label)}</button>`
+      ).join('');
+      chipBox.querySelectorAll('[data-tquick]').forEach((b) => {
+        b.addEventListener('click', () => {
+          const item = TRUCK_QUICK_CHIPS[Number(b.dataset.tquick)];
+          if (!item) return;
+          addTruckItem({
+            category: item.category,
+            name: item.name,
+            fixtureId: item.fixtureId || null,
+            cableId: item.cableId || null,
+            qty: 1
+          });
+        });
+      });
+    }
+  }
+
   function addTruckItem({ category, name, fixtureId = null, cableId = null, qty = 1 }) {
     const existing = state.truckItems.find(
       (i) => i.name.toLowerCase() === name.toLowerCase() && i.category === category
@@ -1025,12 +1095,14 @@
     saveState();
     renderLiveBadges();
     if (state.activeTab === 'truck') renderTruckTab();
-    showToast(`Kamyona eklendi: ${name}`);
+    if (window.SetDistroUI) window.SetDistroUI.render();
+    showToast(`Listeye eklendi: ${name}`);
   }
 
   function renderTruckTab() {
-    document.getElementById('truckProjectHeading').textContent = state.projectName || 'Kamyon & Paydos';
-    document.getElementById('truckRentalSubtitle').textContent = state.rentalHouse || 'Kamyon Envanteri ve Paydos Sayımı';
+    populateTruckQuickHelpers();
+    document.getElementById('truckProjectHeading').textContent = state.projectName || 'Kamyon';
+    document.getElementById('truckRentalSubtitle').textContent = state.rentalHouse || 'Kamyon Listesi & Birim Dağıtım';
 
     const settingsCard = document.getElementById('truckSettingsCard');
     settingsCard.classList.toggle('open', ui.truckSettingsOpen);
@@ -1563,6 +1635,29 @@
       });
     });
 
+    // Kamyon Hızlı Tek Satır Ekleme (Modal açmadan saniyeler içinde liste yap)
+    const quickForm = document.getElementById('truckQuickAddForm');
+    if (quickForm) {
+      quickForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const inp = document.getElementById('truckQuickAddInput');
+        const qtyInp = document.getElementById('truckQuickQtyInput');
+        const name = inp ? inp.value.trim() : '';
+        const qty = Math.max(1, Number(qtyInp?.value) || 1);
+        if (!name) return;
+        const detected = detectTruckCategory(name);
+        addTruckItem({
+          category: detected.category,
+          name,
+          fixtureId: detected.fixtureId,
+          cableId: detected.cableId,
+          qty
+        });
+        if (inp) { inp.value = ''; inp.focus(); }
+        if (qtyInp) qtyInp.value = '1';
+      });
+    }
+
     document.getElementById('toggleTruckSettingsBtn').addEventListener('click', () => {
       ui.truckSettingsOpen = !ui.truckSettingsOpen;
       renderTruckTab();
@@ -1780,7 +1875,7 @@
     setTab(state.activeTab);
 
     if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
-      navigator.serviceWorker.register('./sw.js?v=13').then((reg) => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=14').then((reg) => reg.update()).catch(() => {});
     }
   });
 })();

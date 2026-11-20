@@ -1,4 +1,4 @@
-// SetAmp — Diğer Birimlere Dağıtılan Kablo & Aksesuar Takibi (Genişletilmiş Set Birimleri + Özel Birim/Malzeme + Kamyon Stok Eşleştirme)
+// SetAmp — Diğer Birimlere Dağıtılan Kablo & Aksesuar Takibi (Sade 2-Dokunuş Arayüz + Kamyon Stok Eşleştirme)
 (function () {
   const DISTRO_STORAGE_KEY = 'setamp_dept_loans_v2';
   const LEGACY_STORAGE_KEY = 'setamp_dept_loans_v1';
@@ -20,20 +20,20 @@
   ];
 
   const DEFAULT_QUICK_ITEMS = [
-    { name: '16A Uzatma Kablo (20m)', matches: ['16a uzatma', '16a monofaze uzatma', 'stinger'] },
-    { name: 'Türk Kablo (Üçlü Priz)', matches: ['türk kablo', 'üçlü', "3'lü", 'çoklu priz', 'örümcek'] },
-    { name: 'Kablo Yolu (Ramp)', matches: ['kablo yolu', 'ramp', 'yellow jacket'] },
-    { name: '32A Kablo', matches: ['32a kablo', '32a monofaze', '32a trifaze'] },
-    { name: '63A Kablo', matches: ['63a kablo', '63a trifaze'] },
-    { name: '125A Ana Kablo', matches: ['125a ana kablo', '125a kablo', '125a trifaze'] },
-    { name: 'Distro Kutusu', matches: ['distro'] },
-    { name: 'Adaptör / Çevirici', matches: ['adaptör', 'çevirici'] },
-    { name: 'C-Stand', matches: ['c-stand'] },
-    { name: 'Combo Stand', matches: ['combo stand'] },
-    { name: 'Kum Torbası', matches: ['kum torbası'] },
-    { name: 'Cardellini / Klemp', matches: ['cardellini', 'klemp', 'maşa'] },
-    { name: '4x4 Floppy', matches: ['floppy'] },
-    { name: 'DMX Kablosu', matches: ['dmx'] }
+    { name: '16A Uzatma Kablo (20m)', short: '16A Uzatma', matches: ['16a uzatma', '16a monofaze uzatma', 'stinger'] },
+    { name: 'Türk Kablo (Üçlü Priz)', short: 'Üçlü Priz', matches: ['türk kablo', 'üçlü', "3'lü", 'çoklu priz', 'örümcek'] },
+    { name: 'Kablo Yolu (Ramp)', short: 'Kablo Yolu', matches: ['kablo yolu', 'ramp', 'yellow jacket'] },
+    { name: '32A Kablo', short: '32A Kablo', matches: ['32a kablo', '32a monofaze', '32a trifaze'] },
+    { name: '63A Kablo', short: '63A Kablo', matches: ['63a kablo', '63a trifaze'] },
+    { name: '125A Ana Kablo', short: '125A Kablo', matches: ['125a ana kablo', '125a kablo', '125a trifaze'] },
+    { name: 'Distro Kutusu', short: 'Distro', matches: ['distro'] },
+    { name: 'Adaptör / Çevirici', short: 'Adaptör', matches: ['adaptör', 'çevirici'] },
+    { name: 'C-Stand', short: 'C-Stand', matches: ['c-stand'] },
+    { name: 'Combo Stand', short: 'Combo', matches: ['combo stand'] },
+    { name: 'Kum Torbası', short: 'Kum Torbası', matches: ['kum torbası'] },
+    { name: 'Cardellini / Klemp', short: 'Klemp', matches: ['cardellini', 'klemp', 'maşa'] },
+    { name: '4x4 Floppy', short: 'Floppy', matches: ['floppy'] },
+    { name: 'DMX Kablosu', short: 'DMX', matches: ['dmx'] }
   ];
 
   function uid() {
@@ -65,7 +65,6 @@
           customItems: Array.isArray(parsed.customItems) ? parsed.customItems : []
         };
       }
-      // v1'den eski zimmet kayıtlarını kayıpsız taşı
       const oldRaw = localStorage.getItem(LEGACY_STORAGE_KEY);
       if (oldRaw) {
         const oldLoans = JSON.parse(oldRaw);
@@ -81,14 +80,16 @@
 
   const saved = loadDistroState();
   const dState = {
-    loans: saved.loans, // [{ id, dept, itemName, qty, note, time }]
+    loans: saved.loans,
     customDepts: saved.customDepts,
     customItems: saved.customItems,
     selectedDept: 'Kamera / DIT',
     selectedItemName: '16A Uzatma Kablo (20m)',
+    qtyDraft: 1,
     filterDept: 'Tümü',
     viewMode: 'byItem',
-    addingDept: false
+    addingDept: false,
+    showNote: false
   };
 
   function saveDistroState() {
@@ -114,7 +115,7 @@
     const existingLower = new Set(list.map((x) => x.name.toLowerCase()));
     for (const ci of dState.customItems) {
       if (!existingLower.has(ci.toLowerCase())) {
-        list.push({ name: ci, matches: [ci.toLowerCase()] });
+        list.push({ name: ci, short: ci, matches: [ci.toLowerCase()] });
         existingLower.add(ci.toLowerCase());
       }
     }
@@ -129,9 +130,6 @@
     return typeof window.SetAppGetTruckItems === 'function' ? window.SetAppGetTruckItems() : [];
   }
 
-  /**
-   * Kamyon envanterinden ilgili ekipmanın toplam stok sayısını bulur (eski ve yeni şablon isimleriyle uyumlu)
-   */
   function findTruckTotalQty(itemName) {
     const inv = getTruckInventory();
     const norm = itemName.trim().toLowerCase();
@@ -163,7 +161,7 @@
     dState.addingDept = false;
     saveDistroState();
     renderDistroPanel();
-    toast(`Yeni birim eklendi: ${clean}`);
+    toast(`Birim eklendi: ${clean}`);
   }
 
   function addLoan(dept, itemName, qty, note = '') {
@@ -172,7 +170,6 @@
     const addQty = Math.max(1, Number(qty) || 1);
     if (!cleanItem) return;
 
-    // Yeni yazılan malzemeyi hızlı seçim listesine hatırla
     const isKnown = getAllQuickItems().some((x) => x.name.toLowerCase() === cleanItem.toLowerCase());
     if (!isKnown) {
       dState.customItems.push(cleanItem);
@@ -196,6 +193,7 @@
       });
     }
     dState.selectedItemName = cleanItem;
+    dState.qtyDraft = 1;
     saveDistroState();
     renderDistroPanel();
     if (window.SetAppRefreshBadges) window.SetAppRefreshBadges();
@@ -289,45 +287,25 @@
       deptCounts[l.dept] = (deptCounts[l.dept] || 0) + l.qty;
     }
 
-    // 1. Birim Seçici (Tüm set birimleri + "+ Yeni Birim" butonu)
-    const deptPicker = document.getElementById('distroDeptPicker');
-    if (deptPicker) {
-      deptPicker.innerHTML = allDepts.map((d) => {
+    // 1. Sade Birim Dropdown (13 hazır birim + özel eklenenler)
+    const deptSel = document.getElementById('distroDeptSelect');
+    if (deptSel) {
+      deptSel.innerHTML = allDepts.map((d) => {
         const cnt = deptCounts[d] || 0;
-        return `<button type="button" class="brand-btn ${dState.selectedDept === d ? 'active' : ''}" data-pick-dept="${esc(d)}"><span>${esc(d)}</span>${cnt > 0 ? `<span class="brand-cnt">${cnt}</span>` : ''}</button>`;
-      }).join('') + `<button type="button" class="brand-btn" id="distroToggleNewDeptBtn" style="border-style:dashed;">+ Yeni Birim</button>`;
-
-      deptPicker.querySelectorAll('[data-pick-dept]').forEach((b) => {
-        b.addEventListener('click', () => {
-          dState.selectedDept = b.dataset.pickDept;
-          renderDistroPanel();
-        });
-      });
-
-      const newDeptBtn = document.getElementById('distroToggleNewDeptBtn');
-      if (newDeptBtn) {
-        newDeptBtn.addEventListener('click', () => {
-          dState.addingDept = !dState.addingDept;
-          renderDistroPanel();
-          if (dState.addingDept) {
-            const inp = document.getElementById('distroNewDeptInput');
-            if (inp) inp.focus();
-          }
-        });
-      }
+        return `<option value="${esc(d)}" ${dState.selectedDept === d ? 'selected' : ''}>${esc(d)}${cnt > 0 ? ` (${cnt} dışarıda)` : ''}</option>`;
+      }).join('');
     }
 
     const newDeptWrap = document.getElementById('distroNewDeptWrap');
-    if (newDeptWrap) {
-      newDeptWrap.style.display = dState.addingDept ? 'flex' : 'none';
-    }
+    if (newDeptWrap) newDeptWrap.style.display = dState.addingDept ? 'flex' : 'none';
 
-    // 2. Hızlı Malzeme Butonları (Kablo Yolu, Distro, Adaptör, 16A–125A, Türk Kablo, Stand/Grip + Özel)
+    // 2. Tek satır yatay hızlı malzeme şeridi
     const itemPicker = document.getElementById('distroQuickItemPicker');
     if (itemPicker) {
       itemPicker.innerHTML = getAllQuickItems().map((q) => {
         const stock = findTruckTotalQty(q.name);
-        return `<button type="button" class="len-chip ${dState.selectedItemName === q.name ? 'active' : ''}" data-pick-item="${esc(q.name)}">${esc(q.name)}${stock !== null ? ` (${stock})` : ''}</button>`;
+        const active = dState.selectedItemName.toLowerCase() === q.name.toLowerCase();
+        return `<button type="button" class="quick-strip-chip ${active ? 'active' : ''}" data-pick-item="${esc(q.name)}">${esc(q.short || q.name)}${stock !== null ? ` <span class="mono" style="opacity:0.7;">(${stock})</span>` : ''}</button>`;
       }).join('');
       itemPicker.querySelectorAll('[data-pick-item]').forEach((b) => {
         b.addEventListener('click', () => {
@@ -339,12 +317,12 @@
       });
     }
 
-    // Kamyon envanterindeki TÜM malzemelerden doğrudan seçme menüsü
-    const invSelect = document.getElementById('distroFromTruckSelect');
-    if (invSelect) {
-      const inv = getTruckInventory();
-      invSelect.innerHTML = `<option value="">Kamyon envanterinden seç (${inv.length} kalem)...</option>` +
-        inv.map((it) => `<option value="${esc(it.name)}">[${esc(it.category)}] ${esc(it.name)} (${it.qty} adet)</option>`).join('');
+    // Datalist: hızlı kalemler + kamyondaki tüm ekipmanlar
+    const dl = document.getElementById('distroItemDatalist');
+    if (dl) {
+      const names = new Set(getAllQuickItems().map((x) => x.name));
+      for (const it of getTruckInventory()) names.add(it.name);
+      dl.innerHTML = Array.from(names).map((n) => `<option value="${esc(n)}"></option>`).join('');
     }
 
     const customInp = document.getElementById('distroCustomItemInput');
@@ -352,38 +330,56 @@
       customInp.value = dState.selectedItemName;
     }
 
-    // 3. Aktif Dışarıdaki Birim Filtre Çubuğu
+    const qtyValEl = document.getElementById('distroQtyVal');
+    if (qtyValEl) qtyValEl.textContent = dState.qtyDraft;
+
+    const noteWrap = document.getElementById('distroNoteWrap');
+    if (noteWrap) noteWrap.style.display = dState.showNote ? 'block' : 'none';
+
+    // 3. Başlık Özeti & Aktif Birim Filtresi
+    const activeDepts = allDepts.filter((d) => (deptCounts[d] || 0) > 0);
+    const hdrEl = document.getElementById('distroHeaderSummary');
+    if (hdrEl) {
+      hdrEl.textContent = outCount > 0
+        ? `Dışarıda: ${outCount} adet (${activeDepts.length} birim)`
+        : 'Dışarıdaki Ekipmanlar';
+    }
+
     const filterRow = document.getElementById('distroDeptFilterRow');
     if (filterRow) {
-      const activeDepts = allDepts.filter((d) => (deptCounts[d] || 0) > 0);
-      const filters = ['Tümü', ...activeDepts];
-      if (!filters.includes(dState.filterDept)) dState.filterDept = 'Tümü';
-      filterRow.innerHTML = filters.map((f) => {
-        const cnt = f === 'Tümü' ? outCount : (deptCounts[f] || 0);
-        return `<button class="brand-btn ${dState.filterDept === f ? 'active' : ''}" data-fdept="${esc(f)}"><span>${esc(f)}</span><span class="brand-cnt">${cnt}</span></button>`;
-      }).join('');
-      filterRow.querySelectorAll('[data-fdept]').forEach((b) => {
-        b.addEventListener('click', () => {
-          dState.filterDept = b.dataset.fdept;
-          renderDistroPanel();
+      if (activeDepts.length >= 2) {
+        const filters = ['Tümü', ...activeDepts];
+        if (!filters.includes(dState.filterDept)) dState.filterDept = 'Tümü';
+        filterRow.style.display = 'flex';
+        filterRow.innerHTML = filters.map((f) => {
+          const cnt = f === 'Tümü' ? outCount : (deptCounts[f] || 0);
+          return `<button type="button" class="quick-strip-chip ${dState.filterDept === f ? 'active' : ''}" data-fdept="${esc(f)}">${esc(f)} <span class="mono">(${cnt})</span></button>`;
+        }).join('');
+        filterRow.querySelectorAll('[data-fdept]').forEach((b) => {
+          b.addEventListener('click', () => {
+            dState.filterDept = b.dataset.fdept;
+            renderDistroPanel();
+          });
         });
-      });
+      } else {
+        dState.filterDept = 'Tümü';
+        filterRow.style.display = 'none';
+      }
     }
 
     document.querySelectorAll('[data-dview]').forEach((b) => {
       b.classList.toggle('active', b.dataset.dview === dState.viewMode);
     });
 
-    // 4. Liste Alanı (Malzemeye Göre veya Birime Göre)
+    // 4. Temiz Liste Alanı
     const listContainer = document.getElementById('distroSummaryList');
     if (!listContainer) return;
 
     const visibleLoans = dState.loans.filter((l) => dState.filterDept === 'Tümü' || l.dept === dState.filterDept);
-
     if (visibleLoans.length === 0) {
       listContainer.innerHTML = `
-        <div class="empty-box">
-          Şu an diğer birimlerde bekleyen ekipman yok. Yukarıdan birim (Ronin, Prodüksiyon, Jeneratör vb.) ve malzeme (Kablo Yolu, Üçlü Priz, Uzatma vb.) seçip <strong>Ver</strong> diyebilirsin.
+        <div class="empty-box" style="padding:18px 10px;">
+          Şu an başka birimde ekipman yok. Yukarıdan birim ve malzeme seçip <strong>Ver</strong>’e basman yeterli.
         </div>
       `;
       return;
@@ -404,25 +400,25 @@
         const overStock = remaining !== null && remaining < 0;
 
         const stockBadges = truckQty !== null
-          ? `<span class="tag mono">Toplam: ${truckQty}</span>
-             <span class="tag ${overStock ? 'tag-danger' : 'tag-caution'} mono">Dışarıda: ${g.totalOut}</span>
-             <span class="tag ${overStock ? 'tag-danger' : 'tag-safe'} mono">Kamyonda: ${remaining}</span>`
-          : `<span class="tag tag-caution mono">Dışarıda: ${g.totalOut} adet</span>`;
+          ? `<span class="tag mono">Toplam ${truckQty}</span>
+             <span class="tag ${overStock ? 'tag-danger' : 'tag-caution'} mono">Dışarı ${g.totalOut}</span>
+             <span class="tag ${overStock ? 'tag-danger' : 'tag-safe'} mono">Kamyon ${remaining}</span>`
+          : `<span class="tag tag-caution mono">${g.totalOut} adet dışarıda</span>`;
 
         const rows = g.entries.map((l) => `
           <div class="distro-entry-row">
-            <div style="flex:1; min-width:140px;">
+            <div style="flex:1; min-width:110px;">
               <strong style="font-size:13px;">${esc(l.dept)}</strong>
-              <span class="mono" style="font-size:11px; color:var(--text-dim); margin-left:6px;">${l.time}</span>
-              ${l.note ? `<div style="font-size:11.5px; color:var(--text-muted);">${esc(l.note)}</div>` : ''}
+              <span class="mono" style="font-size:10.5px; color:var(--text-dim); margin-left:5px;">${l.time}</span>
+              ${l.note ? `<div style="font-size:11px; color:var(--text-muted);">${esc(l.note)}</div>` : ''}
             </div>
             <div style="display:flex; align-items:center; gap:6px;">
               <div class="stepper">
-                <button data-ln-dec="${l.id}" title="1 adet geri geldi">−</button>
+                <button type="button" data-ln-dec="${l.id}">−</button>
                 <span class="mono">${l.qty}</span>
-                <button data-ln-inc="${l.id}" title="1 adet daha verildi">+</button>
+                <button type="button" data-ln-inc="${l.id}">+</button>
               </div>
-              <button class="st-pill active-ok" data-ln-ret="${l.id}" title="Hepsi geri geldi">Geldi</button>
+              <button type="button" class="st-pill active-ok" data-ln-ret="${l.id}">Geldi</button>
             </div>
           </div>
         `).join('');
@@ -430,8 +426,8 @@
         return `
           <div class="distro-group-card ${overStock ? 'over-stock' : ''}">
             <div class="distro-group-head">
-              <div style="font-weight:700; font-size:14px;">${esc(itemName)}</div>
-              <div style="display:flex; gap:10px; flex-wrap:wrap;">${stockBadges}</div>
+              <div style="font-weight:700; font-size:13.5px;">${esc(itemName)}</div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">${stockBadges}</div>
             </div>
             <div class="distro-entries">${rows}</div>
           </div>
@@ -448,18 +444,18 @@
         const sum = entries.reduce((s, x) => s + x.qty, 0);
         const rows = entries.map((l) => `
           <div class="distro-entry-row">
-            <div style="flex:1; min-width:140px;">
+            <div style="flex:1; min-width:110px;">
               <strong style="font-size:13px;">${esc(l.itemName)}</strong>
-              <span class="mono" style="font-size:11px; color:var(--text-dim); margin-left:6px;">${l.time}</span>
-              ${l.note ? `<div style="font-size:11.5px; color:var(--text-muted);">${esc(l.note)}</div>` : ''}
+              <span class="mono" style="font-size:10.5px; color:var(--text-dim); margin-left:5px;">${l.time}</span>
+              ${l.note ? `<div style="font-size:11px; color:var(--text-muted);">${esc(l.note)}</div>` : ''}
             </div>
             <div style="display:flex; align-items:center; gap:6px;">
               <div class="stepper">
-                <button data-ln-dec="${l.id}">−</button>
+                <button type="button" data-ln-dec="${l.id}">−</button>
                 <span class="mono">${l.qty}</span>
-                <button data-ln-inc="${l.id}">+</button>
+                <button type="button" data-ln-inc="${l.id}">+</button>
               </div>
-              <button class="st-pill active-ok" data-ln-ret="${l.id}">Geldi</button>
+              <button type="button" class="st-pill active-ok" data-ln-ret="${l.id}">Geldi</button>
             </div>
           </div>
         `).join('');
@@ -467,8 +463,8 @@
         return `
           <div class="distro-group-card">
             <div class="distro-group-head">
-              <div style="font-weight:700; font-size:14px;">${esc(dept)}</div>
-              <span class="tag tag-caution mono">Toplam ${sum} adet dışarıda</span>
+              <div style="font-weight:700; font-size:13.5px;">${esc(dept)}</div>
+              <span class="tag tag-caution mono">${sum} adet dışarıda</span>
             </div>
             <div class="distro-entries">${rows}</div>
           </div>
@@ -488,20 +484,23 @@
   }
 
   function bindDistroEvents() {
-    const form = document.getElementById('distroAddForm');
-    if (form) {
-      form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const itemInp = document.getElementById('distroCustomItemInput');
-        const qtyInp = document.getElementById('distroQtyInput');
-        const noteInp = document.getElementById('distroNoteInput');
-        const name = itemInp ? itemInp.value.trim() : dState.selectedItemName;
-        const qty = qtyInp ? Number(qtyInp.value) : 1;
-        const note = noteInp ? noteInp.value.trim() : '';
-        if (!name) return;
-        addLoan(dState.selectedDept, name, qty, note);
-        if (qtyInp) qtyInp.value = '1';
-        if (noteInp) noteInp.value = '';
+    const deptSel = document.getElementById('distroDeptSelect');
+    if (deptSel) {
+      deptSel.addEventListener('change', (e) => {
+        dState.selectedDept = e.target.value;
+        renderDistroPanel();
+      });
+    }
+
+    const newDeptToggle = document.getElementById('distroToggleNewDeptBtn');
+    if (newDeptToggle) {
+      newDeptToggle.addEventListener('click', () => {
+        dState.addingDept = !dState.addingDept;
+        renderDistroPanel();
+        if (dState.addingDept) {
+          const inp = document.getElementById('distroNewDeptInput');
+          if (inp) inp.focus();
+        }
       });
     }
 
@@ -523,15 +522,46 @@
       });
     }
 
-    const invSelect = document.getElementById('distroFromTruckSelect');
-    if (invSelect) {
-      invSelect.addEventListener('change', (e) => {
-        if (!e.target.value) return;
-        dState.selectedItemName = e.target.value;
-        const inp = document.getElementById('distroCustomItemInput');
-        if (inp) inp.value = e.target.value;
-        e.target.value = '';
+    const decBtn = document.getElementById('distroQtyDec');
+    const incBtn = document.getElementById('distroQtyInc');
+    if (decBtn) {
+      decBtn.addEventListener('click', () => {
+        dState.qtyDraft = Math.max(1, dState.qtyDraft - 1);
+        const v = document.getElementById('distroQtyVal');
+        if (v) v.textContent = dState.qtyDraft;
+      });
+    }
+    if (incBtn) {
+      incBtn.addEventListener('click', () => {
+        dState.qtyDraft = Math.min(99, dState.qtyDraft + 1);
+        const v = document.getElementById('distroQtyVal');
+        if (v) v.textContent = dState.qtyDraft;
+      });
+    }
+
+    const noteToggle = document.getElementById('distroToggleNoteBtn');
+    if (noteToggle) {
+      noteToggle.addEventListener('click', () => {
+        dState.showNote = !dState.showNote;
         renderDistroPanel();
+        if (dState.showNote) {
+          const inp = document.getElementById('distroNoteInput');
+          if (inp) inp.focus();
+        }
+      });
+    }
+
+    const form = document.getElementById('distroAddForm');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const itemInp = document.getElementById('distroCustomItemInput');
+        const noteInp = document.getElementById('distroNoteInput');
+        const name = itemInp ? itemInp.value.trim() : dState.selectedItemName;
+        const note = noteInp ? noteInp.value.trim() : '';
+        if (!name) return;
+        addLoan(dState.selectedDept, name, dState.qtyDraft, note);
+        if (noteInp) noteInp.value = '';
       });
     }
 
@@ -559,7 +589,7 @@
         saveDistroState();
         renderDistroPanel();
         if (window.SetAppRefreshBadges) window.SetAppRefreshBadges();
-        toast('Tüm birim zimmetleri teslim alındı olarak temizlendi');
+        toast('Tüm birim zimmetleri temizlendi');
       });
     }
   }
