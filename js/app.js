@@ -725,10 +725,23 @@
     renderQuickPicker(cable, ev.phaseAmps);
   }
 
+  function getBrandCounts() {
+    const all = getAllFixtures();
+    const counts = { Tümü: all.length };
+    for (const b of NAMED_BRANDS) counts[b] = 0;
+    counts['Diğer'] = 0;
+    for (const f of all) {
+      if (NAMED_BRANDS.includes(f.brand)) counts[f.brand] += 1;
+      else counts['Diğer'] += 1;
+    }
+    return counts;
+  }
+
   function renderQuickPicker(cable, currentPhaseAmps) {
+    const counts = getBrandCounts();
     const brandContainer = document.getElementById('quickBrandPills');
     brandContainer.innerHTML = BRANDS.map((b) =>
-      `<button class="chip ${ui.quickBrand === b ? 'active' : ''}" data-qbrand="${esc(b)}">${esc(b)}</button>`
+      `<button class="brand-btn ${ui.quickBrand === b ? 'active' : ''}" data-qbrand="${esc(b)}"><span>${esc(b)}</span><span class="brand-cnt">${counts[b] || 0}</span></button>`
     ).join('');
     brandContainer.querySelectorAll('[data-qbrand]').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -819,10 +832,11 @@
     }
     typeSel.value = ui.catalogType;
 
-    // Marka chipleri
+    // Marka butonları (adetli, sarılı ızgara)
+    const counts = getBrandCounts();
     const brandBox = document.getElementById('catalogBrandPills');
     brandBox.innerHTML = BRANDS.map((b) =>
-      `<button class="chip ${ui.catalogBrand === b ? 'active' : ''}" data-cbrand="${esc(b)}">${esc(b)}</button>`
+      `<button class="brand-btn ${ui.catalogBrand === b ? 'active' : ''}" data-cbrand="${esc(b)}"><span>${esc(b)}</span><span class="brand-cnt">${counts[b] || 0}</span></button>`
     ).join('');
     brandBox.querySelectorAll('[data-cbrand]').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -1745,7 +1759,7 @@
     setTab(state.activeTab);
 
     if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
-      navigator.serviceWorker.register('./sw.js?v=9').then((reg) => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=10').then((reg) => reg.update()).catch(() => {});
     }
   });
 })();
