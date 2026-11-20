@@ -1780,7 +1780,7 @@
     setTab(state.activeTab);
 
     if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
-      navigator.serviceWorker.register('./sw.js?v=11').then((reg) => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=12').then((reg) => reg.update()).catch(() => {});
     }
   });
 })();

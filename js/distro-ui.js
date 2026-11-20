@@ -14,14 +14,14 @@
   ];
 
   const QUICK_ITEMS = [
-    { name: '16A Uzatma Kablo (20m)', match: '16a uzatma' },
-    { name: 'Türk Kablo (Üçlü Priz)', match: 'türk kablo' },
-    { name: '32A Kablo', match: '32a kablo' },
-    { name: '63A Kablo', match: '63a kablo' },
-    { name: 'C-Stand', match: 'c-stand' },
-    { name: 'Kum Torbası', match: 'kum torbası' },
-    { name: 'Cardellini / Klemp', match: 'cardellini' },
-    { name: '4x4 Floppy', match: 'floppy' }
+    { name: '16A Uzatma Kablo (20m)', matches: ['16a uzatma', '16a monofaze uzatma', 'stinger'] },
+    { name: 'Türk Kablo (Üçlü Priz)', matches: ['türk kablo', 'üçlü', "3'lü", 'çoklu priz', 'örümcek'] },
+    { name: '32A Kablo', matches: ['32a kablo', '32a monofaze', '32a trifaze'] },
+    { name: '63A Kablo', matches: ['63a kablo', '63a trifaze'] },
+    { name: 'C-Stand', matches: ['c-stand'] },
+    { name: 'Kum Torbası', matches: ['kum torbası'] },
+    { name: 'Cardellini / Klemp', matches: ['cardellini', 'klemp', 'maşa'] },
+    { name: '4x4 Floppy', matches: ['floppy'] }
   ];
 
   function uid() {
@@ -80,19 +80,24 @@
   }
 
   /**
-   * Kamyon envanterinden ilgili ekipmanın toplam stok sayısını bulur (varsa)
+   * Kamyon envanterinden ilgili ekipmanın toplam stok sayısını bulur (eski ve yeni şablon isimleriyle uyumlu)
    */
   function findTruckTotalQty(itemName) {
     const inv = getTruckInventory();
     const norm = itemName.trim().toLowerCase();
-    // Önce birebir eşleşme
-    let exact = inv.find((i) => i.name.trim().toLowerCase() === norm);
+    const exact = inv.find((i) => i.name.trim().toLowerCase() === norm);
     if (exact) return Number(exact.qty) || 0;
-    // Sonra anahtar kelime eşleşmesi (ör. "16A Uzatma Kablo (20m)" <-> "16A Uzatma Kablo (20m - 3×2.5mm²)")
+
     const q = QUICK_ITEMS.find((qi) => qi.name.toLowerCase() === norm);
-    const key = q ? q.match : norm.split('(')[0].trim();
-    if (!key) return null;
-    const matches = inv.filter((i) => i.name.toLowerCase().includes(key));
+    const keys = q ? q.matches : [norm.split('(')[0].trim()].filter(Boolean);
+    if (keys.length === 0) return null;
+
+    // Distro kutularını normal kablolarla karıştırma
+    const matches = inv.filter((i) => {
+      const n = i.name.toLowerCase();
+      if (n.includes('distro') && !norm.includes('distro')) return false;
+      return keys.some((k) => n.includes(k));
+    });
     if (matches.length === 0) return null;
     return matches.reduce((sum, x) => sum + (Number(x.qty) || 0), 0);
   }
