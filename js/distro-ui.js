@@ -89,7 +89,7 @@
     selectedItemName: '16A Kablo',
     qtyDraft: 1,
     filterDept: 'Tümü',
-    viewMode: 'byItem',
+    viewMode: 'byDept',
     addingDept: false,
     showNote: false
   };
@@ -353,11 +353,26 @@
     saveDistroState();
     renderDistroPanel();
     if (window.SetAppRefreshBadges) window.SetAppRefreshBadges();
-    toast(`Tamamı geri alındı: ${item.qty}× ${item.itemName} (${item.dept})`);
+    toast(`Geri alındı: ${item.qty}× ${item.itemName} (${item.dept})`);
+  }
+
+  function returnAllForDept(dept) {
+    const clean = String(dept || '');
+    const count = dState.loans.filter((l) => l.dept === clean).reduce((s, l) => s + (Number(l.qty) || 0), 0);
+    if (count === 0) return;
+    dState.loans = dState.loans.filter((l) => l.dept !== clean);
+    saveDistroState();
+    renderDistroPanel();
+    if (window.SetAppRefreshBadges) window.SetAppRefreshBadges();
+    toast(`${clean}: ${count} adet malzeme kamyona geri alındı`);
   }
 
   function getTotalOutCount() {
     return dState.loans.reduce((sum, l) => sum + (Number(l.qty) || 0), 0);
+  }
+
+  function getActiveDeptCount() {
+    return new Set(dState.loans.map((l) => l.dept)).size;
   }
 
   function buildDistroReport() {
@@ -472,29 +487,14 @@
     const newDeptWrap = document.getElementById('distroNewDeptWrap');
     if (newDeptWrap) newDeptWrap.style.display = dState.addingDept ? 'flex' : 'none';
 
-    // 2. Tek satır yatay hızlı malzeme şeridi (+1 Hızlı Ver destekli)
+    // 2. Temiz tek satır hızlı malzeme şeridi
     const itemPicker = document.getElementById('distroQuickItemPicker');
     if (itemPicker) {
-      const activeQuick = getAllQuickItems().find((q) => q.name.toLowerCase() === dState.selectedItemName.toLowerCase());
-      const activeShort = activeQuick ? (activeQuick.short || activeQuick.name) : (dState.selectedItemName || 'Seçili');
-      const deptShort = String(dState.selectedDept || '').split('/')[0].trim();
-      const instantBtn = dState.selectedItemName
-        ? `<button type="button" class="quick-strip-chip qset-chip can-fit" data-instant-give="1" title="${esc(dState.selectedDept)} birimine +1 ekle">⚡ ${esc(activeShort)} → ${esc(deptShort)} (+1)</button>`
-        : '';
-
-      itemPicker.innerHTML = instantBtn + getAllQuickItems().map((q) => {
+      itemPicker.innerHTML = getAllQuickItems().map((q) => {
         const stock = findTruckTotalQty(q.name);
         const active = dState.selectedItemName.toLowerCase() === q.name.toLowerCase();
         return `<button type="button" class="quick-strip-chip ${active ? 'active' : ''}" data-pick-item="${esc(q.name)}">${esc(q.short || q.name)}${stock !== null ? ` <span class="mono" style="opacity:0.7;">(${stock})</span>` : ''}</button>`;
       }).join('');
-      const instEl = itemPicker.querySelector('[data-instant-give]');
-      if (instEl) {
-        instEl.addEventListener('click', () => {
-          const inp = document.getElementById('distroCustomItemInput');
-          const name = (inp && inp.value.trim()) || dState.selectedItemName;
-          if (name) addLoan(dState.selectedDept, name, 1, '');
-        });
-      }
       itemPicker.querySelectorAll('[data-pick-item]').forEach((b) => {
         b.addEventListener('click', () => {
           dState.selectedItemName = b.dataset.pickItem;
@@ -522,8 +522,8 @@
     const hdrEl = document.getElementById('distroHeaderSummary');
     if (hdrEl) {
       hdrEl.textContent = outCount > 0
-        ? `Dışarıda: ${outCount} adet (${activeDepts.length} birim)`
-        : 'Dışarıdaki Ekipmanlar';
+        ? `Kimde Ne Var? — ${outCount} adet (${activeDepts.length} birimde)`
+        : 'Kimde Ne Var? — Başka Birimdekiler';
     }
 
     const filterRow = document.getElementById('distroDeptFilterRow');
@@ -552,7 +552,7 @@
       b.classList.toggle('active', b.dataset.dview === dState.viewMode);
     });
 
-    // 4. Temiz Liste Alanı
+    // 4. Net "Kimde Ne Var?" Liste Alanı
     const listContainer = document.getElementById('distroSummaryList');
     if (!listContainer) return;
 
@@ -560,7 +560,7 @@
     if (visibleLoans.length === 0) {
       listContainer.innerHTML = `
         <div class="empty-box" style="padding:18px 10px;">
-          Şu an başka birimde ekipman yok. Yukarıdan birim ve malzeme seçip <strong>Ver</strong>’e basman yeterli.
+          Şu an başka birimde ekipman yok — tüm malzemeler kamyonda.
         </div>
       `;
       return;
@@ -581,16 +581,16 @@
         const overStock = remaining !== null && remaining < 0;
 
         const stockBadges = truckQty !== null
-          ? `<span class="tag mono">Toplam ${truckQty}</span>
-             <span class="tag ${overStock ? 'tag-danger' : 'tag-caution'} mono">Dışarı ${g.totalOut}</span>
-             <span class="tag ${overStock ? 'tag-danger' : 'tag-safe'} mono">Kamyon ${remaining}</span>`
+          ? `<span class="tag mono">Toplam: ${truckQty}</span>
+             <span class="tag ${overStock ? 'tag-danger' : 'tag-caution'} mono">Dışarıda: ${g.totalOut}</span>
+             <span class="tag ${overStock ? 'tag-danger' : 'tag-safe'} mono">Kamyonda: ${remaining}</span>`
           : `<span class="tag tag-caution mono">${g.totalOut} adet dışarıda</span>`;
 
         const rows = g.entries.map((l) => `
           <div class="distro-entry-row">
             <div style="flex:1; min-width:110px;">
-              <strong style="font-size:13px;">${esc(l.dept)}</strong>
-              <span class="mono" style="font-size:10.5px; color:var(--text-dim); margin-left:5px;">${l.time}</span>
+              <strong style="font-size:13px;">📍 ${esc(l.dept)}: ${l.qty} adet</strong>
+              <span class="mono" style="font-size:10.5px; color:var(--text-dim); margin-left:5px;">Saat ${l.time}</span>
               ${l.note ? `<div style="font-size:11px; color:var(--text-muted);">${esc(l.note)}</div>` : ''}
             </div>
             <div style="display:flex; align-items:center; gap:6px;">
@@ -599,7 +599,7 @@
                 <span class="mono">${l.qty}</span>
                 <button type="button" data-ln-inc="${l.id}">+</button>
               </div>
-              <button type="button" class="st-pill active-ok" data-ln-ret="${l.id}">Geldi</button>
+              <button type="button" class="st-pill active-ok" data-ln-ret="${l.id}">✓ Geri Geldi</button>
             </div>
           </div>
         `).join('');
@@ -623,29 +623,38 @@
 
       listContainer.innerHTML = Array.from(groupedDept.entries()).map(([dept, entries]) => {
         const sum = entries.reduce((s, x) => s + x.qty, 0);
-        const rows = entries.map((l) => `
-          <div class="distro-entry-row">
-            <div style="flex:1; min-width:110px;">
-              <strong style="font-size:13px;">${esc(l.itemName)}</strong>
-              <span class="mono" style="font-size:10.5px; color:var(--text-dim); margin-left:5px;">${l.time}</span>
-              ${l.note ? `<div style="font-size:11px; color:var(--text-muted);">${esc(l.note)}</div>` : ''}
-            </div>
-            <div style="display:flex; align-items:center; gap:6px;">
-              <div class="stepper">
-                <button type="button" data-ln-dec="${l.id}">−</button>
-                <span class="mono">${l.qty}</span>
-                <button type="button" data-ln-inc="${l.id}">+</button>
+        const rows = entries.map((l) => {
+          const totalOutForItem = getOutCountForLoanName(l.itemName);
+          const truckQty = findTruckTotalQty(l.itemName);
+          const remaining = truckQty !== null ? truckQty - totalOutForItem : null;
+          const stockSub = truckQty !== null
+            ? `Kamyonda kalan: ${remaining}/${truckQty}`
+            : 'Kamyon dışı kalem';
+          return `
+            <div class="distro-entry-row">
+              <div style="flex:1; min-width:110px;">
+                <div style="font-size:13px;"><strong>${l.qty} × ${esc(l.itemName)}</strong></div>
+                <div class="mono" style="font-size:10.5px; color:var(--text-muted); margin-top:2px;">
+                  ${esc(stockSub)} · Saat ${l.time}${l.note ? ` · ${esc(l.note)}` : ''}
+                </div>
               </div>
-              <button type="button" class="st-pill active-ok" data-ln-ret="${l.id}">Geldi</button>
+              <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                <div class="stepper">
+                  <button type="button" data-ln-dec="${l.id}">−</button>
+                  <span class="mono">${l.qty}</span>
+                  <button type="button" data-ln-inc="${l.id}">+</button>
+                </div>
+                <button type="button" class="st-pill active-ok" data-ln-ret="${l.id}">✓ Geri Geldi</button>
+              </div>
             </div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
 
         return `
           <div class="distro-group-card">
             <div class="distro-group-head">
-              <div style="font-weight:700; font-size:13.5px;">${esc(dept)}</div>
-              <span class="tag tag-caution mono">${sum} adet dışarıda</span>
+              <div style="font-weight:700; font-size:13.5px;">📍 ${esc(dept)} <span class="tag tag-caution mono" style="margin-left:5px;">${sum} adet</span></div>
+              <button type="button" class="btn btn-soft btn-xs" data-dept-ret-all="${esc(dept)}">Tümünü Geri Al</button>
             </div>
             <div class="distro-entries">${rows}</div>
           </div>
@@ -661,6 +670,9 @@
     );
     listContainer.querySelectorAll('[data-ln-ret]').forEach((b) =>
       b.addEventListener('click', () => returnAllForLoan(b.dataset.lnRet))
+    );
+    listContainer.querySelectorAll('[data-dept-ret-all]').forEach((b) =>
+      b.addEventListener('click', () => returnAllForDept(b.dataset.deptRetAll))
     );
   }
 
@@ -804,6 +816,7 @@
       renderDistroPanel();
     },
     getTotalOutCount,
+    getActiveDeptCount,
     getOutInfoForItem
   };
 })();
