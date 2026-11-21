@@ -7,7 +7,7 @@
   <title>SetAmp — Işık Ekibi</title>
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
-  <link rel="stylesheet" href="./css/styles.css?v=17" />
+  <link rel="stylesheet" href="./css/styles.css?v=18" />
 </head>
 <body>
   <div class="app-shell">
@@ -206,6 +206,15 @@
             <!-- Uyarılar (Sadece aktif uyarı varsa görünür!) -->
             <div id="warningsContainer" class="warning-stack" style="display:none;"></div>
 
+            <!-- Tek Dokunuşla Set Lambaları Şeridi -->
+            <div class="quick-set-lamps-bar">
+              <div class="quick-set-lamps-head">
+                <span class="quick-set-lamps-title">⚡ Setten Tek Dokunuşla Ekle</span>
+                <span class="quick-set-lamps-hint mono">Dokun → +1 Hatta</span>
+              </div>
+              <div id="calcQuickAddStrip" class="quick-strip-scroll"></div>
+            </div>
+
             <!-- Mobilde Lamba Ekle Çekmecesini Açan Temiz Buton -->
             <div class="mobile-add-bar">
               <button id="openMobilePickerBtn" class="btn btn-primary" style="width:100%; min-height:44px; font-size:14px;">
@@ -377,6 +386,9 @@
         <div id="truck-subtab-distro" style="display:none;">
           <div class="section-card quick-list-card">
             <form id="distroAddForm" class="distro-simple-form">
+              <!-- 1-Dokunuş Hızlı Birim Seçici -->
+              <div id="distroDeptQuickStrip" class="quick-strip-scroll" aria-label="Hızlı birim seç"></div>
+
               <!-- Satır 1: Birim seç + Yeni birim ekle -->
               <div class="distro-dept-row">
                 <select id="distroDeptSelect" class="select" aria-label="Birim Seç"></select>
@@ -530,16 +542,24 @@
             </div>
           </div>
 
+          <!-- Kamera Altı Canlı Bulut & Tek Dokunuş Sayacı -->
+          <div id="solarCameraCloudBar" class="solar-cam-cloud-bar"></div>
+
           <!-- Kamera Altı Kompakt Saat & Özet Kartı (Tek Bakışta) -->
           <div class="section-card solar-bottom-card">
             <div class="section-head" style="margin-bottom:6px; gap:6px;">
               <div style="display:flex; align-items:center; gap:7px; flex-wrap:wrap;">
                 <span id="solarSelectedTime" class="mono" style="font-size:18px; font-weight:700;">12:00</span>
                 <span id="solarPhaseBadge" class="status-pill">Gün Işığı</span>
-              </div>
-              <div style="display:flex; align-items:center; gap:6px;">
-                <button type="button" id="solarPlayDayBtn" class="btn btn-soft btn-sm solar-play-btn">▶ Oynat</button>
                 <span id="solarNextCountdown" class="mono" style="font-size:11px; color:var(--text-muted);"></span>
+              </div>
+              <div class="solar-time-actions">
+                <div class="solar-shift-group">
+                  <button type="button" class="len-chip mono" data-solar-shift="-30">−30dk</button>
+                  <button type="button" class="len-chip mono" data-solar-shift="30">+30dk</button>
+                  <button type="button" class="len-chip mono" data-solar-shift="60">+1sa</button>
+                </div>
+                <button type="button" id="solarPlayDayBtn" class="btn btn-soft btn-sm solar-play-btn">▶ Oynat</button>
               </div>
             </div>
 
@@ -849,13 +869,13 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script src="./js/data-cables.js?v=17"></script>
-  <script src="./js/data-fixtures.js?v=17"></script>
-  <script src="./js/data-templates.js?v=17"></script>
-  <script src="./js/calc.js?v=17"></script>
-  <script src="./js/solar.js?v=17"></script>
-  <script src="./js/solar-ui.js?v=17"></script>
-  <script src="./js/distro-ui.js?v=17"></script>
-  <script src="./js/app.js?v=17"></script>
+  <script src="./js/data-cables.js?v=18"></script>
+  <script src="./js/data-fixtures.js?v=18"></script>
+  <script src="./js/data-templates.js?v=18"></script>
+  <script src="./js/calc.js?v=18"></script>
+  <script src="./js/solar.js?v=18"></script>
+  <script src="./js/solar-ui.js?v=18"></script>
+  <script src="./js/distro-ui.js?v=18"></script>
+  <script src="./js/app.js?v=18"></script>
 </body>
 </html>

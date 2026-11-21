@@ -1401,6 +1401,102 @@
         toast(`Bulut çıkış geri sayımı (~${formatSec(sec)})`);
       });
     });
+
+    renderCameraCloudBar(now, estSmall, estMed, estLarge);
+  }
+
+  function renderCameraCloudBar(now, estSmall, estMed, estLarge) {
+    const camBar = document.getElementById('solarCameraCloudBar');
+    if (!camBar) return;
+
+    let statusHtml = '';
+    let actionsHtml = '';
+    let toneCls = '';
+
+    if (live.cloudPhase === 'idle') {
+      const weatherMini = live.weather
+        ? `<span class="mono" style="color:var(--text-dim); font-size:10.5px;">%${live.weather.cloudLow} alçak · ${live.weather.windSpeedKmh} km/s</span>`
+        : `<span style="color:var(--text-dim); font-size:11px;">Kamera üstü tek dokunuş</span>`;
+      statusHtml = `
+        <div class="scc-status">
+          <span class="tag mono">☁️ BULUT SAYACI</span>
+          ${weatherMini}
+        </div>
+      `;
+      actionsHtml = `
+        <button type="button" class="len-chip mono" data-cam-cloud="approach">Yaklaşıyor</button>
+        <button type="button" class="len-chip mono" data-cam-est="${estSmall}">Küçük (~${formatSec(estSmall)})</button>
+        <button type="button" class="len-chip mono" data-cam-est="${estMed}">Orta (~${formatSec(estMed)})</button>
+        <button type="button" class="len-chip mono" data-cam-est="${estLarge}">Büyük (~${formatSec(estLarge)})</button>
+      `;
+    } else if (live.cloudPhase === 'approach_measuring') {
+      toneCls = 'is-caution';
+      const el = formatSec((now - live.tStart) / 1000);
+      statusHtml = `<div class="scc-status"><span class="tag tag-caution mono">☀️ YAKLAŞIYOR</span><strong class="mono scc-clock">${el}</strong></div>`;
+      actionsHtml = `
+        <button type="button" class="btn btn-primary btn-xs" data-cam-cloud="appHalf">Yarı Yolda</button>
+        <button type="button" class="btn btn-soft btn-xs" data-cam-cloud="enter">Buluta Girdi</button>
+        <button type="button" class="btn btn-danger-soft btn-xs" data-cam-cloud="reset" aria-label="Sıfırla">✕</button>
+      `;
+    } else if (live.cloudPhase === 'approach_countdown') {
+      const remSec = (live.tTarget - now) / 1000;
+      toneCls = remSec <= 10 ? 'is-danger' : 'is-caution';
+      const tTxt = remSec > 0 ? `-${formatSec(remSec)}` : `+${formatSec(-remSec)}`;
+      statusHtml = `<div class="scc-status"><span class="tag ${remSec <= 10 ? 'tag-danger' : 'tag-caution'} mono">☀️ GİRİŞE</span><strong class="mono scc-clock">${tTxt}</strong></div>`;
+      actionsHtml = `
+        <button type="button" class="btn btn-primary btn-xs" data-cam-cloud="enter">Buluta Girdi</button>
+        <button type="button" class="btn btn-danger-soft btn-xs" data-cam-cloud="reset" aria-label="Sıfırla">✕</button>
+      `;
+    } else if (live.cloudPhase === 'in_cloud_measuring') {
+      toneCls = 'is-danger';
+      const el = formatSec((now - live.tStart) / 1000);
+      statusHtml = `<div class="scc-status"><span class="tag tag-danger mono">☁️ BULUTTA</span><strong class="mono scc-clock">${el}</strong></div>`;
+      actionsHtml = `
+        <button type="button" class="btn btn-primary btn-xs" data-cam-cloud="cloudHalf">Yarısında</button>
+        <button type="button" class="btn btn-safe btn-xs" data-cam-cloud="exit">Güneş Çıktı</button>
+        <button type="button" class="btn btn-danger-soft btn-xs" data-cam-cloud="reset" aria-label="Sıfırla">✕</button>
+      `;
+    } else if (live.cloudPhase === 'in_cloud_countdown') {
+      const remSec = (live.tTarget - now) / 1000;
+      toneCls = remSec <= 12 ? 'is-safe' : 'is-caution';
+      const tTxt = remSec > 0 ? `-${formatSec(remSec)}` : `+${formatSec(-remSec)}`;
+      statusHtml = `<div class="scc-status"><span class="tag ${remSec <= 12 ? 'tag-safe' : 'tag-caution'} mono">☁️ ÇIKIŞA</span><strong class="mono scc-clock">${tTxt}</strong></div>`;
+      actionsHtml = `
+        <button type="button" class="btn btn-safe btn-xs" data-cam-cloud="exit">Güneş Çıktı</button>
+        <button type="button" class="btn btn-danger-soft btn-xs" data-cam-cloud="reset" aria-label="Sıfırla">✕</button>
+      `;
+    } else if (live.cloudPhase === 'sun_open') {
+      toneCls = 'is-safe';
+      const el = formatSec((now - live.tStart) / 1000);
+      statusHtml = `<div class="scc-status"><span class="tag tag-safe mono">☀️ GÜNEŞ AÇIK</span><strong class="mono scc-clock">${el}</strong></div>`;
+      actionsHtml = `
+        <button type="button" class="btn btn-primary btn-xs" data-cam-cloud="approach">Yaklaşıyor</button>
+        <button type="button" class="btn btn-soft btn-xs" data-cam-cloud="enter">Buluta Girdi</button>
+        <button type="button" class="btn btn-danger-soft btn-xs" data-cam-cloud="reset" aria-label="Durdur">✕</button>
+      `;
+    }
+
+    camBar.className = `solar-cam-cloud-bar ${toneCls}`;
+    camBar.innerHTML = `${statusHtml}<div class="scc-actions">${actionsHtml}</div>`;
+
+    camBar.querySelectorAll('[data-cam-cloud]').forEach((b) => {
+      b.addEventListener('click', () => {
+        const act = b.dataset.camCloud;
+        if (act === 'approach') startApproachMeasure();
+        else if (act === 'appHalf') markApproachHalfway();
+        else if (act === 'enter') markEnteredCloud(null);
+        else if (act === 'cloudHalf') markCloudHalfway();
+        else if (act === 'exit') markExitedCloud();
+        else if (act === 'reset') resetCloudTimer();
+      });
+    });
+    camBar.querySelectorAll('[data-cam-est]').forEach((b) => {
+      b.addEventListener('click', () => {
+        const sec = Number(b.dataset.camEst);
+        markEnteredCloud(sec);
+        toast(`Bulut çıkış geri sayımı (~${formatSec(sec)})`);
+      });
+    });
   }
 
   function renderCloudWeatherPanel() {
@@ -1849,6 +1945,16 @@
     };
     const playDayBtn = document.getElementById('solarPlayDayBtn');
     if (playDayBtn) playDayBtn.addEventListener('click', togglePlayDay);
+
+    document.querySelectorAll('[data-solar-shift]').forEach((b) => {
+      b.addEventListener('click', () => {
+        stopPlayDay();
+        const delta = Number(b.dataset.solarShift || 0);
+        sState.minute = Math.max(300, Math.min(1320, sState.minute + delta));
+        if (!live.sensorActive) aimManualAtSun();
+        renderSolarTab();
+      });
+    });
 
     const slider = document.getElementById('solarTimeSlider');
     if (slider) slider.addEventListener('input', (e) => onTimeSlide(e.target.value));

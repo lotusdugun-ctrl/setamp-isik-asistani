@@ -418,6 +418,48 @@
       deptCounts[l.dept] = (deptCounts[l.dept] || 0) + l.qty;
     }
 
+    // 0. 1-Dokunuş Hızlı Birim Çipleri
+    const deptStrip = document.getElementById('distroDeptQuickStrip');
+    if (deptStrip) {
+      const priorityDepts = [
+        'Kamera / DIT',
+        'Ronin / Steadicam',
+        'Reji / Monitör',
+        'Ses',
+        'Sanat',
+        'Prodüksiyon',
+        'Jeneratör',
+        'Grip',
+        'Makyaj / Saç'
+      ];
+      const chipDepts = [];
+      const seenD = new Set();
+      for (const d of allDepts) {
+        if ((deptCounts[d] || 0) > 0 || d === dState.selectedDept) {
+          seenD.add(d);
+          chipDepts.push(d);
+        }
+      }
+      for (const d of priorityDepts) {
+        if (!seenD.has(d) && allDepts.includes(d)) {
+          seenD.add(d);
+          chipDepts.push(d);
+        }
+      }
+      deptStrip.innerHTML = chipDepts.map((d) => {
+        const cnt = deptCounts[d] || 0;
+        const shortLabel = d.split('/')[0].trim();
+        const isActive = dState.selectedDept === d;
+        return `<button type="button" class="quick-strip-chip ${isActive ? 'active' : ''}" data-pick-dept="${esc(d)}">${esc(shortLabel)}${cnt > 0 ? ` <span class="mono dept-chip-cnt">${cnt}</span>` : ''}</button>`;
+      }).join('');
+      deptStrip.querySelectorAll('[data-pick-dept]').forEach((b) => {
+        b.addEventListener('click', () => {
+          dState.selectedDept = b.dataset.pickDept;
+          renderDistroPanel();
+        });
+      });
+    }
+
     // 1. Sade Birim Dropdown (13 hazır birim + özel eklenenler)
     const deptSel = document.getElementById('distroDeptSelect');
     if (deptSel) {
@@ -430,14 +472,29 @@
     const newDeptWrap = document.getElementById('distroNewDeptWrap');
     if (newDeptWrap) newDeptWrap.style.display = dState.addingDept ? 'flex' : 'none';
 
-    // 2. Tek satır yatay hızlı malzeme şeridi
+    // 2. Tek satır yatay hızlı malzeme şeridi (+1 Hızlı Ver destekli)
     const itemPicker = document.getElementById('distroQuickItemPicker');
     if (itemPicker) {
-      itemPicker.innerHTML = getAllQuickItems().map((q) => {
+      const activeQuick = getAllQuickItems().find((q) => q.name.toLowerCase() === dState.selectedItemName.toLowerCase());
+      const activeShort = activeQuick ? (activeQuick.short || activeQuick.name) : (dState.selectedItemName || 'Seçili');
+      const deptShort = String(dState.selectedDept || '').split('/')[0].trim();
+      const instantBtn = dState.selectedItemName
+        ? `<button type="button" class="quick-strip-chip qset-chip can-fit" data-instant-give="1" title="${esc(dState.selectedDept)} birimine +1 ekle">⚡ ${esc(activeShort)} → ${esc(deptShort)} (+1)</button>`
+        : '';
+
+      itemPicker.innerHTML = instantBtn + getAllQuickItems().map((q) => {
         const stock = findTruckTotalQty(q.name);
         const active = dState.selectedItemName.toLowerCase() === q.name.toLowerCase();
         return `<button type="button" class="quick-strip-chip ${active ? 'active' : ''}" data-pick-item="${esc(q.name)}">${esc(q.short || q.name)}${stock !== null ? ` <span class="mono" style="opacity:0.7;">(${stock})</span>` : ''}</button>`;
       }).join('');
+      const instEl = itemPicker.querySelector('[data-instant-give]');
+      if (instEl) {
+        instEl.addEventListener('click', () => {
+          const inp = document.getElementById('distroCustomItemInput');
+          const name = (inp && inp.value.trim()) || dState.selectedItemName;
+          if (name) addLoan(dState.selectedDept, name, 1, '');
+        });
+      }
       itemPicker.querySelectorAll('[data-pick-item]').forEach((b) => {
         b.addEventListener('click', () => {
           dState.selectedItemName = b.dataset.pickItem;
@@ -738,6 +795,14 @@
       renderDistroPanel();
     },
     render: renderDistroPanel,
+    prefillItem(itemName) {
+      const clean = String(itemName || '').trim();
+      if (!clean) return;
+      dState.selectedItemName = clean;
+      const inp = document.getElementById('distroCustomItemInput');
+      if (inp) inp.value = clean;
+      renderDistroPanel();
+    },
     getTotalOutCount,
     getOutInfoForItem
   };
