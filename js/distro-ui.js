@@ -604,7 +604,10 @@
         const rows = g.entries.map((l) => `
           <div class="distro-entry-row">
             <div style="flex:1; min-width:110px;">
-              <div style="font-size:13px;"><strong>📍 ${esc(l.dept)}: ${l.qty} adet</strong></div>
+              <div class="inv-item-line">
+                <span class="inv-qty-box mono">${l.qty}×</span>
+                <strong style="font-size:13px;">📍 ${esc(l.dept)}</strong>
+              </div>
               <div class="mono" style="font-size:10.5px; color:var(--text-muted); margin-top:2px;">
                 Saat ${l.time}${l.note ? ` · ${esc(l.note)}` : ''}
               </div>
@@ -648,7 +651,10 @@
           return `
             <div class="distro-entry-row">
               <div style="flex:1; min-width:110px;">
-                <div style="font-size:13px;"><strong>${l.qty} × ${esc(l.itemName)}</strong></div>
+                <div class="inv-item-line">
+                  <span class="inv-qty-box mono">${l.qty}×</span>
+                  <strong style="font-size:13px;">${esc(l.itemName)}</strong>
+                </div>
                 <div class="mono" style="font-size:10.5px; color:var(--text-muted); margin-top:2px;">
                   ${esc(stockSub)} · Saat ${l.time}${l.note ? ` · ${esc(l.note)}` : ''}
                 </div>

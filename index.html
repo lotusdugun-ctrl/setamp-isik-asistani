@@ -7,7 +7,7 @@
   <title>SetAmp — Işık Ekibi</title>
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
-  <link rel="stylesheet" href="./css/styles.css?v=22" />
+  <link rel="stylesheet" href="./css/styles.css?v=23" />
 </head>
 <body>
   <div class="app-shell">
@@ -364,42 +364,48 @@
             <form id="distroAddForm" class="distro-simple-form">
               <select id="distroDeptSelect" class="select" aria-label="Birim Seç" style="display:none;"></select>
 
-              <!-- 1. Ekip Seç -->
-              <div class="distro-step-head">
-                <span class="distro-step-label">1. EKİP SEÇ</span>
-                <button type="button" id="distroToggleNewDeptBtn" class="distro-note-toggle">+ Yeni Ekip</button>
-              </div>
-              <div id="distroDeptQuickStrip" class="quick-strip-scroll" aria-label="Hızlı ekip seç"></div>
-              <div id="distroNewDeptWrap" style="display:none; gap:6px;">
-                <input id="distroNewDeptInput" class="input" placeholder="Yeni ekip adı (ör. VFX, 2. Ünite)..." />
-                <button type="button" id="distroSaveNewDeptBtn" class="btn btn-primary btn-sm" style="height:36px;">Ekle</button>
-              </div>
-
-              <!-- 2. Dokun -> Anında Ver (+1) -->
-              <div class="distro-step-head">
-                <span class="distro-step-label">2. DOKUN → ANINDA VER (+1)</span>
-                <span id="distroActiveDeptHint" class="mono" style="font-size:11px; color:var(--accent); font-weight:700;">→ Kamera</span>
-              </div>
-              <div id="distroQuickItemPicker" class="distro-quick-grid" aria-label="Tek tıkla malzeme ver"></div>
-
-              <!-- 3. Farklı Malzeme / Çoklu Adet -->
-              <div class="distro-action-row" style="position:relative;">
-                <input id="distroCustomItemInput" class="input" autocomplete="off" required placeholder="Başka malzeme ara veya yaz..." />
-                <div id="distroItemSuggest" class="pro-suggest-menu" style="display:none;"></div>
-                <div class="stepper distro-qty-stepper">
-                  <button type="button" id="distroQtyDec" aria-label="Azalt">−</button>
-                  <span id="distroQtyVal" class="mono">1</span>
-                  <button type="button" id="distroQtyInc" aria-label="Artır">+</button>
+              <!-- 1. Ekip Seç (Ayrı Kutu) -->
+              <div class="distro-step-box">
+                <div class="distro-step-head">
+                  <span class="distro-step-label">1. EKİP SEÇ</span>
+                  <button type="button" id="distroToggleNewDeptBtn" class="distro-note-toggle">+ Yeni Ekip</button>
                 </div>
-                <button type="submit" class="btn btn-primary" style="height:37px; padding:0 14px;">📤 Ver</button>
+                <div id="distroDeptQuickStrip" class="quick-strip-scroll" aria-label="Hızlı ekip seç"></div>
+                <div id="distroNewDeptWrap" style="display:none; gap:6px; margin-top:6px;">
+                  <input id="distroNewDeptInput" class="input" placeholder="Yeni ekip adı (ör. VFX, 2. Ünite)..." />
+                  <button type="button" id="distroSaveNewDeptBtn" class="btn btn-primary btn-sm" style="height:36px;">Ekle</button>
+                </div>
               </div>
 
-              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
-                <div id="distroLiveStockHint" class="distro-stock-hint mono">Kamyon stoğu kontrol ediliyor...</div>
-                <button type="button" id="distroToggleNoteBtn" class="distro-note-toggle">+ Not</button>
+              <!-- 2. Dokun -> Anında Ver (+1) (Ayrı Kutu) -->
+              <div class="distro-step-box">
+                <div class="distro-step-head">
+                  <span class="distro-step-label">2. DOKUN → ANINDA VER (+1)</span>
+                  <span id="distroActiveDeptHint" class="mono" style="font-size:11px; color:var(--accent); font-weight:700;">→ Kamera</span>
+                </div>
+                <div id="distroQuickItemPicker" class="distro-quick-grid" aria-label="Tek tıkla malzeme ver"></div>
               </div>
-              <div id="distroNoteWrap" style="display:none;">
-                <input id="distroNoteInput" class="input" placeholder="Kişi veya yer notu (ör. Ahmet - Kamera arabası)..." />
+
+              <!-- 3. Farklı Malzeme / Çoklu Adet (Ayrı Kutu) -->
+              <div class="distro-step-box">
+                <div class="distro-step-head">
+                  <span class="distro-step-label">3. FARKLI MALZEME VEYA ADETLİ VER</span>
+                  <button type="button" id="distroToggleNoteBtn" class="distro-note-toggle">+ Not</button>
+                </div>
+                <div class="distro-action-row" style="position:relative;">
+                  <input id="distroCustomItemInput" class="input" autocomplete="off" required placeholder="Başka malzeme ara veya yaz..." />
+                  <div id="distroItemSuggest" class="pro-suggest-menu" style="display:none;"></div>
+                  <div class="stepper distro-qty-stepper">
+                    <button type="button" id="distroQtyDec" aria-label="Azalt">−</button>
+                    <span id="distroQtyVal" class="mono">1</span>
+                    <button type="button" id="distroQtyInc" aria-label="Artır">+</button>
+                  </div>
+                  <button type="submit" class="btn btn-primary" style="height:37px; padding:0 14px;">📤 Ver</button>
+                </div>
+                <div id="distroLiveStockHint" class="distro-stock-hint mono" style="margin-top:5px;">Kamyon stoğu kontrol ediliyor...</div>
+                <div id="distroNoteWrap" style="display:none; margin-top:6px;">
+                  <input id="distroNoteInput" class="input" placeholder="Kişi veya yer notu (ör. Ahmet - Kamera arabası)..." />
+                </div>
               </div>
             </form>
           </div>
@@ -846,13 +852,13 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script src="./js/data-cables.js?v=22"></script>
-  <script src="./js/data-fixtures.js?v=22"></script>
-  <script src="./js/data-templates.js?v=22"></script>
-  <script src="./js/calc.js?v=22"></script>
-  <script src="./js/solar.js?v=22"></script>
-  <script src="./js/solar-ui.js?v=22"></script>
-  <script src="./js/distro-ui.js?v=22"></script>
-  <script src="./js/app.js?v=22"></script>
+  <script src="./js/data-cables.js?v=23"></script>
+  <script src="./js/data-fixtures.js?v=23"></script>
+  <script src="./js/data-templates.js?v=23"></script>
+  <script src="./js/calc.js?v=23"></script>
+  <script src="./js/solar.js?v=23"></script>
+  <script src="./js/solar-ui.js?v=23"></script>
+  <script src="./js/distro-ui.js?v=23"></script>
+  <script src="./js/app.js?v=23"></script>
 </body>
 </html>

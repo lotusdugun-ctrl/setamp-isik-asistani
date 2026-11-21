@@ -989,9 +989,10 @@
         const cap = Calc.calcMaxUnitsForCable(catCable, f);
         const kwText = Calc.formatKW(f.watts);
         const badgeCls = cap.level === 'SAFE' ? 'tag-safe' : cap.level === 'CAUTION' ? 'tag-caution' : 'tag-danger';
+        const rowStatusCls = !cap.compatible ? 'cap-danger' : cap.level === 'SAFE' ? 'cap-safe' : cap.level === 'CAUTION' ? 'cap-caution' : 'cap-danger';
         const capText = cap.compatible ? `${cap.maxSafeTotal > 0 ? cap.maxSafeTotal : '1*'} adet` : `Min ${f.minSocketAmps}A`;
         return `
-          <article class="catalog-row-card">
+          <article class="catalog-row-card ${rowStatusCls}">
             <button class="lamp-thumb lamp-thumb-sm" data-preview-fix="${f.id}" title="Detay ve görseli aç">
               <img src="${esc(getFixtureImage(f))}" alt="${esc(f.brand)} ${esc(f.model)}" />
             </button>
@@ -1007,7 +1008,7 @@
               </div>
             </div>
             <div class="catalog-row-actions">
-              <button class="btn btn-soft btn-xs" data-cat-addtruck="${f.id}" title="Kamyona ekle">🚚</button>
+              <button class="btn btn-soft btn-xs" data-cat-addtruck="${f.id}" title="Kamyon listesine ekle">+ Kamyon</button>
               <button class="btn btn-primary btn-xs" data-cat-addload="${f.id}">+ Hatta</button>
             </div>
           </article>
@@ -1522,11 +1523,12 @@
       'Grip'
     ];
 
-    listEl.innerHTML = list.map((item) => {
+    const renderSingleTruckItem = (item) => {
       const outInfo = outInfoById.get(item.id);
       const outQty = outInfo?.totalOut || 0;
       const inTruckQty = Math.max(0, Number(item.qty) - outQty);
       const isOpen = ui.expandedTruckItemId === item.id;
+      const catMeta = getTruckCategoryMeta(item.category);
 
       const metaParts = [];
       if (item.status === 'missing') metaParts.push(`<span class="tag tag-caution mono">⚠️ EKSİK</span>`);
@@ -1536,11 +1538,11 @@
       }
 
       return `
-        <div class="inv-item st-${item.status} ${outQty > 0 ? 'has-out' : ''} ${isOpen ? 'expanded' : ''}">
+        <div class="inv-item ${catMeta.cls} st-${item.status} ${outQty > 0 ? 'has-out' : ''} ${isOpen ? 'expanded' : ''}">
           <div class="inv-compact-row">
             <div class="inv-compact-mid" data-inv-toggle="${item.id}">
               <div class="inv-item-line">
-                <span class="inv-qty-prefix mono">${item.qty} ×</span>
+                <span class="inv-qty-box mono">${item.qty}×</span>
                 <span class="inv-item-title">${esc(item.name)}</span>
               </div>
               ${(metaParts.length > 0 || item.note) ? `
@@ -1551,15 +1553,15 @@
                 </div>
               ` : ''}
             </div>
-            <button type="button" class="inv-chev-btn" data-inv-toggle="${item.id}" aria-label="Hızlı işlem aç">
-              <span class="inv-chevron mono">${isOpen ? '▴' : '▾'}</span>
+            <button type="button" class="inv-action-pill mono ${isOpen ? 'open' : ''}" data-inv-toggle="${item.id}" aria-label="Ekibe ver veya düzenle">
+              ${isOpen ? 'Kapat ▴' : 'Ver / Düzenle ▾'}
             </button>
           </div>
 
           ${isOpen ? `
             <div class="inv-expand-panel">
               <div class="inv-quick-lend-bar">
-                <span class="inv-quick-lend-lbl">📤 EKİBE VER (+1):</span>
+                <span class="inv-quick-lend-lbl">📤 TEK TIKLA EKİBE VER (+1 ADET):</span>
                 <div class="inv-quick-lend-chips">
                   ${quickDepts.map((d) => `<button type="button" class="quick-strip-chip inv-dept-chip" data-inv-quick-dept="${esc(d)}" data-inv-quick-item="${esc(item.name)}">+ ${esc(d.split('/')[0].trim())}</button>`).join('')}
                 </div>
@@ -1583,7 +1585,37 @@
           ` : ''}
         </div>
       `;
-    }).join('');
+    };
+
+    const groupedByCat = new Map();
+    for (const c of TRUCK_CATEGORIES.filter((x) => x !== 'Tümü')) {
+      groupedByCat.set(c, []);
+    }
+    for (const item of list) {
+      const catKey = item.category || 'Aksesuar';
+      if (!groupedByCat.has(catKey)) groupedByCat.set(catKey, []);
+      groupedByCat.get(catKey).push(item);
+    }
+
+    const sectionsHtml = [];
+    groupedByCat.forEach((catItems, catName) => {
+      if (catItems.length === 0) return;
+      const catMeta = getTruckCategoryMeta(catName);
+      const totalQtySum = catItems.reduce((s, x) => s + (Number(x.qty) || 0), 0);
+      sectionsHtml.push(`
+        <div class="inv-cat-group">
+          <div class="inv-cat-band ${catMeta.cls}">
+            <span class="inv-cat-band-title">${catMeta.svg} <span>${esc(catName)}</span></span>
+            <span class="inv-cat-band-count mono">${catItems.length} çeşit · ${totalQtySum} adet</span>
+          </div>
+          <div class="inv-cat-items">
+            ${catItems.map(renderSingleTruckItem).join('')}
+          </div>
+        </div>
+      `);
+    });
+
+    listEl.innerHTML = sectionsHtml.join('');
 
     listEl.querySelectorAll('[data-inv-toggle]').forEach((el) => {
       el.addEventListener('click', (e) => {
@@ -1774,14 +1806,17 @@
       return;
     }
 
-    listEl.innerHTML = list.map((e) => {
+    const renderSingleExpItem = (e) => {
       const isLow = Number(e.qty) <= Number(e.minQty);
       const minVal = Math.max(0.5, Number(e.minQty) || 1);
       const ratioPct = Math.min(100, Math.max(6, Math.round((Number(e.qty) / (minVal * 3)) * 100)));
       return `
         <div class="exp-item ${isLow ? 'low-stock' : ''}">
           <div class="exp-item-left">
-            <div class="exp-item-name">${esc(e.name)}</div>
+            <div class="inv-item-line">
+              <span class="inv-qty-box mono">${e.qty} ${esc(e.unit)}</span>
+              <span class="exp-item-name">${esc(e.name)}</span>
+            </div>
             <div class="exp-item-sub mono">
               <span>${esc(e.category)}</span>
               ${isLow ? `<span class="tag tag-danger">• KRİTİK (Min ${e.minQty})</span>` : `<span style="opacity:0.65;">• Min ${e.minQty}</span>`}
@@ -1798,7 +1833,35 @@
           </div>
         </div>
       `;
-    }).join('');
+    };
+
+    const groupedExp = new Map();
+    for (const c of EXP_CATEGORIES.filter((x) => x !== 'Tümü')) {
+      groupedExp.set(c, []);
+    }
+    for (const e of list) {
+      const catKey = e.category || 'Aksesuar';
+      if (!groupedExp.has(catKey)) groupedExp.set(catKey, []);
+      groupedExp.get(catKey).push(e);
+    }
+
+    const expSections = [];
+    groupedExp.forEach((items, catName) => {
+      if (items.length === 0) return;
+      expSections.push(`
+        <div class="inv-cat-group">
+          <div class="inv-cat-band cat-aksesuar">
+            <span class="inv-cat-band-title"><span>${esc(catName)}</span></span>
+            <span class="inv-cat-band-count mono">${items.length} kalem</span>
+          </div>
+          <div class="inv-cat-items">
+            ${items.map(renderSingleExpItem).join('')}
+          </div>
+        </div>
+      `);
+    });
+
+    listEl.innerHTML = expSections.join('');
 
     listEl.querySelectorAll('[data-exp-dec]').forEach((b) => {
       b.addEventListener('click', () => {
@@ -2455,7 +2518,7 @@
     setTab(state.activeTab);
 
     if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
-      navigator.serviceWorker.register('./sw.js?v=22').then((reg) => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=23').then((reg) => reg.update()).catch(() => {});
     }
   });
 })();
