@@ -517,37 +517,23 @@
     const noteWrap = document.getElementById('distroNoteWrap');
     if (noteWrap) noteWrap.style.display = dState.showNote ? 'block' : 'none';
 
-    // 3. Başlık Özeti & Aktif Birim Filtresi
+    // 3. Başlık Özeti (Her zaman doğrudan "Kimde Ne Var?" birim listesi)
     const activeDepts = allDepts.filter((d) => (deptCounts[d] || 0) > 0);
     const hdrEl = document.getElementById('distroHeaderSummary');
     if (hdrEl) {
       hdrEl.textContent = outCount > 0
-        ? `Kimde Ne Var? — ${outCount} adet (${activeDepts.length} birimde)`
-        : 'Kimde Ne Var? — Başka Birimdekiler';
+        ? `Kimde Ne Var? (${outCount} adet)`
+        : 'Kimde Ne Var?';
     }
 
     const filterRow = document.getElementById('distroDeptFilterRow');
     if (filterRow) {
-      if (activeDepts.length >= 2) {
-        const filters = ['Tümü', ...activeDepts];
-        if (!filters.includes(dState.filterDept)) dState.filterDept = 'Tümü';
-        filterRow.style.display = 'flex';
-        filterRow.innerHTML = filters.map((f) => {
-          const cnt = f === 'Tümü' ? outCount : (deptCounts[f] || 0);
-          return `<button type="button" class="quick-strip-chip ${dState.filterDept === f ? 'active' : ''}" data-fdept="${esc(f)}">${esc(f)} <span class="mono">(${cnt})</span></button>`;
-        }).join('');
-        filterRow.querySelectorAll('[data-fdept]').forEach((b) => {
-          b.addEventListener('click', () => {
-            dState.filterDept = b.dataset.fdept;
-            renderDistroPanel();
-          });
-        });
-      } else {
-        dState.filterDept = 'Tümü';
-        filterRow.style.display = 'none';
-      }
+      dState.filterDept = 'Tümü';
+      filterRow.style.display = 'none';
+      filterRow.innerHTML = '';
     }
 
+    dState.viewMode = 'byDept';
     document.querySelectorAll('[data-dview]').forEach((b) => {
       b.classList.toggle('active', b.dataset.dview === dState.viewMode);
     });

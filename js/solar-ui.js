@@ -1414,20 +1414,16 @@
     let toneCls = '';
 
     if (live.cloudPhase === 'idle') {
-      const weatherMini = live.weather
-        ? `<span class="mono" style="color:var(--text-dim); font-size:10.5px;">%${live.weather.cloudLow} alçak · ${live.weather.windSpeedKmh} km/s</span>`
-        : `<span style="color:var(--text-dim); font-size:11px;">Kamera üstü tek dokunuş</span>`;
       statusHtml = `
         <div class="scc-status">
-          <span class="tag mono">☁️ BULUT SAYACI</span>
-          ${weatherMini}
+          <span class="tag mono">☁️ Bulut:</span>
         </div>
       `;
       actionsHtml = `
         <button type="button" class="len-chip mono" data-cam-cloud="approach">Yaklaşıyor</button>
-        <button type="button" class="len-chip mono" data-cam-est="${estSmall}">Küçük (~${formatSec(estSmall)})</button>
-        <button type="button" class="len-chip mono" data-cam-est="${estMed}">Orta (~${formatSec(estMed)})</button>
-        <button type="button" class="len-chip mono" data-cam-est="${estLarge}">Büyük (~${formatSec(estLarge)})</button>
+        <button type="button" class="len-chip mono" data-cam-est="${estSmall}">Küçük</button>
+        <button type="button" class="len-chip mono" data-cam-est="${estMed}">Orta</button>
+        <button type="button" class="len-chip mono" data-cam-est="${estLarge}">Büyük</button>
       `;
     } else if (live.cloudPhase === 'approach_measuring') {
       toneCls = 'is-caution';

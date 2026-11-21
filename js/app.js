@@ -180,6 +180,7 @@
     truckStatusFilter: 'all',
     truckCatFilter: 'Tümü',
     truckSubtab: 'inventory',
+    truckMode: 'all',
     truckSearch: '',
     expCatFilter: 'Tümü',
     cableSettingsOpen: false,
@@ -243,16 +244,28 @@
     }
   }
 
-  function setTruckSubtab(sub) {
-    ui.truckSubtab = sub === 'distro' ? 'distro' : 'inventory';
-    document.querySelectorAll('[data-truck-subtab]').forEach((b) => b.classList.toggle('active', b.dataset.truckSubtab === ui.truckSubtab));
+  function setTruckMode(mode) {
+    const valid = ['all', 'distro', 'issues'].includes(mode) ? mode : 'all';
+    ui.truckMode = valid;
+    ui.truckSubtab = valid === 'distro' ? 'distro' : 'inventory';
+    if (valid === 'issues') {
+      ui.truckStatusFilter = 'issues';
+    } else if (valid === 'all' && ui.truckStatusFilter === 'issues') {
+      ui.truckStatusFilter = 'all';
+    }
+    document.querySelectorAll('[data-truck-mode]').forEach((b) => {
+      b.classList.toggle('active', b.dataset.truckMode === valid);
+    });
     const invEl = document.getElementById('truck-subtab-inventory');
     const disEl = document.getElementById('truck-subtab-distro');
     if (invEl) invEl.style.display = ui.truckSubtab === 'inventory' ? 'block' : 'none';
     if (disEl) disEl.style.display = ui.truckSubtab === 'distro' ? 'block' : 'none';
-    renderTruckLocationSummary();
     if (ui.truckSubtab === 'inventory') renderTruckTab();
     if (ui.truckSubtab === 'distro' && window.SetDistroUI) window.SetDistroUI.render();
+  }
+
+  function setTruckSubtab(sub) {
+    setTruckMode(sub === 'distro' ? 'distro' : 'all');
   }
 
   function setTheme(themeName) {
@@ -456,6 +469,10 @@
     }
 
     const issues = state.truckItems.filter((i) => i.status === 'missing' || i.status === 'faulty').length;
+    const tcEl = document.getElementById('truckCountTab');
+    if (tcEl) tcEl.textContent = state.truckItems.length;
+    const tiEl = document.getElementById('truckIssueTabCount');
+    if (tiEl) tiEl.textContent = issues;
     const outLoans = window.SetDistroUI ? window.SetDistroUI.getTotalOutCount() : 0;
     const truckTotalBadge = issues + outLoans;
     ['sideTruckBadge', 'mobileTruckBadge'].forEach((id) => {
@@ -583,8 +600,6 @@
           <span class="strip-v" style="color:${dropColor};">${ev.deliveredVoltage}V (−%${ev.voltageDropPercent})</span>
         </div>
       </div>
-
-      ${buildHeroHeadroomHtml(cable, ev.phaseAmps, fixtureMap)}
 
       <div id="cableSettingsPanel" class="cable-settings-panel ${ui.cableSettingsOpen ? 'open' : ''}">
         <div>
@@ -816,27 +831,6 @@
       .trim();
     if (s.length > 16) s = s.slice(0, 15) + '…';
     return s || f.model;
-  }
-
-  function buildHeroHeadroomHtml(cable, phaseAmps, fixtureMap) {
-    const candidates = ['aputure-xt52', 'godox-mg4k', 'aputure-storm-1000c', 'arri-skypanel-s60', 'aputure-amaran-300c', 'arri-m18', 'aputure-600d-pro', 'aputure-700x', 'aputure-storm-80c'];
-    const chips = [];
-    for (const id of candidates) {
-      const f = fixtureMap[id];
-      if (!f) continue;
-      const cap = Calc.calcMaxUnitsForCable(cable, f, phaseAmps);
-      if (cap.compatible && cap.remainingSafeAdd > 0) {
-        chips.push(`<button type="button" class="hero-headroom-chip mono" data-hero-add="${f.id}">+1 ${esc(formatShortLampLabel(f))} <span class="hr-max">(max ${cap.remainingSafeAdd})</span></button>`);
-      }
-      if (chips.length >= 4) break;
-    }
-    if (chips.length === 0) return '';
-    return `
-      <div class="hero-headroom-bar">
-        <span class="hero-headroom-lbl">Sığanlar:</span>
-        <div class="hero-headroom-chips">${chips.join('')}</div>
-      </div>
-    `;
   }
 
   function renderCalcQuickAddStrip(cable, phaseAmps, fixtureMap) {
@@ -1463,59 +1457,20 @@
 
   function renderTruckLocationSummary() {
     const el = document.getElementById('truckLocationSummary');
-    if (!el) return;
-    const total = state.truckItems.length;
-    const countOk = state.truckItems.filter((i) => i.status === 'ok').length;
-    const countIssues = state.truckItems.filter((i) => i.status === 'missing' || i.status === 'faulty').length;
-    const outLoans = window.SetDistroUI ? window.SetDistroUI.getTotalOutCount() : 0;
-    const outDepts = window.SetDistroUI?.getActiveDeptCount ? window.SetDistroUI.getActiveDeptCount() : 0;
-
-    el.innerHTML = `
-      <button type="button" class="truck-where-box ${ui.truckSubtab === 'inventory' && ui.truckStatusFilter === 'all' ? 'active' : ''}" data-where-jump="all">
-        <span class="tw-lbl">Kamyon Listesi</span>
-        <strong class="tw-val mono">${total} kalem</strong>
-      </button>
-      <button type="button" class="truck-where-box ${ui.truckSubtab === 'inventory' && ui.truckStatusFilter === 'ok' ? 'active' : ''}" data-where-jump="ok">
-        <span class="tw-lbl">Sayım Tamam</span>
-        <strong class="tw-val mono" style="color:var(--safe);">${countOk}/${total}</strong>
-      </button>
-      <button type="button" class="truck-where-box ${outLoans > 0 ? 'is-out' : ''} ${ui.truckSubtab === 'distro' ? 'active' : ''}" data-where-jump="distro">
-        <span class="tw-lbl">Başka Birimde</span>
-        <strong class="tw-val mono">${outLoans} adet${outDepts > 0 ? ` (${outDepts})` : ''}</strong>
-      </button>
-      <button type="button" class="truck-where-box ${countIssues > 0 ? 'is-warn' : ''} ${ui.truckSubtab === 'inventory' && ui.truckStatusFilter === 'issues' ? 'active' : ''}" data-where-jump="issues">
-        <span class="tw-lbl">Eksik / Arıza</span>
-        <strong class="tw-val mono">${countIssues} kalem</strong>
-      </button>
-    `;
-
-    el.querySelectorAll('[data-where-jump]').forEach((b) => {
-      b.addEventListener('click', () => {
-        const jump = b.dataset.whereJump;
-        if (jump === 'distro') {
-          setTruckSubtab('distro');
-          return;
-        }
-        if (jump === 'all') ui.truckStatusFilter = 'all';
-        else if (jump === 'ok') ui.truckStatusFilter = countOk > 0 ? 'ok' : 'pending';
-        else if (jump === 'issues') ui.truckStatusFilter = 'issues';
-        setTruckSubtab('inventory');
-      });
-    });
+    if (el) el.innerHTML = '';
   }
 
   function renderTruckTab() {
     populateTruckQuickHelpers();
-    renderTruckLocationSummary();
     document.getElementById('truckProjectHeading').textContent = state.projectName || 'Kamyon';
-    document.getElementById('truckRentalSubtitle').textContent = state.rentalHouse || 'Kamyon Listesi & Başkasına Verilenler';
+    document.getElementById('truckRentalSubtitle').textContent = state.rentalHouse || 'Kamyon Envanteri & Başka Birimler';
 
     const quickBox = document.getElementById('truckQuickAddCollapsible');
     if (quickBox) quickBox.classList.toggle('open', ui.truckQuickAddOpen);
     const toggleQuickBtn = document.getElementById('toggleTruckQuickAddBtn');
     if (toggleQuickBtn) {
       toggleQuickBtn.classList.toggle('active', ui.truckQuickAddOpen);
-      toggleQuickBtn.textContent = ui.truckQuickAddOpen ? 'Kapat' : '+ Malzeme Ekle';
+      toggleQuickBtn.textContent = ui.truckQuickAddOpen ? 'Kapat' : '+ Ekle';
     }
 
     const settingsCard = document.getElementById('truckSettingsCard');
@@ -1543,11 +1498,20 @@
     const countMissing = state.truckItems.filter((i) => i.status === 'missing').length;
     const countFaulty = state.truckItems.filter((i) => i.status === 'faulty').length;
     const countIssues = countMissing + countFaulty;
-    const countOutItems = state.truckItems.filter((i) => (outInfoById.get(i.id)?.totalOut || 0) > 0).length;
     const checked = countOk + countMissing + countFaulty;
     const pct = total > 0 ? Math.round((checked / total) * 100) : 0;
 
-    document.getElementById('wrapProgressText').textContent = `%${pct} (${checked}/${total})`;
+    const tcEl = document.getElementById('truckCountTab');
+    if (tcEl) tcEl.textContent = total;
+    const tiEl = document.getElementById('truckIssueTabCount');
+    if (tiEl) tiEl.textContent = countIssues;
+
+    const wrapTxt = document.getElementById('wrapProgressText');
+    if (wrapTxt) {
+      wrapTxt.textContent = ui.truckMode === 'issues'
+        ? `${countIssues} eksik / arıza`
+        : `Sayım: ${countOk}/${total} tamam`;
+    }
     document.getElementById('wrapProgressSub').textContent = `${checked}/${total}`;
 
     const bar = document.getElementById('wrapProgressBar');
@@ -1555,25 +1519,20 @@
     bar.className = `bar-fill ${countIssues > 0 ? 'CAUTION' : 'SAFE'}`;
 
     const counters = document.getElementById('wrapStatusCounters');
-    const statDefs = [
-      { key: 'all', num: total, lbl: 'Tümü', cls: '' },
-      { key: 'out', num: countOutItems, lbl: 'Başka Birimde', cls: countOutItems > 0 ? 'st-c-out' : '' },
-      { key: 'issues', num: countIssues, lbl: 'Eksik / Arıza', cls: countIssues > 0 ? 'st-c-miss' : '' },
-      { key: 'pending', num: countPending, lbl: 'Sayılacak', cls: 'st-c-pend' },
-      { key: 'ok', num: countOk, lbl: '✓ Tamam', cls: 'st-c-ok' }
-    ];
-    counters.innerHTML = statDefs.map((s) => `
-      <button class="stat-pill-btn ${s.cls} ${ui.truckStatusFilter === s.key ? 'active' : ''}" data-tstat="${s.key}">
-        <span>${s.lbl}</span>
-        <span class="mono">${s.num}</span>
-      </button>
-    `).join('');
-    counters.querySelectorAll('[data-tstat]').forEach((b) => {
-      b.addEventListener('click', () => {
-        ui.truckStatusFilter = b.dataset.tstat;
+    if (ui.truckMode === 'issues') {
+      counters.innerHTML = `<button type="button" class="stat-pill-btn active" data-tstat-all="1">Tümünü Göster</button>`;
+      counters.querySelector('[data-tstat-all]')?.addEventListener('click', () => setTruckMode('all'));
+    } else {
+      counters.innerHTML = `
+        <button type="button" class="stat-pill-btn ${ui.truckStatusFilter === 'pending' ? 'active' : ''}" data-tstat-pend="1">
+          Sadece Sayılmayan (${countPending})
+        </button>
+      `;
+      counters.querySelector('[data-tstat-pend]')?.addEventListener('click', () => {
+        ui.truckStatusFilter = ui.truckStatusFilter === 'pending' ? 'all' : 'pending';
         renderTruckTab();
       });
-    });
+    }
 
     const catCounts = { Tümü: total };
     for (const c of TRUCK_CATEGORIES) if (c !== 'Tümü') catCounts[c] = 0;
@@ -1597,7 +1556,7 @@
       const outQty = outInfoById.get(item.id)?.totalOut || 0;
       let sOk = true;
       if (ui.truckStatusFilter === 'out') sOk = outQty > 0;
-      else if (ui.truckStatusFilter === 'issues') sOk = item.status === 'missing' || item.status === 'faulty';
+      else if (ui.truckStatusFilter === 'issues' || ui.truckMode === 'issues') sOk = item.status === 'missing' || item.status === 'faulty';
       else if (ui.truckStatusFilter !== 'all') sOk = item.status === ui.truckStatusFilter;
       const cOk = ui.truckCatFilter === 'Tümü' || item.category === ui.truckCatFilter;
       const qOk = !q || `${item.name} ${item.category} ${item.note || ''}`.toLowerCase().includes(q);
@@ -1607,7 +1566,10 @@
     const fMap = getFixtureMap();
     const listEl = document.getElementById('truckList');
     if (list.length === 0) {
-      listEl.innerHTML = `<div class="empty-box" style="padding:18px 10px;">Bu filtrede ekipman bulunmuyor.</div>`;
+      const emptyMsg = ui.truckMode === 'issues'
+        ? 'Harika — eksik veya arızalı malzeme yok.'
+        : 'Bu filtrede ekipman bulunmuyor.';
+      listEl.innerHTML = `<div class="empty-box" style="padding:18px 10px;">${emptyMsg}</div>`;
       return;
     }
 
@@ -1621,8 +1583,6 @@
       const checkGlyph = item.status === 'ok' ? '✓' : item.status === 'missing' ? '!' : item.status === 'faulty' ? '✕' : '';
 
       const metaParts = [];
-      if (ui.truckCatFilter === 'Tümü') metaParts.push(`<span class="inv-cat-tiny ${catMeta.cls}">${esc(item.category)}</span>`);
-      if (item.status === 'ok' && outQty === 0) metaParts.push(`<span class="inv-loc-ok mono">✓ Kamyonda</span>`);
       if (item.status === 'missing') metaParts.push(`<span class="tag tag-caution mono">⚠️ EKSİK</span>`);
       if (item.status === 'faulty') metaParts.push(`<span class="tag tag-danger mono">🔧 ARIZALI</span>`);
       if (outQty > 0) {
@@ -1630,13 +1590,13 @@
       }
 
       const qtyBadgeHtml = outQty > 0
-        ? `<span class="inv-qty-badge has-out mono" title="Kamyonda kalan / Toplam adet">${inTruckQty}/${item.qty}</span>`
-        : `<span class="inv-qty-badge mono">${item.qty} Adet</span>`;
+        ? `<span class="inv-qty-badge has-out mono" title="Kamyonda kalan / Toplam">${inTruckQty}/${item.qty}</span>`
+        : `<span class="inv-qty-badge mono">${item.qty}</span>`;
 
       return `
         <div class="inv-item st-${item.status} ${outQty > 0 ? 'has-out' : ''} ${isOpen ? 'expanded' : ''}">
           <div class="inv-compact-row">
-            <button type="button" class="inv-check-btn" data-inv-quick-ok="${item.id}" aria-label="Tamam işaretle" title="Tek dokunuşla Kamyonda Tamam / Sayılacak">${checkGlyph}</button>
+            <button type="button" class="inv-check-btn" data-inv-quick-ok="${item.id}" aria-label="Tamam işaretle" title="Tek dokunuşla Tamam / Bekliyor">${checkGlyph}</button>
             ${f ? `
               <button type="button" class="lamp-thumb inv-thumb-mini" data-preview-fix="${f.id}" title="Görseli büyüt">
                 <img src="${esc(getFixtureImage(f))}" alt="${esc(item.name)}" />
@@ -1653,8 +1613,11 @@
                 </div>
               ` : ''}
             </div>
-            <button type="button" class="inv-right-trigger" data-inv-toggle="${item.id}" title="Adet ve durum düzenle">
+            <button type="button" class="inv-qty-trigger" data-inv-toggle="${item.id}" title="Düzenle">
               ${qtyBadgeHtml}
+            </button>
+            <button type="button" class="inv-lend-btn" data-inv-lend="${esc(item.name)}" title="Başka birime ver">Ver</button>
+            <button type="button" class="inv-chev-btn" data-inv-toggle="${item.id}" aria-label="Detay">
               <span class="inv-chevron mono">${isOpen ? '▴' : '▾'}</span>
             </button>
           </div>
@@ -1668,10 +1631,9 @@
                   <button type="button" data-inv-inc="${item.id}" aria-label="Artır">+</button>
                 </div>
                 <div class="st-group" style="flex:1;">
-                  <button type="button" class="st-pill ${item.status === 'ok' ? 'active-ok' : ''}" data-inv-st="${item.id}|ok">✓ Kamyonda Tamam</button>
+                  <button type="button" class="st-pill ${item.status === 'ok' ? 'active-ok' : ''}" data-inv-st="${item.id}|ok">✓ Tamam</button>
                   <button type="button" class="st-pill ${item.status === 'missing' ? 'active-missing' : ''}" data-inv-st="${item.id}|missing">⚠️ Eksik</button>
                   <button type="button" class="st-pill ${item.status === 'faulty' ? 'active-faulty' : ''}" data-inv-st="${item.id}|faulty">🔧 Arızalı</button>
-                  <button type="button" class="st-pill st-pill-lend" data-inv-lend="${esc(item.name)}" title="Başka birime zimmetle">📤 Başka Birime Ver</button>
                   <button type="button" class="st-pill inv-del-btn" data-inv-del="${item.id}" title="Listeden Sil">Sil</button>
                 </div>
               </div>
@@ -2178,9 +2140,9 @@
       closeModal('lampLightboxModal');
     });
 
-    // Kamyon kontrolleri & Alt Sekme (Envanter / Birim Dağıtım)
-    document.querySelectorAll('[data-truck-subtab]').forEach((btn) => {
-      btn.addEventListener('click', () => setTruckSubtab(btn.dataset.truckSubtab));
+    // Kamyon kontrolleri & 3 Üst Mod (Kamyon / Dışarıda / Eksik-Arıza)
+    document.querySelectorAll('[data-truck-mode]').forEach((btn) => {
+      btn.addEventListener('click', () => setTruckMode(btn.dataset.truckMode));
     });
 
     // Kamyon Hızlı Tek Satır Ekleme + Özel Canlı Öneri Menüsü
@@ -2574,7 +2536,7 @@
     setTab(state.activeTab);
 
     if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
-      navigator.serviceWorker.register('./sw.js?v=19').then((reg) => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=20').then((reg) => reg.update()).catch(() => {});
     }
   });
 })();
