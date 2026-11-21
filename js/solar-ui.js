@@ -482,7 +482,7 @@
   function updateArControlsUI() {
     const camBtn = document.getElementById('solarArCameraBtn');
     if (camBtn) {
-      camBtn.textContent = live.cameraActive ? 'Kamerayı Kapat' : 'Canlı Kamerayı Aç';
+      camBtn.textContent = live.cameraActive ? 'Kamerayı Kapat' : '📷 Canlı Kamerayı Aç';
       camBtn.classList.toggle('btn-danger-soft', live.cameraActive);
       camBtn.classList.toggle('btn-primary', !live.cameraActive);
     }
@@ -604,9 +604,13 @@
     }
 
     const look = basisToAzEl(basis);
+    const { year, month, day } = parseIsoDate(sState.dateIso);
+    const selPos = Solar.getSolarPosition(year, month, day, sState.minute, sState.lat, sState.lng, sState.tz);
     const aimEl = document.getElementById('solarArAimReadout');
     if (aimEl) {
-      aimEl.textContent = `${Math.round(look.az)}° ${Solar.azimuthToCompass(look.az, false)} · ${look.el >= 0 ? '+' : ''}${Math.round(look.el)}°`;
+      const prefix = live.cameraActive && live.sensorReceived ? '● AR · ' : live.cameraActive ? '● KAM · ' : '';
+      aimEl.textContent = `${prefix}Bakış: ${Math.round(look.az)}° ${Solar.azimuthToCompass(look.az, false)} · Güneş: ${Math.round(selPos.elevation)}°`;
+      aimEl.classList.toggle('live-on', live.cameraActive);
     }
 
     ctx.clearRect(0, 0, W, H);
@@ -756,7 +760,6 @@
 
     // 4. GÜNLÜK GÜNEŞ YOLU YAYI + GİDİŞ YÖNÜ OKLARI
     ensureDayCache();
-    const { year, month, day } = parseIsoDate(sState.dateIso);
     const summary = live.cachedSummary;
     const pathPts = live.cachedPathPts;
 
@@ -824,27 +827,29 @@
       drawArrowHead(ctx, cur.x, cur.y, Math.atan2(dy, dx), 7.5, '#fde047');
     }
 
-    // 5. SAAT NOKTALARI VE SAAT ETİKETLERİ (08:00, 09:00 ... 18:00)
+    // 5. SAAT NOKTALARI VE SAAT ETİKETLERİ (Çarpışmasız: 2 saatte bir & aktif saatten >=45 dk uzak)
     for (const hm of live.cachedHourPts) {
+      if (hm.hour % 2 !== 0) continue;
+      if (Math.abs(hm.minute - sState.minute) < 45) continue;
       const pt = projectSky(hm.vec, basis, cx, cy, focal);
-      if (!pt || pt.x < 22 || pt.x > W - 22 || pt.y < 42 || pt.y > H - 54) continue;
+      if (!pt || pt.x < 24 || pt.x > W - 24 || pt.y < 42 || pt.y > H - 54) continue;
       ctx.beginPath();
-      ctx.arc(pt.x, pt.y, 4.2, 0, Math.PI * 2);
+      ctx.arc(pt.x, pt.y, 3.8, 0, Math.PI * 2);
       ctx.fillStyle = '#0f172a';
       ctx.fill();
       ctx.strokeStyle = '#f5b71a';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1.8;
       ctx.stroke();
 
       drawPill(
         ctx,
         pt.x,
-        pt.y - 18,
+        pt.y - 16,
         hm.label,
         'rgba(10, 14, 22, 0.78)',
         '#f8fafc',
-        'rgba(245, 183, 26, 0.5)',
-        '700 10px ui-monospace, monospace'
+        'rgba(245, 183, 26, 0.45)',
+        '700 9.5px ui-monospace, monospace'
       );
     }
 
@@ -862,25 +867,24 @@
       }
     }
 
-    // 7. AKTİF SEÇİLİ SAATTE GÜNEŞ + SONRAKİ 1 SAAT YÖN OKU + EKRAN DIŞI REHBERİ
-    const selPos = Solar.getSolarPosition(year, month, day, sState.minute, sState.lat, sState.lng, sState.tz);
+    // 7. AKTİF SEÇİLİ SAATTE GÜNEŞ + YÖN OKU + EKRAN DIŞI REHBERİ
     const selVec = skyVec(selPos.azimuth, selPos.elevation);
     const selScr = projectSky(selVec, basis, cx, cy, focal);
 
-    // Eğer bugünse ve kaydırıcı şu anki saatten uzaksa, gerçek "ŞİMDİ" güneşini de soluk referans göster
-    if (sState.dateIso === todayIso() && Math.abs(sState.minute - nowMinutes()) >= 15) {
+    // Eğer bugünse ve kaydırıcı şu anki saatten >= 60 dk uzaksa, gerçek "ŞİMDİ" güneşini küçük göster
+    if (sState.dateIso === todayIso() && Math.abs(sState.minute - nowMinutes()) >= 60) {
       const nowPos = Solar.getSolarPosition(year, month, day, nowMinutes(), sState.lat, sState.lng, sState.tz);
       if (nowPos.elevation > -4) {
         const ns = projectSky(skyVec(nowPos.azimuth, nowPos.elevation), basis, cx, cy, focal);
-        if (ns && ns.x > 14 && ns.x < W - 14 && ns.y > 40 && ns.y < H - 50) {
+        if (ns && ns.x > 16 && ns.x < W - 16 && ns.y > 42 && ns.y < H - 52) {
           ctx.beginPath();
-          ctx.arc(ns.x, ns.y, 11, 0, Math.PI * 2);
-          ctx.strokeStyle = 'rgba(255,255,255,0.85)';
-          ctx.lineWidth = 1.8;
+          ctx.arc(ns.x, ns.y, 8, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+          ctx.lineWidth = 1.6;
           ctx.setLineDash([3, 3]);
           ctx.stroke();
           ctx.setLineDash([]);
-          drawPill(ctx, ns.x, ns.y + 20, 'ŞİMDİ', 'rgba(15,23,42,0.8)', '#cbd5e1', 'rgba(255,255,255,0.35)', '700 9.5px ui-monospace, monospace');
+          drawPill(ctx, ns.x, ns.y + 16, 'ŞİMDİ', 'rgba(15,23,42,0.75)', '#cbd5e1', 'rgba(255,255,255,0.3)', '700 9px ui-monospace, monospace');
         }
       }
     }
@@ -940,8 +944,8 @@
       drawPill(
         ctx,
         selScr.x,
-        selScr.y + 26,
-        `${Solar.formatMinutes(sState.minute)} · ${Math.round(selPos.azimuth)}° ${selPos.compass} · ${selPos.elevation >= 0 ? '+' : ''}${Math.round(selPos.elevation)}°`,
+        selScr.y + 24,
+        `${Solar.formatMinutes(sState.minute)} · ${Math.round(selPos.azimuth)}° ${selPos.compass}`,
         'rgba(10, 14, 22, 0.88)',
         '#f5b71a',
         '#f5b71a',
@@ -971,7 +975,7 @@
       drawPill(ctx, gx, gy, guideText, 'rgba(245, 183, 26, 0.94)', '#111827', '#ffffff', '700 11px ui-monospace, monospace');
     }
 
-    // 8. Orta Nişangah Artısı & Üst Vizör Pusula Cetveli
+    // 8. Orta Nişangah Artısı
     ctx.strokeStyle = 'rgba(255,255,255,0.65)';
     ctx.lineWidth = 1.25;
     ctx.beginPath();
@@ -980,50 +984,6 @@
     ctx.moveTo(cx, cy - 10); ctx.lineTo(cx, cy - 4);
     ctx.moveTo(cx, cy + 4); ctx.lineTo(cx, cy + 10);
     ctx.stroke();
-
-    // Vizör üst derece cetveli (profesyonel kamera HUD)
-    const tapeW = Math.min(220, W - 40);
-    const tapeLeft = cx - tapeW / 2;
-    const tapeY = 44;
-    ctx.fillStyle = 'rgba(10, 14, 22, 0.62)';
-    ctx.beginPath();
-    ctx.roundRect(tapeLeft, tapeY, tapeW, 18, 4);
-    ctx.fill();
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(tapeLeft + 2, tapeY, tapeW - 4, 18);
-    ctx.clip();
-    const pxPerDeg = 3.1;
-    const baseAz = Math.floor((look.az - 40) / 5) * 5;
-    ctx.font = '700 8.5px ui-monospace, monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    for (let deg = baseAz; deg <= look.az + 45; deg += 5) {
-      const diff = shortestAngleDelta(look.az, Solar.normalizeDeg(deg));
-      const tx = cx + diff * pxPerDeg;
-      if (tx < tapeLeft || tx > tapeLeft + tapeW) continue;
-      const major = ((deg % 15) + 15) % 15 === 0;
-      ctx.strokeStyle = major ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.32)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(tx, tapeY + 18);
-      ctx.lineTo(tx, tapeY + (major ? 12 : 14.5));
-      ctx.stroke();
-      if (major) {
-        const dNorm = Math.round(Solar.normalizeDeg(deg));
-        const dLbl = dNorm === 0 ? 'K' : dNorm === 90 ? 'D' : dNorm === 180 ? 'G' : dNorm === 270 ? 'B' : `${dNorm}°`;
-        ctx.fillStyle = dNorm % 90 === 0 ? '#f5b71a' : '#cbd5e1';
-        ctx.fillText(dLbl, tx, tapeY + 7);
-      }
-    }
-    ctx.restore();
-    ctx.fillStyle = '#f5b71a';
-    ctx.beginPath();
-    ctx.moveTo(cx, tapeY + 18);
-    ctx.lineTo(cx - 3.5, tapeY + 23);
-    ctx.lineTo(cx + 3.5, tapeY + 23);
-    ctx.closePath();
-    ctx.fill();
 
     ctx.restore();
   }
@@ -1565,7 +1525,7 @@
     const playBtn = document.getElementById('solarPlayDayBtn');
     if (playBtn) {
       playBtn.classList.toggle('active', live.playingDay);
-      playBtn.textContent = live.playingDay ? '⏸ Durdur' : '▶ Günü Oynat';
+      playBtn.textContent = live.playingDay ? '⏸ Durdur' : '▶ Oynat';
     }
   }
 

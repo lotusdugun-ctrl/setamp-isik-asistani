@@ -7,7 +7,7 @@
   <title>SetAmp — Işık Ekibi</title>
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
-  <link rel="stylesheet" href="./css/styles.css?v=16" />
+  <link rel="stylesheet" href="./css/styles.css?v=17" />
 </head>
 <body>
   <div class="app-shell">
@@ -305,33 +305,33 @@
           </div>
         </div>
 
-        <!-- ALT SEKME 1: KAMYON LİSTEM & PAYDOS -->
+        <!-- ALT SEKME 1: KAMYON LİSTEM & PAYDOS (SADE & TEK BAKIŞTA LİSTE) -->
         <div id="truck-subtab-inventory">
-          <!-- 1 Satırda Hızlı Liste Ekleme (Özel canlı arama menülü) -->
-          <div class="section-card quick-list-card">
+          <!-- Arama + + Ekle + Yapıştır (Tek Kompakt Satır) -->
+          <div class="truck-top-bar">
+            <input id="truckSearch" class="input" type="search" placeholder="Malzemede ara (XT52, C-Stand, 32A)..." />
+            <button type="button" id="toggleTruckQuickAddBtn" class="btn btn-primary btn-sm">+ Ekle</button>
+            <button type="button" id="openPasteListModalBtn" class="btn btn-soft btn-sm">📋 Yapıştır</button>
+          </div>
+
+          <!-- Açılır Hızlı Ekleme & Araçlar (Varsayılan Gizli — "+ Ekle"ye basınca açılır) -->
+          <div id="truckQuickAddCollapsible" class="section-card quick-list-card collapsible-box" style="margin-bottom:8px;">
             <form id="truckQuickAddForm" class="quick-add-row" style="position:relative;">
-              <input id="truckQuickAddInput" class="input" autocomplete="off" placeholder="Ekipman yaz veya seç (M18, 16A, C-Stand, Kablo Yolu)..." required />
+              <input id="truckQuickAddInput" class="input" autocomplete="off" placeholder="Ekipman yaz veya seç (M18, 16A, C-Stand, Kablo)..." required />
               <div id="truckQuickSuggest" class="pro-suggest-menu" style="display:none;"></div>
               <input id="truckQuickQtyInput" class="input mono" type="number" min="1" max="500" value="1" aria-label="Adet" />
-              <button type="submit" class="btn btn-primary">+ Ekle</button>
+              <button type="submit" class="btn btn-primary">Ekle</button>
             </form>
-
-            <!-- Tek Dokunuşla Sık Kullanılanları Ekle (Tek Yatay Satır) -->
             <div id="truckQuickChips" class="quick-strip-scroll" aria-label="Tek dokunuşla ekle"></div>
-
-            <!-- Kompakt Yardımcı Çubuk -->
             <div class="quick-tools-row">
-              <button type="button" id="openPasteListModalBtn" class="btn btn-soft btn-sm">📋 Liste Yapıştır</button>
               <button type="button" id="toggleTruckSettingsBtn" class="btn btn-soft btn-sm">Şablon / Proje</button>
               <button type="button" id="truckToCalcBtn" class="btn btn-soft btn-sm">Yük Hesabına</button>
-              <button type="button" id="markAllOkBtn" class="btn btn-safe btn-sm">Tümünü Tamamla</button>
               <button type="button" id="openAddTruckItemBtn" class="btn btn-soft btn-sm">+ Detaylı</button>
-              <button type="button" id="resetWrapBtn" class="btn btn-soft btn-sm">Sayımı Sıfırla</button>
             </div>
           </div>
 
           <!-- Açılır Proje & Hazır Şablon Ayarı -->
-          <div id="truckSettingsCard" class="section-card collapsible-box" style="margin-top:0;">
+          <div id="truckSettingsCard" class="section-card collapsible-box" style="margin-top:0; margin-bottom:8px;">
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px;">
               <div>
                 <label class="field-label" for="projectNameInput">Proje / Set Adı</label>
@@ -351,25 +351,22 @@
             </div>
           </div>
 
-          <!-- Kamyon Listesi & Paydos -->
-          <div class="section-card">
-            <div class="section-head" style="margin-bottom:8px;">
-              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <h2 class="section-title">Liste &amp; Paydos</h2>
-                <span id="wrapProgressText" class="tag tag-safe mono">%0</span>
+          <!-- Ana Ekipman Listesi Kartı -->
+          <div class="section-card truck-list-card">
+            <div id="truckCategoryPills" class="chip-row" style="margin-bottom:8px;"></div>
+
+            <div class="truck-status-toolbar">
+              <div id="wrapStatusCounters" class="stat-tabs-compact"></div>
+              <div style="display:flex; gap:5px; align-items:center; flex-shrink:0;">
+                <span id="wrapProgressText" class="tag tag-safe mono" style="font-size:11px;">%0</span>
+                <button type="button" id="markAllOkBtn" class="btn btn-safe btn-sm" title="Bekleyenleri Tamamla">Tümünü ✓</button>
+                <button type="button" id="resetWrapBtn" class="btn btn-soft btn-sm" title="Paydos Sayımını Sıfırla">Sıfırla</button>
               </div>
-              <span id="wrapProgressSub" style="font-size:11.5px; color:var(--text-muted);"></span>
             </div>
 
-            <div class="bar-track" style="margin-bottom:10px;">
+            <span id="wrapProgressSub" style="display:none;"></span>
+            <div class="bar-track bar-track-thin" style="margin-bottom:6px;">
               <div id="wrapProgressBar" class="bar-fill SAFE" style="width:0%;"></div>
-            </div>
-
-            <div id="wrapStatusCounters" class="stat-tabs"></div>
-
-            <div class="truck-filter-row">
-              <input id="truckSearch" class="input" type="search" placeholder="Listede ara..." />
-              <div id="truckCategoryPills" class="chip-row"></div>
             </div>
 
             <div id="truckList"></div>
@@ -451,20 +448,23 @@
           </div>
         </div>
 
-        <div id="lowStockBanner" class="hero-card status-CAUTION" style="display:none; padding:14px 16px;"></div>
+        <div id="lowStockBanner" class="exp-low-strip" style="display:none;"></div>
 
-        <!-- Hızlı Sarf Ekleme (Tek Satır + Sık Kullanılanlar) -->
-        <div class="section-card quick-list-card">
+        <!-- Hızlı Sarf Ekleme (Varsayılan Gizli — "+ Sarf Ekle"ye basınca açılır) -->
+        <div id="expQuickAddCard" class="section-card quick-list-card collapsible-box">
           <form id="expQuickAddForm" class="quick-add-row">
             <input id="expQuickNameInput" class="input" autocomplete="off" placeholder="Sarf adı yaz (ör. Siyah Gaffer, 216, CTO, C-47)..." required />
             <input id="expQuickQtyInput" class="input mono" type="number" min="0.5" max="200" step="0.5" value="1" aria-label="Miktar" />
             <button type="submit" class="btn btn-primary">+ Ekle</button>
           </form>
           <div id="expQuickChips" class="quick-strip-scroll" aria-label="Hızlı sarf ekle"></div>
+          <div style="display:flex; justify-content:flex-end;">
+            <button type="button" id="openExpModalInnerBtn" class="btn btn-soft btn-sm">Detaylı Ekle (Kategori / Alt Sınır)</button>
+          </div>
         </div>
 
-        <div class="section-card">
-          <div id="expCategoryPills" class="chip-row" style="margin-bottom:12px;"></div>
+        <div class="section-card truck-list-card">
+          <div id="expCategoryPills" class="chip-row" style="margin-bottom:8px;"></div>
           <div id="expendablesList"></div>
         </div>
       </section>
@@ -503,11 +503,11 @@
             <video id="solarArVideo" class="ar-video" autoplay playsinline muted></video>
             <canvas id="solarArCanvas" class="ar-canvas"></canvas>
 
-            <!-- Üst HUD: Tek Satır Sade -->
+            <!-- Üst HUD: Tek Kompakt Bilgi Hapı + Hizala / Tam Ekran -->
             <div class="ar-hud-top">
               <div class="ar-hud-left">
-                <span id="solarArModePill" class="ar-pill mono">ÖNİZLEME</span>
-                <span id="solarArAimReadout" class="ar-pill ar-pill-sub mono">180° G · +18°</span>
+                <span id="solarArModePill" style="display:none;">ÖNİZLEME</span>
+                <span id="solarArAimReadout" class="ar-pill mono">Bakış: 180° G · Güneş: 29°</span>
               </div>
               <div class="ar-hud-right">
                 <button type="button" id="solarArCalibrateBtn" class="ar-hud-btn" title="Ortadaki artıyı gerçek güneşe tutup bas">Hizala</button>
@@ -515,7 +515,7 @@
               </div>
             </div>
 
-            <!-- Tam Ekranda Görünür Saat Kaydırıcı + Ana Butonlar -->
+            <!-- Tam Ekranda Görünür Saat Kaydırıcı + 2 Sade Buton -->
             <div class="ar-hud-bottom">
               <div class="ar-fs-timebar">
                 <span id="solarArFsTime" class="mono" style="font-weight:700; font-size:13px; color:#f5b71a;">12:00</span>
@@ -524,37 +524,32 @@
               </div>
 
               <div class="ar-action-bar">
-                <button type="button" id="solarArCameraBtn" class="btn btn-primary btn-sm">Canlı Kamerayı Aç</button>
-                <button type="button" id="solarArAimSunBtn" class="ar-hud-btn">Güneşe Bak</button>
-                <div class="ar-dir-jumps">
-                  <button type="button" class="ar-hud-btn" data-ar-az="90">D</button>
-                  <button type="button" class="ar-hud-btn" data-ar-az="180">G</button>
-                  <button type="button" class="ar-hud-btn" data-ar-az="270">B</button>
-                </div>
+                <button type="button" id="solarArCameraBtn" class="btn btn-primary btn-sm">📷 Canlı Kamerayı Aç</button>
+                <button type="button" id="solarArAimSunBtn" class="ar-hud-btn">Güneşe Odakla</button>
               </div>
             </div>
           </div>
 
-          <!-- Kamera Altı Kompakt Saat & Özet Kartı (İlk ekrana sığar) -->
+          <!-- Kamera Altı Kompakt Saat & Özet Kartı (Tek Bakışta) -->
           <div class="section-card solar-bottom-card">
-            <div class="section-head" style="margin-bottom:6px;">
+            <div class="section-head" style="margin-bottom:6px; gap:6px;">
               <div style="display:flex; align-items:center; gap:7px; flex-wrap:wrap;">
                 <span id="solarSelectedTime" class="mono" style="font-size:18px; font-weight:700;">12:00</span>
                 <span id="solarPhaseBadge" class="status-pill">Gün Işığı</span>
               </div>
               <div style="display:flex; align-items:center; gap:6px;">
-                <button type="button" id="solarPlayDayBtn" class="btn btn-soft btn-sm solar-play-btn">▶ Günü Oynat</button>
+                <button type="button" id="solarPlayDayBtn" class="btn btn-soft btn-sm solar-play-btn">▶ Oynat</button>
                 <span id="solarNextCountdown" class="mono" style="font-size:11px; color:var(--text-muted);"></span>
               </div>
             </div>
 
             <div class="solar-slider-wrap" style="margin-top:0; padding:7px 10px;">
-              <div id="solarQuickTimeChips" class="solar-quick-4col"></div>
               <input id="solarTimeSlider" class="solar-slider" type="range" min="300" max="1320" step="5" value="720" />
+              <div id="solarQuickTimeChips" class="solar-quick-4col" style="margin-top:6px; margin-bottom:0;"></div>
             </div>
 
             <div id="solarLiveMetrics" class="solar-metrics-grid"></div>
-            <div id="solarSetTip" style="font-size:11.5px; color:var(--text-muted); margin-top:7px; padding-top:7px; border-top:1px solid var(--border);"></div>
+            <div id="solarSetTip" style="display:none;"></div>
           </div>
         </div>
 
@@ -854,13 +849,13 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script src="./js/data-cables.js?v=16"></script>
-  <script src="./js/data-fixtures.js?v=16"></script>
-  <script src="./js/data-templates.js?v=16"></script>
-  <script src="./js/calc.js?v=16"></script>
-  <script src="./js/solar.js?v=16"></script>
-  <script src="./js/solar-ui.js?v=16"></script>
-  <script src="./js/distro-ui.js?v=16"></script>
-  <script src="./js/app.js?v=16"></script>
+  <script src="./js/data-cables.js?v=17"></script>
+  <script src="./js/data-fixtures.js?v=17"></script>
+  <script src="./js/data-templates.js?v=17"></script>
+  <script src="./js/calc.js?v=17"></script>
+  <script src="./js/solar.js?v=17"></script>
+  <script src="./js/solar-ui.js?v=17"></script>
+  <script src="./js/distro-ui.js?v=17"></script>
+  <script src="./js/app.js?v=17"></script>
 </body>
 </html>

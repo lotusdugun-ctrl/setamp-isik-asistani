@@ -182,7 +182,10 @@
     truckSearch: '',
     expCatFilter: 'Tümü',
     cableSettingsOpen: false,
+    truckQuickAddOpen: false,
     truckSettingsOpen: false,
+    expandedTruckItemId: null,
+    expQuickAddOpen: false,
     lightboxFixtureId: null
   };
 
@@ -914,47 +917,24 @@
       grid.innerHTML = filtered.map((f) => {
         const cap = Calc.calcMaxUnitsForCable(catCable, f);
         const kwText = Calc.formatKW(f.watts);
+        const badgeCls = cap.level === 'SAFE' ? 'tag-safe' : cap.level === 'CAUTION' ? 'tag-caution' : 'tag-danger';
+        const capText = cap.compatible ? `${cap.maxSafeTotal > 0 ? cap.maxSafeTotal : '1*'} adet` : `Min ${f.minSocketAmps}A`;
         return `
-          <article class="catalog-card">
-            <div style="display:flex; gap:13px; align-items:flex-start;">
-              <button class="lamp-thumb lamp-thumb-lg" data-preview-fix="${f.id}" title="Görseli büyüt">
-                <img src="${esc(getFixtureImage(f))}" alt="${esc(f.brand)} ${esc(f.model)}" />
-              </button>
-              <div style="flex:1; min-width:0;">
-                <div class="ccard-head">
-                  <div style="min-width:0;">
-                    <span class="tag tag-brand">${esc(f.brand)}</span>
-                    <span class="tag" style="margin-left:4px;">${esc(f.type)}</span>
-                    <div class="ccard-title">${esc(f.model)}</div>
-                  </div>
-                  <div class="ccard-power mono">
-                    <div class="ccard-amp">${cap.unitAmps.toFixed(1)} A</div>
-                    <div class="ccard-kw">${kwText}</div>
-                    <div class="ccard-pf">Min ${f.minSocketAmps}A</div>
-                  </div>
-                </div>
+          <article class="catalog-row-card">
+            <button class="lamp-thumb lamp-thumb-sm" data-preview-fix="${f.id}" title="Detay ve görseli aç">
+              <img src="${esc(getFixtureImage(f))}" alt="${esc(f.brand)} ${esc(f.model)}" />
+            </button>
+            <div class="catalog-row-main" data-preview-fix="${f.id}">
+              <div class="catalog-row-title">
+                <span class="tag tag-brand">${esc(f.brand)}</span>
+                <span>${esc(f.model)}</span>
+              </div>
+              <div class="catalog-row-meta mono">
+                <span>${cap.unitAmps.toFixed(1)}A · ${kwText}</span>
+                <span class="tag ${badgeCls}">${esc(capText)}</span>
               </div>
             </div>
-
-            <div class="cap-banner ${cap.level}">
-              <div>
-                <div style="font-size:11px; color:var(--text-muted);">${esc(catCable.shortName)} (${catPower.ratedTotalKWText}) ile:</div>
-                <div class="cap-val mono">${esc(cap.label)}</div>
-              </div>
-              <div class="mono" style="text-align:right; font-size:11.5px; color:var(--text-muted);">
-                ${cap.compatible ? `Max: ${cap.maxAbsoluteTotal} adet` : `Min ${f.minSocketAmps}A`}
-              </div>
-            </div>
-
-            <div class="ccard-note">${esc(cap.compatible ? (f.notes || cap.reason) : cap.reason)}</div>
-
-            <div class="ccard-foot">
-              <span class="mono" style="font-size:11.5px; color:var(--text-dim);">${esc(f.colorTemp || '')} • PF ${f.pf}</span>
-              <div style="display:flex; gap:6px;">
-                <button class="btn btn-primary btn-sm" data-cat-addload="${f.id}">+ Hata Ekle</button>
-                <button class="btn btn-soft btn-sm" data-cat-addtruck="${f.id}">+ Kamyon</button>
-              </div>
-            </div>
+            <button class="btn btn-primary btn-sm" data-cat-addload="${f.id}">+ Ekle</button>
           </article>
         `;
       }).join('');
@@ -1357,6 +1337,14 @@
     document.getElementById('truckProjectHeading').textContent = state.projectName || 'Kamyon';
     document.getElementById('truckRentalSubtitle').textContent = state.rentalHouse || 'Kamyon Listesi & Birim Dağıtım';
 
+    const quickBox = document.getElementById('truckQuickAddCollapsible');
+    if (quickBox) quickBox.classList.toggle('open', ui.truckQuickAddOpen);
+    const toggleQuickBtn = document.getElementById('toggleTruckQuickAddBtn');
+    if (toggleQuickBtn) {
+      toggleQuickBtn.classList.toggle('active', ui.truckQuickAddOpen);
+      toggleQuickBtn.textContent = ui.truckQuickAddOpen ? 'Kapat' : '+ Ekle';
+    }
+
     const settingsCard = document.getElementById('truckSettingsCard');
     settingsCard.classList.toggle('open', ui.truckSettingsOpen);
 
@@ -1372,7 +1360,6 @@
     }
 
     const total = state.truckItems.length;
-    const countPending = state.truckItems.filter((i) => i.status === 'pending').length;
     const countOk = state.truckItems.filter((i) => i.status === 'ok').length;
     const countMissing = state.truckItems.filter((i) => i.status === 'missing').length;
     const countFaulty = state.truckItems.filter((i) => i.status === 'faulty').length;
@@ -1380,11 +1367,7 @@
     const pct = total > 0 ? Math.round((checked / total) * 100) : 0;
 
     document.getElementById('wrapProgressText').textContent = `%${pct} (${checked}/${total})`;
-    document.getElementById('wrapProgressSub').textContent = countMissing > 0 || countFaulty > 0
-      ? `Dikkat: ${countMissing} eksik, ${countFaulty} arızalı ekipman işaretlendi.`
-      : countPending === 0 && total > 0
-        ? 'Tüm kamyon sayımı eksiksiz tamamlandı.'
-        : 'Ekipmanları tek dokunuşla Tamam, Eksik veya Arıza olarak işaretleyin.';
+    document.getElementById('wrapProgressSub').textContent = `${checked}/${total}`;
 
     const bar = document.getElementById('wrapProgressBar');
     bar.style.width = `${pct}%`;
@@ -1392,15 +1375,15 @@
 
     const counters = document.getElementById('wrapStatusCounters');
     const statDefs = [
-      { key: 'all', num: total, lbl: 'Tümü', color: 'var(--text)' },
-      { key: 'ok', num: countOk, lbl: 'Tamam', color: 'var(--safe)' },
-      { key: 'missing', num: countMissing, lbl: 'Eksik', color: 'var(--caution)' },
-      { key: 'faulty', num: countFaulty, lbl: 'Arızalı', color: 'var(--danger)' }
+      { key: 'all', num: total, lbl: 'Tümü', cls: '' },
+      { key: 'ok', num: countOk, lbl: '✓', cls: 'st-c-ok' },
+      { key: 'missing', num: countMissing, lbl: 'Eksik', cls: 'st-c-miss' },
+      { key: 'faulty', num: countFaulty, lbl: 'Arıza', cls: 'st-c-fault' }
     ];
     counters.innerHTML = statDefs.map((s) => `
-      <button class="stat-tab ${ui.truckStatusFilter === s.key ? 'active' : ''}" data-tstat="${s.key}">
-        <span class="stat-tab-num mono" style="color:${s.color};">${s.num}</span>
-        <span class="stat-tab-lbl">${s.lbl}</span>
+      <button class="stat-pill-btn ${s.cls} ${ui.truckStatusFilter === s.key ? 'active' : ''}" data-tstat="${s.key}">
+        <span>${s.lbl}</span>
+        <span class="mono">${s.num}</span>
       </button>
     `).join('');
     counters.querySelectorAll('[data-tstat]').forEach((b) => {
@@ -1410,9 +1393,15 @@
       });
     });
 
+    const catCounts = { Tümü: total };
+    for (const c of TRUCK_CATEGORIES) if (c !== 'Tümü') catCounts[c] = 0;
+    for (const it of state.truckItems) {
+      catCounts[it.category] = (catCounts[it.category] || 0) + 1;
+    }
+
     const catPills = document.getElementById('truckCategoryPills');
     catPills.innerHTML = TRUCK_CATEGORIES.map((c) =>
-      `<button class="chip ${ui.truckCatFilter === c ? 'active' : ''}" data-tcat="${esc(c)}">${esc(c)}</button>`
+      `<button class="chip ${ui.truckCatFilter === c ? 'active' : ''}" data-tcat="${esc(c)}">${esc(c)} <span class="mono" style="opacity:0.65;">(${catCounts[c] || 0})</span></button>`
     ).join('');
     catPills.querySelectorAll('[data-tcat]').forEach((b) => {
       b.addEventListener('click', () => {
@@ -1432,56 +1421,88 @@
     const fMap = getFixtureMap();
     const listEl = document.getElementById('truckList');
     if (list.length === 0) {
-      listEl.innerHTML = `<div class="empty-box">Bu filtrede ekipman bulunmuyor.</div>`;
+      listEl.innerHTML = `<div class="empty-box" style="padding:18px 10px;">Bu filtrede ekipman bulunmuyor.</div>`;
       return;
     }
 
     listEl.innerHTML = list.map((item) => {
       const f = item.fixtureId ? fMap[item.fixtureId] : null;
       const outInfo = window.SetDistroUI?.getOutInfoForItem?.(item.name);
-      const outBadge = outInfo && outInfo.totalOut > 0
-        ? `<span class="tag tag-caution mono" title="Diğer birimlerde bekleyen">Dışarıda: ${outInfo.totalOut} (${esc(outInfo.summaryText)})</span>`
-        : '';
+      const isOpen = ui.expandedTruckItemId === item.id;
+      const checkGlyph = item.status === 'ok' ? '✓' : item.status === 'missing' ? '!' : item.status === 'faulty' ? '✕' : '';
+
+      const metaParts = [];
+      if (ui.truckCatFilter === 'Tümü') metaParts.push(`<span class="inv-cat-tiny">${esc(item.category)}</span>`);
+      if (item.status === 'missing') metaParts.push(`<span class="tag tag-caution mono">EKSİK</span>`);
+      if (item.status === 'faulty') metaParts.push(`<span class="tag tag-danger mono">ARIZA</span>`);
+      if (outInfo && outInfo.totalOut > 0) {
+        metaParts.push(`<span class="tag tag-caution mono">Dışarıda: ${outInfo.totalOut} (${esc(outInfo.summaryText)})</span>`);
+      }
 
       return `
-        <div class="inv-item st-${item.status}">
-          <div class="inv-item-main">
-            <div class="inv-item-left">
-              ${f ? `
-                <button class="lamp-thumb lamp-thumb-sm" data-preview-fix="${f.id}">
-                  <img src="${esc(getFixtureImage(f))}" alt="${esc(item.name)}" />
-                </button>
-              ` : ''}
-              <div style="min-width:0; flex:1;">
-                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                  <span class="tag">${esc(item.category)}</span>
-                  ${outBadge}
+        <div class="inv-item st-${item.status} ${isOpen ? 'expanded' : ''}">
+          <div class="inv-compact-row">
+            <button type="button" class="inv-check-btn" data-inv-quick-ok="${item.id}" aria-label="Tamam işaretle" title="Tek dokunuşla Tamam / Bekliyor">${checkGlyph}</button>
+            ${f ? `
+              <button type="button" class="lamp-thumb inv-thumb-mini" data-preview-fix="${f.id}" title="Görseli büyüt">
+                <img src="${esc(getFixtureImage(f))}" alt="${esc(item.name)}" />
+              </button>
+            ` : ''}
+            <div class="inv-compact-mid" data-inv-toggle="${item.id}">
+              <div class="inv-item-name">${esc(item.name)}</div>
+              ${(metaParts.length > 0 || item.note) ? `
+                <div class="inv-meta-line">
+                  ${metaParts.join(' ')}
+                  ${item.note ? `<span class="inv-note-inline">${esc(item.note)}</span>` : ''}
                 </div>
-                <div class="inv-item-name">${esc(item.name)}</div>
+              ` : ''}
+            </div>
+            <button type="button" class="inv-right-trigger" data-inv-toggle="${item.id}" title="Adet ve durum düzenle">
+              <span class="inv-qty-badge mono">${item.qty}</span>
+              <span class="inv-chevron mono">${isOpen ? '▴' : '▾'}</span>
+            </button>
+          </div>
+
+          ${isOpen ? `
+            <div class="inv-expand-panel">
+              <div class="inv-expand-controls">
+                <div class="stepper">
+                  <button type="button" data-inv-dec="${item.id}" aria-label="Azalt">−</button>
+                  <span class="mono">${item.qty}</span>
+                  <button type="button" data-inv-inc="${item.id}" aria-label="Artır">+</button>
+                </div>
+                <div class="st-group" style="flex:1;">
+                  <button type="button" class="st-pill ${item.status === 'ok' ? 'active-ok' : ''}" data-inv-st="${item.id}|ok">✓ Tamam</button>
+                  <button type="button" class="st-pill ${item.status === 'missing' ? 'active-missing' : ''}" data-inv-st="${item.id}|missing">Eksik</button>
+                  <button type="button" class="st-pill ${item.status === 'faulty' ? 'active-faulty' : ''}" data-inv-st="${item.id}|faulty">Arıza</button>
+                  <button type="button" class="st-pill inv-del-btn" data-inv-del="${item.id}" title="Listeden Sil">Sil</button>
+                </div>
               </div>
-            </div>
-            <div class="stepper">
-              <button data-inv-dec="${item.id}" aria-label="Azalt">−</button>
-              <span class="mono">${item.qty}</span>
-              <button data-inv-inc="${item.id}" aria-label="Artır">+</button>
-            </div>
-          </div>
-          <div class="inv-item-actions st-group">
-            <button class="st-pill ${item.status === 'ok' ? 'active-ok' : ''}" data-inv-st="${item.id}|ok">✓ Tamam</button>
-            <button class="st-pill ${item.status === 'missing' ? 'active-missing' : ''}" data-inv-st="${item.id}|missing">Eksik</button>
-            <button class="st-pill ${item.status === 'faulty' ? 'active-faulty' : ''}" data-inv-st="${item.id}|faulty">Arıza</button>
-            <button class="st-pill inv-del-btn" data-inv-del="${item.id}" title="Listeden Sil">✕</button>
-          </div>
-          ${(item.status === 'missing' || item.status === 'faulty' || item.note) ? `
-            <div style="margin-top:7px;">
-              <input class="input" style="min-height:33px; height:33px; font-size:12px;" data-inv-note="${item.id}" value="${esc(item.note)}"
-                placeholder="${item.status === 'faulty' ? 'Arıza detayı yazın (ör. Balast soketi gevşek / lamba patlak)...' : 'Eksik / konum notu yazın...'}" />
+              <input class="input" style="min-height:32px; height:32px; font-size:12px; margin-top:7px;" data-inv-note="${item.id}" value="${esc(item.note)}"
+                placeholder="${item.status === 'faulty' ? 'Arıza detayı yazın...' : 'Eksik / konum notu yazın...'}" />
             </div>
           ` : ''}
         </div>
       `;
     }).join('');
 
+    listEl.querySelectorAll('[data-inv-quick-ok]').forEach((b) => {
+      b.addEventListener('click', () => {
+        const it = state.truckItems.find((x) => x.id === b.dataset.invQuickOk);
+        if (!it) return;
+        it.status = it.status === 'ok' ? 'pending' : 'ok';
+        saveState();
+        renderLiveBadges();
+        renderTruckTab();
+      });
+    });
+    listEl.querySelectorAll('[data-inv-toggle]').forEach((el) => {
+      el.addEventListener('click', () => {
+        const id = el.dataset.invToggle;
+        ui.expandedTruckItemId = ui.expandedTruckItemId === id ? null : id;
+        renderTruckTab();
+      });
+    });
     listEl.querySelectorAll('[data-preview-fix]').forEach((b) =>
       b.addEventListener('click', () => openLampLightbox(b.dataset.previewFix))
     );
@@ -1528,6 +1549,7 @@
     listEl.querySelectorAll('[data-inv-del]').forEach((b) => {
       b.addEventListener('click', () => {
         state.truckItems = state.truckItems.filter((x) => x.id !== b.dataset.invDel);
+        if (ui.expandedTruckItemId === b.dataset.invDel) ui.expandedTruckItemId = null;
         saveState();
         renderLiveBadges();
         renderTruckTab();
@@ -1599,20 +1621,19 @@
 
   function renderExpendablesTab() {
     populateExpQuickHelpers();
+    const expCard = document.getElementById('expQuickAddCard');
+    if (expCard) expCard.classList.toggle('open', ui.expQuickAddOpen);
+    const expToggleBtn = document.getElementById('openAddExpBtn');
+    if (expToggleBtn) {
+      expToggleBtn.classList.toggle('active', ui.expQuickAddOpen);
+      expToggleBtn.textContent = ui.expQuickAddOpen ? 'Kapat' : '+ Sarf Ekle';
+    }
+
     const lowItems = state.expendables.filter((e) => Number(e.qty) <= Number(e.minQty));
     const banner = document.getElementById('lowStockBanner');
     if (lowItems.length > 0) {
       banner.style.display = 'block';
-      banner.innerHTML = `
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-          <div>
-            <span class="status-pill">SİPARİŞ GEREKLİ • ${lowItems.length} KALEM</span>
-            <div style="font-size:13px; color:var(--text-muted); margin-top:8px;">
-              ${lowItems.map((x) => `<strong>${esc(x.name)}</strong> (${x.qty} ${esc(x.unit)})`).join(' • ')}
-            </div>
-          </div>
-        </div>
-      `;
+      banner.innerHTML = `<span class="tag tag-caution mono">⚠ SİPARİŞ (${lowItems.length}):</span> ${lowItems.map((x) => `<strong>${esc(x.name)}</strong> (${x.qty} ${esc(x.unit)})`).join(' · ')}`;
     } else {
       banner.style.display = 'none';
     }
@@ -1631,7 +1652,7 @@
     const list = state.expendables.filter((e) => ui.expCatFilter === 'Tümü' || e.category === ui.expCatFilter);
     const listEl = document.getElementById('expendablesList');
     if (list.length === 0) {
-      listEl.innerHTML = `<div class="empty-box">Bu kategoride sarf malzeme yok.</div>`;
+      listEl.innerHTML = `<div class="empty-box" style="padding:18px 10px;">Bu kategoride sarf malzeme yok.</div>`;
       return;
     }
 
@@ -1639,19 +1660,20 @@
       const isLow = Number(e.qty) <= Number(e.minQty);
       return `
         <div class="exp-item ${isLow ? 'low-stock' : ''}">
-          <div style="flex:1; min-width:170px;">
-            <span class="tag">${esc(e.category)}</span>
-            ${isLow ? `<span class="tag tag-danger" style="margin-left:4px;">KRİTİK STOK</span>` : ''}
-            <div style="font-weight:700; margin-top:4px;">${esc(e.name)}</div>
-            <div class="mono" style="font-size:11.5px; color:var(--text-muted);">Alt sınır: ${e.minQty} ${esc(e.unit)}</div>
-          </div>
-          <div style="display:flex; align-items:center; gap:7px;">
-            <div class="stepper">
-              <button data-exp-dec="${e.id}">−</button>
-              <span class="mono" style="min-width:60px; font-size:12px;">${e.qty} ${esc(e.unit)}</span>
-              <button data-exp-inc="${e.id}">+</button>
+          <div class="exp-item-left">
+            <div class="exp-item-name">${esc(e.name)}</div>
+            <div class="exp-item-sub mono">
+              <span>${esc(e.category)}</span>
+              ${isLow ? `<span class="tag tag-danger">• KRİTİK (Min ${e.minQty})</span>` : `<span style="opacity:0.65;">• Min ${e.minQty}</span>`}
             </div>
-            <button class="st-pill" data-exp-del="${e.id}" title="Sil">✕</button>
+          </div>
+          <div class="exp-item-right">
+            <div class="stepper">
+              <button data-exp-dec="${e.id}" aria-label="Azalt">−</button>
+              <span class="mono" style="min-width:54px; font-size:11.5px;">${e.qty} ${esc(e.unit)}</span>
+              <button data-exp-inc="${e.id}" aria-label="Artır">+</button>
+            </div>
+            <button class="st-pill inv-del-btn" data-exp-del="${e.id}" title="Sil">✕</button>
           </div>
         </div>
       `;
@@ -2095,6 +2117,16 @@
       });
     }
 
+    const toggleQuickAddBtn = document.getElementById('toggleTruckQuickAddBtn');
+    if (toggleQuickAddBtn) {
+      toggleQuickAddBtn.addEventListener('click', () => {
+        ui.truckQuickAddOpen = !ui.truckQuickAddOpen;
+        if (!ui.truckQuickAddOpen) ui.truckSettingsOpen = false;
+        renderTruckTab();
+        if (ui.truckQuickAddOpen && quickInp) quickInp.focus();
+      });
+    }
+
     document.getElementById('toggleTruckSettingsBtn').addEventListener('click', () => {
       ui.truckSettingsOpen = !ui.truckSettingsOpen;
       renderTruckTab();
@@ -2218,7 +2250,16 @@
       populateTruckPresetSelect();
       openModal('addTruckItemModal');
     });
-    document.getElementById('openAddExpBtn').addEventListener('click', () => openModal('addExpModal'));
+    document.getElementById('openAddExpBtn').addEventListener('click', () => {
+      ui.expQuickAddOpen = !ui.expQuickAddOpen;
+      renderExpendablesTab();
+      if (ui.expQuickAddOpen) {
+        const inp = document.getElementById('expQuickNameInput');
+        if (inp) inp.focus();
+      }
+    });
+    const innerExpBtn = document.getElementById('openExpModalInnerBtn');
+    if (innerExpBtn) innerExpBtn.addEventListener('click', () => openModal('addExpModal'));
 
     document.querySelectorAll('[data-close-modal]').forEach((btn) => {
       btn.addEventListener('click', () => closeModal(btn.dataset.closeModal));
@@ -2329,7 +2370,7 @@
     setTab(state.activeTab);
 
     if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
-      navigator.serviceWorker.register('./sw.js?v=16').then((reg) => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=17').then((reg) => reg.update()).catch(() => {});
     }
   });
 })();
