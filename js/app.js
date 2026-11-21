@@ -12,6 +12,7 @@
   const BRANDS = ['Tümü', ...NAMED_BRANDS, 'Diğer'];
   const FIXTURE_TYPES = ['Tümü', 'HMI', 'LED COB', 'LED Panel', 'LED Tüp', 'Tungsten'];
   const TRUCK_CATEGORIES = ['Tümü', 'Lamba', 'Ayak', 'Aksesuar', 'Kablo + Pano', 'Grip & Çerçeve'];
+  const TRUCK_CAT_LABELS = { 'Kablo + Pano': 'Kablo', 'Grip & Çerçeve': 'Grip' };
   const EXP_CATEGORIES = ['Tümü', 'Bant', 'Difüzyon', 'Renk Jelatini', 'Kontrol', 'Aksesuar', 'Güvenlik'];
 
   function uid(prefix = 'id') {
@@ -1508,9 +1509,7 @@
 
     const wrapTxt = document.getElementById('wrapProgressText');
     if (wrapTxt) {
-      wrapTxt.textContent = ui.truckMode === 'issues'
-        ? `${countIssues} eksik / arıza`
-        : `Sayım: ${countOk}/${total} tamam`;
+      wrapTxt.textContent = `✓ ${countOk}/${total}`;
     }
     document.getElementById('wrapProgressSub').textContent = `${checked}/${total}`;
 
@@ -1519,31 +1518,26 @@
     bar.className = `bar-fill ${countIssues > 0 ? 'CAUTION' : 'SAFE'}`;
 
     const counters = document.getElementById('wrapStatusCounters');
-    if (ui.truckMode === 'issues') {
-      counters.innerHTML = `<button type="button" class="stat-pill-btn active" data-tstat-all="1">Tümünü Göster</button>`;
-      counters.querySelector('[data-tstat-all]')?.addEventListener('click', () => setTruckMode('all'));
-    } else {
-      counters.innerHTML = `
-        <button type="button" class="stat-pill-btn ${ui.truckStatusFilter === 'pending' ? 'active' : ''}" data-tstat-pend="1">
-          Sadece Sayılmayan (${countPending})
-        </button>
-      `;
-      counters.querySelector('[data-tstat-pend]')?.addEventListener('click', () => {
-        ui.truckStatusFilter = ui.truckStatusFilter === 'pending' ? 'all' : 'pending';
+    const issuePillHtml = (countIssues > 0 || ui.truckStatusFilter === 'issues')
+      ? `<button type="button" class="stat-pill-btn st-c-miss ${ui.truckStatusFilter === 'issues' ? 'active' : ''}" data-tstat="issues">Eksik/Arıza (${countIssues})</button>`
+      : '';
+    counters.innerHTML = `
+      <button type="button" class="stat-pill-btn ${ui.truckStatusFilter === 'pending' ? 'active' : ''}" data-tstat="pending">Sayılmayan (${countPending})</button>
+      ${issuePillHtml}
+    `;
+    counters.querySelectorAll('[data-tstat]').forEach((b) => {
+      b.addEventListener('click', () => {
+        const key = b.dataset.tstat;
+        ui.truckStatusFilter = ui.truckStatusFilter === key ? 'all' : key;
         renderTruckTab();
       });
-    }
-
-    const catCounts = { Tümü: total };
-    for (const c of TRUCK_CATEGORIES) if (c !== 'Tümü') catCounts[c] = 0;
-    for (const it of state.truckItems) {
-      catCounts[it.category] = (catCounts[it.category] || 0) + 1;
-    }
+    });
 
     const catPills = document.getElementById('truckCategoryPills');
-    catPills.innerHTML = TRUCK_CATEGORIES.map((c) =>
-      `<button class="chip ${ui.truckCatFilter === c ? 'active' : ''}" data-tcat="${esc(c)}">${esc(c)} <span class="mono" style="opacity:0.65;">(${catCounts[c] || 0})</span></button>`
-    ).join('');
+    catPills.innerHTML = TRUCK_CATEGORIES.map((c) => {
+      const lbl = TRUCK_CAT_LABELS[c] || c;
+      return `<button class="chip ${ui.truckCatFilter === c ? 'active' : ''}" data-tcat="${esc(c)}">${esc(lbl)}</button>`;
+    }).join('');
     catPills.querySelectorAll('[data-tcat]').forEach((b) => {
       b.addEventListener('click', () => {
         ui.truckCatFilter = b.dataset.tcat;
@@ -1556,17 +1550,16 @@
       const outQty = outInfoById.get(item.id)?.totalOut || 0;
       let sOk = true;
       if (ui.truckStatusFilter === 'out') sOk = outQty > 0;
-      else if (ui.truckStatusFilter === 'issues' || ui.truckMode === 'issues') sOk = item.status === 'missing' || item.status === 'faulty';
+      else if (ui.truckStatusFilter === 'issues') sOk = item.status === 'missing' || item.status === 'faulty';
       else if (ui.truckStatusFilter !== 'all') sOk = item.status === ui.truckStatusFilter;
       const cOk = ui.truckCatFilter === 'Tümü' || item.category === ui.truckCatFilter;
       const qOk = !q || `${item.name} ${item.category} ${item.note || ''}`.toLowerCase().includes(q);
       return sOk && cOk && qOk;
     });
 
-    const fMap = getFixtureMap();
     const listEl = document.getElementById('truckList');
     if (list.length === 0) {
-      const emptyMsg = ui.truckMode === 'issues'
+      const emptyMsg = ui.truckStatusFilter === 'issues'
         ? 'Harika — eksik veya arızalı malzeme yok.'
         : 'Bu filtrede ekipman bulunmuyor.';
       listEl.innerHTML = `<div class="empty-box" style="padding:18px 10px;">${emptyMsg}</div>`;
@@ -1574,8 +1567,6 @@
     }
 
     listEl.innerHTML = list.map((item) => {
-      const f = item.fixtureId ? fMap[item.fixtureId] : null;
-      const catMeta = getTruckCategoryMeta(item.category);
       const outInfo = outInfoById.get(item.id);
       const outQty = outInfo?.totalOut || 0;
       const inTruckQty = Math.max(0, Number(item.qty) - outQty);
@@ -1586,26 +1577,18 @@
       if (item.status === 'missing') metaParts.push(`<span class="tag tag-caution mono">⚠️ EKSİK</span>`);
       if (item.status === 'faulty') metaParts.push(`<span class="tag tag-danger mono">🔧 ARIZALI</span>`);
       if (outQty > 0) {
-        metaParts.push(`<span class="inv-out-pill mono">📤 ${esc(outInfo.summaryText)} · Kalan ${inTruckQty}</span>`);
+        metaParts.push(`<span class="inv-out-pill mono">📤 ${esc(outInfo.summaryText)} (Kamyonda ${inTruckQty} kaldı)</span>`);
       }
-
-      const qtyBadgeHtml = outQty > 0
-        ? `<span class="inv-qty-badge has-out mono" title="Kamyonda kalan / Toplam">${inTruckQty}/${item.qty}</span>`
-        : `<span class="inv-qty-badge mono">${item.qty}</span>`;
 
       return `
         <div class="inv-item st-${item.status} ${outQty > 0 ? 'has-out' : ''} ${isOpen ? 'expanded' : ''}">
           <div class="inv-compact-row">
             <button type="button" class="inv-check-btn" data-inv-quick-ok="${item.id}" aria-label="Tamam işaretle" title="Tek dokunuşla Tamam / Bekliyor">${checkGlyph}</button>
-            ${f ? `
-              <button type="button" class="lamp-thumb inv-thumb-mini" data-preview-fix="${f.id}" title="Görseli büyüt">
-                <img src="${esc(getFixtureImage(f))}" alt="${esc(item.name)}" />
-              </button>
-            ` : `
-              <div class="inv-icon-tile ${catMeta.cls}" aria-hidden="true">${catMeta.svg}</div>
-            `}
             <div class="inv-compact-mid" data-inv-toggle="${item.id}">
-              <div class="inv-item-name">${esc(item.name)}</div>
+              <div class="inv-item-line">
+                <span class="inv-qty-prefix mono">${item.qty} ×</span>
+                <span class="inv-item-title">${esc(item.name)}</span>
+              </div>
               ${(metaParts.length > 0 || item.note) ? `
                 <div class="inv-meta-line">
                   ${metaParts.join(' ')}
@@ -1613,11 +1596,7 @@
                 </div>
               ` : ''}
             </div>
-            <button type="button" class="inv-qty-trigger" data-inv-toggle="${item.id}" title="Düzenle">
-              ${qtyBadgeHtml}
-            </button>
-            <button type="button" class="inv-lend-btn" data-inv-lend="${esc(item.name)}" title="Başka birime ver">Ver</button>
-            <button type="button" class="inv-chev-btn" data-inv-toggle="${item.id}" aria-label="Detay">
+            <button type="button" class="inv-chev-btn" data-inv-toggle="${item.id}" aria-label="Düzenle">
               <span class="inv-chevron mono">${isOpen ? '▴' : '▾'}</span>
             </button>
           </div>
@@ -1633,7 +1612,8 @@
                 <div class="st-group" style="flex:1;">
                   <button type="button" class="st-pill ${item.status === 'ok' ? 'active-ok' : ''}" data-inv-st="${item.id}|ok">✓ Tamam</button>
                   <button type="button" class="st-pill ${item.status === 'missing' ? 'active-missing' : ''}" data-inv-st="${item.id}|missing">⚠️ Eksik</button>
-                  <button type="button" class="st-pill ${item.status === 'faulty' ? 'active-faulty' : ''}" data-inv-st="${item.id}|faulty">🔧 Arızalı</button>
+                  <button type="button" class="st-pill ${item.status === 'faulty' ? 'active-faulty' : ''}" data-inv-st="${item.id}|faulty">🔧 Arıza</button>
+                  <button type="button" class="st-pill st-pill-lend" data-inv-lend="${esc(item.name)}" title="Başka ekibe ver">📤 Ekibe Ver</button>
                   <button type="button" class="st-pill inv-del-btn" data-inv-del="${item.id}" title="Listeden Sil">Sil</button>
                 </div>
               </div>
@@ -2536,7 +2516,7 @@
     setTab(state.activeTab);
 
     if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
-      navigator.serviceWorker.register('./sw.js?v=20').then((reg) => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=21').then((reg) => reg.update()).catch(() => {});
     }
   });
 })();

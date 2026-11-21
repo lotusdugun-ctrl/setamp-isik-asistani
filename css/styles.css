@@ -1439,6 +1439,34 @@ body.theme-light .section-card {
   text-overflow: ellipsis;
 }
 
+.truck-page-header {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.truck-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+.truck-header-tools {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.truck-main-seg {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.truck-main-seg .seg-btn {
+  text-align: center;
+  padding: 0 8px;
+}
+
 .truck-top-bar {
   display: flex;
   align-items: center;
@@ -1471,13 +1499,22 @@ body.theme-light .section-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: 5px;
   margin-bottom: 6px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
+.truck-wrap-left {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.truck-wrap-left::-webkit-scrollbar { display: none; }
 .truck-wrap-inline {
   display: flex;
-  gap: 5px;
+  gap: 4px;
   align-items: center;
   flex-shrink: 0;
 }
@@ -1691,6 +1728,32 @@ body.theme-light .section-card {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.inv-item-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  line-height: 1.32;
+}
+.inv-qty-prefix {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.inv-item-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: normal;
+  word-break: break-word;
+}
+.inv-item.st-ok .inv-item-title {
+  color: var(--text-muted);
+}
+.inv-item.st-ok .inv-qty-prefix {
+  color: var(--safe);
 }
 
 .inv-meta-line {
@@ -2943,15 +3006,29 @@ body.night-red .lightbox-img {
   .truck-main-seg {
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .truck-main-seg .seg-btn {
-    height: 30px;
-    padding: 0 5px;
-    font-size: 10.5px;
+    height: 32px;
+    padding: 0 6px;
+    font-size: 12px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  #truckCategoryPills .chip {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  .truck-wrap-bar .stat-pill-btn {
+    height: 25px;
+    padding: 0 7px;
+    font-size: 10.5px;
+  }
+  .truck-wrap-inline .btn-xs {
+    height: 25px;
+    padding: 0 7px;
+    font-size: 11px;
   }
   .truck-list-card {
     padding: 8px 10px 4px;

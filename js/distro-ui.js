@@ -625,12 +625,8 @@
                 </div>
               </div>
               <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
-                <div class="stepper">
-                  <button type="button" data-ln-dec="${l.id}">−</button>
-                  <span class="mono">${l.qty}</span>
-                  <button type="button" data-ln-inc="${l.id}">+</button>
-                </div>
-                <button type="button" class="st-pill active-ok" data-ln-ret="${l.id}">✓ Geri Geldi</button>
+                ${l.qty > 1 ? `<button type="button" class="btn btn-soft btn-xs mono" data-ln-dec="${l.id}" title="1 adet azalt">−1</button>` : ''}
+                <button type="button" class="st-pill active-ok" data-ln-ret="${l.id}">✓ Geldi</button>
               </div>
             </div>
           `;

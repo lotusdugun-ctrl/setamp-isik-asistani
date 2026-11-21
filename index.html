@@ -7,7 +7,7 @@
   <title>SetAmp — Işık Ekibi</title>
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
-  <link rel="stylesheet" href="./css/styles.css?v=20" />
+  <link rel="stylesheet" href="./css/styles.css?v=21" />
 </head>
 <body>
   <div class="app-shell">
@@ -284,33 +284,34 @@
       </section>
 
       <!-- =========================================================
-           TAB 3: KAMYON & DIŞARIDAKİLER (TEK BAKIŞTA SADE ARAYÜZ)
+           TAB 3: KAMYON LİSTESİ & BAŞKA EKİBE VERİLEN (KAĞIT LİSTE NETLİĞİ)
            ========================================================= -->
       <section id="tab-truck" class="tab-panel">
         <div class="page-header truck-page-header">
-          <div>
-            <h1 class="page-title" id="truckProjectHeading">Kamyon</h1>
-            <p class="page-sub" id="truckRentalSubtitle">Kamyon Envanteri &amp; Başka Birimler</p>
-          </div>
-          <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
-            <div class="segmented truck-main-seg">
-              <button class="seg-btn active" data-truck-mode="all">📦 Kamyon (<span id="truckCountTab" class="mono">0</span>)</button>
-              <button class="seg-btn" data-truck-mode="distro">📤 Dışarıda (<span id="distroSubtabCount" class="mono">0</span>)</button>
-              <button class="seg-btn" data-truck-mode="issues">⚠️ Eksik/Arıza (<span id="truckIssueTabCount" class="mono">0</span>)</button>
+          <div class="truck-header-top">
+            <div style="min-width:0;">
+              <h1 class="page-title" id="truckProjectHeading">Kamyon</h1>
+              <p class="page-sub" id="truckRentalSubtitle">Kamyon Listesi &amp; Başka Ekibe Verilenler</p>
             </div>
-            <button id="exportTruckReportBtn" class="btn btn-soft btn-sm">Rapor</button>
+            <div class="truck-header-tools">
+              <button type="button" id="openPasteListModalBtn" class="btn btn-soft btn-xs">📋 Yapıştır</button>
+              <button type="button" id="toggleTruckQuickAddBtn" class="btn btn-primary btn-xs">+ Ekle</button>
+              <button id="exportTruckReportBtn" class="btn btn-soft btn-xs">Rapor</button>
+            </div>
           </div>
+          <div class="segmented truck-main-seg">
+            <button class="seg-btn active" data-truck-mode="all">📦 Kamyon Listesi (<span id="truckCountTab" class="mono">0</span>)</button>
+            <button class="seg-btn" data-truck-mode="distro">📤 Başka Ekibe Verilen (<span id="distroSubtabCount" class="mono">0</span>)</button>
+          </div>
+          <span id="truckIssueTabCount" style="display:none;">0</span>
         </div>
 
         <div id="truckLocationSummary" style="display:none;"></div>
 
-        <!-- ALT SEKME 1: KAMYON LİSTESİ & EKSİK/ARIZA -->
+        <!-- ALT SEKME 1: KAMYON LİSTESİ -->
         <div id="truck-subtab-inventory">
-          <!-- Arama + + Ekle + Yapıştır -->
           <div class="truck-top-bar">
             <input id="truckSearch" class="input" type="search" placeholder="Malzeme ara (XT52, 32A, C-Stand)..." />
-            <button type="button" id="toggleTruckQuickAddBtn" class="btn btn-primary btn-sm">+ Ekle</button>
-            <button type="button" id="openPasteListModalBtn" class="btn btn-soft btn-sm">📋 Yapıştır</button>
           </div>
 
           <!-- Açılır Hızlı Ekleme & Araçlar (Varsayılan Gizli) -->
@@ -350,17 +351,17 @@
             </div>
           </div>
 
-          <!-- Sade Kategori Sekmeleri + Tek Satır Sayım Özeti + Liste -->
+          <!-- Sade Kategori Sekmeleri + Tek Satır Paydos Çubuğu + Kağıt Liste -->
           <div class="section-card truck-list-card">
             <div id="truckCategoryPills" class="chip-row" style="margin-bottom:6px;"></div>
 
             <div class="truck-wrap-bar">
-              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; min-width:0;">
-                <span id="wrapProgressText" class="tag mono" style="font-size:11px;">Sayım: 0/0</span>
+              <div class="truck-wrap-left">
+                <span id="wrapProgressText" class="tag mono" style="font-size:11px; flex-shrink:0;">✓ 0/0</span>
                 <div id="wrapStatusCounters" class="stat-tabs-compact"></div>
               </div>
               <div class="truck-wrap-inline">
-                <button type="button" id="markAllOkBtn" class="btn btn-safe btn-xs" title="Bekleyenleri Kamyonda Tamamla">Tümünü ✓</button>
+                <button type="button" id="markAllOkBtn" class="btn btn-safe btn-xs" title="Bekleyenleri Tamamla">Tümünü ✓</button>
                 <button type="button" id="resetWrapBtn" class="btn btn-soft btn-xs" title="Paydos Sayımını Sıfırla">Sıfırla</button>
               </div>
             </div>
@@ -374,39 +375,44 @@
           </div>
         </div>
 
-        <!-- ALT SEKME 2: DIŞARIDA (KİMDE NE VAR?) -->
+        <!-- ALT SEKME 2: BAŞKA EKİBE VERİLEN (3 BASİT ADIM + KİMDE NE VAR?) -->
         <div id="truck-subtab-distro" style="display:none;">
           <div class="section-card quick-list-card" style="margin-bottom:8px;">
             <form id="distroAddForm" class="distro-simple-form">
-              <!-- Tek Kompakt Malzeme Verme Satırı -->
-              <div class="distro-fast-grid" style="position:relative;">
-                <select id="distroDeptSelect" class="select" aria-label="Birim Seç"></select>
-                <input id="distroCustomItemInput" class="input" autocomplete="off" required placeholder="Malzeme seç veya yaz..." />
+              <select id="distroDeptSelect" class="select" aria-label="Birim Seç" style="display:none;"></select>
+
+              <!-- 1. Hangi Ekibe? -->
+              <div class="distro-step-head">
+                <span class="distro-step-label">1. HANGİ EKİBE?</span>
+                <button type="button" id="distroToggleNewDeptBtn" class="distro-note-toggle">+ Yeni Ekip</button>
+              </div>
+              <div id="distroDeptQuickStrip" class="quick-strip-scroll" aria-label="Hızlı ekip seç"></div>
+              <div id="distroNewDeptWrap" style="display:none; gap:6px;">
+                <input id="distroNewDeptInput" class="input" placeholder="Yeni ekip adı (ör. VFX, 2. Ünite)..." />
+                <button type="button" id="distroSaveNewDeptBtn" class="btn btn-primary btn-sm" style="height:36px;">Ekle</button>
+              </div>
+
+              <!-- 2. Hangi Malzeme? -->
+              <div class="distro-step-head">
+                <span class="distro-step-label">2. HANGİ MALZEME?</span>
+              </div>
+              <div id="distroQuickItemPicker" class="quick-strip-scroll" aria-label="Hızlı malzeme seç"></div>
+
+              <!-- 3. Adet & Ver -->
+              <div class="distro-action-row" style="position:relative;">
+                <input id="distroCustomItemInput" class="input" autocomplete="off" required placeholder="Malzeme adı yaz veya seç..." />
                 <div id="distroItemSuggest" class="pro-suggest-menu" style="display:none;"></div>
                 <div class="stepper distro-qty-stepper">
                   <button type="button" id="distroQtyDec" aria-label="Azalt">−</button>
                   <span id="distroQtyVal" class="mono">1</span>
                   <button type="button" id="distroQtyInc" aria-label="Artır">+</button>
                 </div>
-                <button type="submit" class="btn btn-primary" style="height:36px; padding:0 12px;">📤 Ver</button>
-              </div>
-
-              <!-- Hızlı Birim ve Malzeme Çipleri -->
-              <div id="distroDeptQuickStrip" class="quick-strip-scroll" aria-label="Hızlı birim seç"></div>
-              <div id="distroQuickItemPicker" class="quick-strip-scroll" aria-label="Hızlı malzeme seç"></div>
-
-              <!-- Gizli yeni birim ekleme satırı -->
-              <div id="distroNewDeptWrap" style="display:none; gap:6px;">
-                <input id="distroNewDeptInput" class="input" placeholder="Yeni birim adı (ör. VFX, 2. Ünite)..." />
-                <button type="button" id="distroSaveNewDeptBtn" class="btn btn-primary btn-sm" style="height:36px;">Ekle</button>
+                <button type="submit" class="btn btn-primary" style="height:37px; padding:0 14px;">📤 Ver</button>
               </div>
 
               <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
                 <div id="distroLiveStockHint" class="distro-stock-hint mono">Kamyon stoğu kontrol ediliyor...</div>
-                <div style="display:flex; gap:10px; align-items:center;">
-                  <button type="button" id="distroToggleNewDeptBtn" class="distro-note-toggle">+ Yeni Birim</button>
-                  <button type="button" id="distroToggleNoteBtn" class="distro-note-toggle">+ Not</button>
-                </div>
+                <button type="button" id="distroToggleNoteBtn" class="distro-note-toggle">+ Not</button>
               </div>
               <div id="distroNoteWrap" style="display:none;">
                 <input id="distroNoteInput" class="input" placeholder="Kişi veya yer notu (ör. Ahmet - Kamera arabası)..." />
@@ -856,13 +862,13 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script src="./js/data-cables.js?v=20"></script>
-  <script src="./js/data-fixtures.js?v=20"></script>
-  <script src="./js/data-templates.js?v=20"></script>
-  <script src="./js/calc.js?v=20"></script>
-  <script src="./js/solar.js?v=20"></script>
-  <script src="./js/solar-ui.js?v=20"></script>
-  <script src="./js/distro-ui.js?v=20"></script>
-  <script src="./js/app.js?v=20"></script>
+  <script src="./js/data-cables.js?v=21"></script>
+  <script src="./js/data-fixtures.js?v=21"></script>
+  <script src="./js/data-templates.js?v=21"></script>
+  <script src="./js/calc.js?v=21"></script>
+  <script src="./js/solar.js?v=21"></script>
+  <script src="./js/solar-ui.js?v=21"></script>
+  <script src="./js/distro-ui.js?v=21"></script>
+  <script src="./js/app.js?v=21"></script>
 </body>
 </html>
