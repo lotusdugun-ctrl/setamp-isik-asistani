@@ -578,28 +578,11 @@
           <div class="bar-fill ${ev.status}" style="width:${barWidth}%;"></div>
           <div class="bar-mark-80" style="left:${Math.round((cable.safeRatio || 0.8) * 100)}%;" title="Sürekli güvenli sınır"></div>
         </div>
-        <div class="gauge-scale mono">
-          <span>0</span>
-          <span>Güvenli (%${Math.round((cable.safeRatio || 0.8) * 100)}): ${cp.safeAmpsPerPhase}A • ${cp.safeTotalKWText}</span>
-          <span>Max (%100): ${cable.ratedAmps}A</span>
-        </div>
       </div>
 
-      <div class="hero-strip mono">
-        <div class="strip-item">
-          <span class="strip-k">Seçili Hat (${esc(cable.connector)})</span>
-          <span class="strip-v">${esc(cable.shortName)} • ${cp.ratedTotalKWText}</span>
-        </div>
-        <div class="strip-item">
-          <span class="strip-k">Kalan Güvenli Kapasite</span>
-          <span class="strip-v" style="color:${totalRemSafeA > 0 ? 'var(--safe)' : 'var(--danger)'};">
-            ${totalRemSafeA > 0 ? `+${totalRemSafeA.toFixed(1)}A · +${Calc.formatKW(totalRemSafeW)}` : 'Dolu (0A · 0 kW)'}
-          </span>
-        </div>
-        <div class="strip-item">
-          <span class="strip-k">Hat Sonu Voltaj (${state.cableLength}m)</span>
-          <span class="strip-v" style="color:${dropColor};">${ev.deliveredVoltage}V (−%${ev.voltageDropPercent})</span>
-        </div>
+      <div class="hero-meta-bar mono">
+        <span>Boşluk: <strong style="color:${totalRemSafeA > 0 ? 'var(--safe)' : 'var(--danger)'};">${totalRemSafeA > 0 ? `+${totalRemSafeA.toFixed(1)}A · +${Calc.formatKW(totalRemSafeW)}` : 'Dolu (0A)'}</strong></span>
+        <span>${state.cableLength}m Sonu: <strong style="color:${dropColor};">${ev.deliveredVoltage}V (−%${ev.voltageDropPercent})</strong></span>
       </div>
 
       <div id="cableSettingsPanel" class="cable-settings-panel ${ui.cableSettingsOpen ? 'open' : ''}">
@@ -1494,44 +1477,14 @@
     }
 
     const total = state.truckItems.length;
-    const countPending = state.truckItems.filter((i) => i.status === 'pending').length;
-    const countOk = state.truckItems.filter((i) => i.status === 'ok').length;
     const countMissing = state.truckItems.filter((i) => i.status === 'missing').length;
     const countFaulty = state.truckItems.filter((i) => i.status === 'faulty').length;
     const countIssues = countMissing + countFaulty;
-    const checked = countOk + countMissing + countFaulty;
-    const pct = total > 0 ? Math.round((checked / total) * 100) : 0;
 
     const tcEl = document.getElementById('truckCountTab');
     if (tcEl) tcEl.textContent = total;
     const tiEl = document.getElementById('truckIssueTabCount');
     if (tiEl) tiEl.textContent = countIssues;
-
-    const wrapTxt = document.getElementById('wrapProgressText');
-    if (wrapTxt) {
-      wrapTxt.textContent = `✓ ${countOk}/${total}`;
-    }
-    document.getElementById('wrapProgressSub').textContent = `${checked}/${total}`;
-
-    const bar = document.getElementById('wrapProgressBar');
-    bar.style.width = `${pct}%`;
-    bar.className = `bar-fill ${countIssues > 0 ? 'CAUTION' : 'SAFE'}`;
-
-    const counters = document.getElementById('wrapStatusCounters');
-    const issuePillHtml = (countIssues > 0 || ui.truckStatusFilter === 'issues')
-      ? `<button type="button" class="stat-pill-btn st-c-miss ${ui.truckStatusFilter === 'issues' ? 'active' : ''}" data-tstat="issues">Eksik/Arıza (${countIssues})</button>`
-      : '';
-    counters.innerHTML = `
-      <button type="button" class="stat-pill-btn ${ui.truckStatusFilter === 'pending' ? 'active' : ''}" data-tstat="pending">Sayılmayan (${countPending})</button>
-      ${issuePillHtml}
-    `;
-    counters.querySelectorAll('[data-tstat]').forEach((b) => {
-      b.addEventListener('click', () => {
-        const key = b.dataset.tstat;
-        ui.truckStatusFilter = ui.truckStatusFilter === key ? 'all' : key;
-        renderTruckTab();
-      });
-    });
 
     const catPills = document.getElementById('truckCategoryPills');
     catPills.innerHTML = TRUCK_CATEGORIES.map((c) => {
@@ -1547,31 +1500,33 @@
 
     const q = ui.truckSearch.trim().toLowerCase();
     const list = state.truckItems.filter((item) => {
-      const outQty = outInfoById.get(item.id)?.totalOut || 0;
-      let sOk = true;
-      if (ui.truckStatusFilter === 'out') sOk = outQty > 0;
-      else if (ui.truckStatusFilter === 'issues') sOk = item.status === 'missing' || item.status === 'faulty';
-      else if (ui.truckStatusFilter !== 'all') sOk = item.status === ui.truckStatusFilter;
       const cOk = ui.truckCatFilter === 'Tümü' || item.category === ui.truckCatFilter;
       const qOk = !q || `${item.name} ${item.category} ${item.note || ''}`.toLowerCase().includes(q);
-      return sOk && cOk && qOk;
+      return cOk && qOk;
     });
 
     const listEl = document.getElementById('truckList');
     if (list.length === 0) {
-      const emptyMsg = ui.truckStatusFilter === 'issues'
-        ? 'Harika — eksik veya arızalı malzeme yok.'
-        : 'Bu filtrede ekipman bulunmuyor.';
-      listEl.innerHTML = `<div class="empty-box" style="padding:18px 10px;">${emptyMsg}</div>`;
+      listEl.innerHTML = `<div class="empty-box" style="padding:18px 10px;">Bu filtrede ekipman bulunmuyor.</div>`;
       return;
     }
+
+    const quickDepts = window.SetDistroUI?.getQuickDepts?.() || [
+      'Kamera / DIT',
+      'Ronin / Steadicam',
+      'Reji / Monitör',
+      'Ses',
+      'Jeneratör',
+      'Sanat',
+      'Prodüksiyon',
+      'Grip'
+    ];
 
     listEl.innerHTML = list.map((item) => {
       const outInfo = outInfoById.get(item.id);
       const outQty = outInfo?.totalOut || 0;
       const inTruckQty = Math.max(0, Number(item.qty) - outQty);
       const isOpen = ui.expandedTruckItemId === item.id;
-      const checkGlyph = item.status === 'ok' ? '✓' : item.status === 'missing' ? '!' : item.status === 'faulty' ? '✕' : '';
 
       const metaParts = [];
       if (item.status === 'missing') metaParts.push(`<span class="tag tag-caution mono">⚠️ EKSİK</span>`);
@@ -1583,7 +1538,6 @@
       return `
         <div class="inv-item st-${item.status} ${outQty > 0 ? 'has-out' : ''} ${isOpen ? 'expanded' : ''}">
           <div class="inv-compact-row">
-            <button type="button" class="inv-check-btn" data-inv-quick-ok="${item.id}" aria-label="Tamam işaretle" title="Tek dokunuşla Tamam / Bekliyor">${checkGlyph}</button>
             <div class="inv-compact-mid" data-inv-toggle="${item.id}">
               <div class="inv-item-line">
                 <span class="inv-qty-prefix mono">${item.qty} ×</span>
@@ -1592,17 +1546,24 @@
               ${(metaParts.length > 0 || item.note) ? `
                 <div class="inv-meta-line">
                   ${metaParts.join(' ')}
+                  ${outQty > 0 ? `<button type="button" class="inv-ret-inline-btn mono" data-inv-ret-all="${esc(item.name)}">✓ Geldi</button>` : ''}
                   ${item.note ? `<span class="inv-note-inline">${esc(item.note)}</span>` : ''}
                 </div>
               ` : ''}
             </div>
-            <button type="button" class="inv-chev-btn" data-inv-toggle="${item.id}" aria-label="Düzenle">
+            <button type="button" class="inv-chev-btn" data-inv-toggle="${item.id}" aria-label="Hızlı işlem aç">
               <span class="inv-chevron mono">${isOpen ? '▴' : '▾'}</span>
             </button>
           </div>
 
           ${isOpen ? `
             <div class="inv-expand-panel">
+              <div class="inv-quick-lend-bar">
+                <span class="inv-quick-lend-lbl">📤 EKİBE VER (+1):</span>
+                <div class="inv-quick-lend-chips">
+                  ${quickDepts.map((d) => `<button type="button" class="quick-strip-chip inv-dept-chip" data-inv-quick-dept="${esc(d)}" data-inv-quick-item="${esc(item.name)}">+ ${esc(d.split('/')[0].trim())}</button>`).join('')}
+                </div>
+              </div>
               <div class="inv-expand-controls">
                 <div class="stepper">
                   <button type="button" data-inv-dec="${item.id}" aria-label="Azalt">−</button>
@@ -1610,36 +1571,43 @@
                   <button type="button" data-inv-inc="${item.id}" aria-label="Artır">+</button>
                 </div>
                 <div class="st-group" style="flex:1;">
-                  <button type="button" class="st-pill ${item.status === 'ok' ? 'active-ok' : ''}" data-inv-st="${item.id}|ok">✓ Tamam</button>
                   <button type="button" class="st-pill ${item.status === 'missing' ? 'active-missing' : ''}" data-inv-st="${item.id}|missing">⚠️ Eksik</button>
                   <button type="button" class="st-pill ${item.status === 'faulty' ? 'active-faulty' : ''}" data-inv-st="${item.id}|faulty">🔧 Arıza</button>
-                  <button type="button" class="st-pill st-pill-lend" data-inv-lend="${esc(item.name)}" title="Başka ekibe ver">📤 Ekibe Ver</button>
+                  ${outQty > 0 ? `<button type="button" class="st-pill active-ok" data-inv-ret-all="${esc(item.name)}">✓ Geri Geldi</button>` : ''}
                   <button type="button" class="st-pill inv-del-btn" data-inv-del="${item.id}" title="Listeden Sil">Sil</button>
                 </div>
               </div>
-              <input class="input" style="min-height:32px; height:32px; font-size:12px; margin-top:7px;" data-inv-note="${item.id}" value="${esc(item.note)}"
-                placeholder="${item.status === 'faulty' ? 'Arıza detayı yazın...' : 'Eksik / konum notu yazın...'}" />
+              <input class="input" style="min-height:32px; height:32px; font-size:12px;" data-inv-note="${item.id}" value="${esc(item.note)}"
+                placeholder="${item.status === 'faulty' ? 'Arıza detayı yazın...' : 'Not veya eksik detayı yazın...'}" />
             </div>
           ` : ''}
         </div>
       `;
     }).join('');
 
-    listEl.querySelectorAll('[data-inv-quick-ok]').forEach((b) => {
-      b.addEventListener('click', () => {
-        const it = state.truckItems.find((x) => x.id === b.dataset.invQuickOk);
-        if (!it) return;
-        it.status = it.status === 'ok' ? 'pending' : 'ok';
-        saveState();
-        renderLiveBadges();
-        renderTruckTab();
-      });
-    });
     listEl.querySelectorAll('[data-inv-toggle]').forEach((el) => {
-      el.addEventListener('click', () => {
+      el.addEventListener('click', (e) => {
+        if (e.target.closest('[data-inv-ret-all]')) return;
         const id = el.dataset.invToggle;
         ui.expandedTruckItemId = ui.expandedTruckItemId === id ? null : id;
         renderTruckTab();
+      });
+    });
+    listEl.querySelectorAll('[data-inv-quick-dept]').forEach((b) => {
+      b.addEventListener('click', () => {
+        if (window.SetDistroUI?.quickLend) {
+          window.SetDistroUI.quickLend(b.dataset.invQuickDept, b.dataset.invQuickItem, 1);
+          renderTruckTab();
+        }
+      });
+    });
+    listEl.querySelectorAll('[data-inv-ret-all]').forEach((b) => {
+      b.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (window.SetDistroUI?.returnAllForTruckItem) {
+          window.SetDistroUI.returnAllForTruckItem(b.dataset.invRetAll);
+          renderTruckTab();
+        }
       });
     });
     listEl.querySelectorAll('[data-preview-fix]').forEach((b) =>
@@ -1927,20 +1895,26 @@
 
   function buildTruckReport() {
     const now = new Date().toLocaleString('tr-TR');
-    const ok = state.truckItems.filter((i) => i.status === 'ok');
     const missing = state.truckItems.filter((i) => i.status === 'missing');
     const faulty = state.truckItems.filter((i) => i.status === 'faulty');
-    const pending = state.truckItems.filter((i) => i.status === 'pending');
+    const loanLines = window.SetDistroUI?.getLoansSummaryLines?.() || [];
+    const totalOut = window.SetDistroUI?.getTotalOutCount?.() || 0;
 
     const lines = [
-      `PAYDOS & KAMYON ENVANTER RAPORU`,
+      `KAMYON MALZEME & EKİP LİSTESİ`,
       `Proje: ${state.projectName || '-'}`,
       `Kamyon / Kiralama: ${state.rentalHouse || '-'}`,
       `Tarih: ${now}`,
       `────────────────────────────────`,
-      `Özet: ${ok.length} Tamam | ${missing.length} Eksik | ${faulty.length} Arızalı | ${pending.length} Sayılmadı`,
+      `Toplam Kalem: ${state.truckItems.length} çeşit | Başka Ekipte: ${totalOut} adet`,
       ``
     ];
+
+    if (loanLines.length > 0) {
+      lines.push(`BAŞKA EKİBE VERİLENLER (${totalOut} adet):`);
+      loanLines.forEach((l) => lines.push(l));
+      lines.push(``);
+    }
 
     if (missing.length > 0) {
       lines.push(`EKSİK EKİPMANLAR (${missing.length}):`);
@@ -1949,19 +1923,13 @@
     }
 
     if (faulty.length > 0) {
-      lines.push(`ARIZALI / BAKIM GEREKTİREN (${faulty.length}):`);
+      lines.push(`ARIZALI / NOTLU EKİPMANLAR (${faulty.length}):`);
       faulty.forEach((i) => lines.push(`• ${i.qty}× ${i.name}${i.note ? ` — Arıza: ${i.note}` : ''}`));
       lines.push(``);
     }
 
-    if (pending.length > 0) {
-      lines.push(`SAYILMAYANLAR (${pending.length}):`);
-      pending.forEach((i) => lines.push(`• ${i.qty}× ${i.name}`));
-      lines.push(``);
-    }
-
-    lines.push(`KAMYONA YÜKLENENLER (${ok.length} kalem):`);
-    ok.forEach((i) => lines.push(`• ${i.qty}× ${i.name} [${i.category}]`));
+    lines.push(`KAMYON MALZEME LİSTESİ (${state.truckItems.length} kalem):`);
+    state.truckItems.forEach((i) => lines.push(`• ${i.qty}× ${i.name} [${i.category}]`));
     return lines.join('\n');
   }
 
@@ -2157,27 +2125,6 @@
       });
     }
 
-    const markAllBtn = document.getElementById('markAllOkBtn');
-    if (markAllBtn) {
-      markAllBtn.addEventListener('click', () => {
-        let changed = 0;
-        state.truckItems.forEach((it) => {
-          if (it.status === 'pending') {
-            it.status = 'ok';
-            changed += 1;
-          }
-        });
-        if (changed === 0) {
-          showToast('Bekleyen (sayılmamış) ekipman yok');
-          return;
-        }
-        saveState();
-        renderLiveBadges();
-        renderTruckTab();
-        showToast(`${changed} ekipman Tamam olarak işaretlendi`);
-      });
-    }
-
     // Sarf Hızlı Ekleme Formu
     const expQuickForm = document.getElementById('expQuickAddForm');
     if (expQuickForm) {
@@ -2279,12 +2226,12 @@
     });
     document.getElementById('projectNameInput').addEventListener('input', (e) => {
       state.projectName = e.target.value;
-      document.getElementById('truckProjectHeading').textContent = state.projectName || 'Kamyon & Paydos';
+      document.getElementById('truckProjectHeading').textContent = state.projectName || 'Kamyon';
       saveState();
     });
     document.getElementById('rentalHouseInput').addEventListener('input', (e) => {
       state.rentalHouse = e.target.value;
-      document.getElementById('truckRentalSubtitle').textContent = state.rentalHouse || 'Kamyon Envanteri ve Paydos Sayımı';
+      document.getElementById('truckRentalSubtitle').textContent = state.rentalHouse || 'Kamyon Malzeme Listesi & Başka Ekibe Verilenler';
       saveState();
     });
     document.getElementById('applyTemplateBtn').addEventListener('click', () => {
@@ -2332,14 +2279,6 @@
       setTab('calc');
       showToast(`${lamps.length} çeşit kamyon lambası yük hesabına aktarıldı`);
     });
-    document.getElementById('resetWrapBtn').addEventListener('click', () => {
-      state.truckItems.forEach((i) => { i.status = 'pending'; i.note = ''; });
-      ui.truckStatusFilter = 'all';
-      saveState();
-      renderLiveBadges();
-      renderTruckTab();
-      showToast('Paydos sayımı sıfırlandı');
-    });
     document.getElementById('truckSearch').addEventListener('input', (e) => {
       ui.truckSearch = e.target.value;
       renderTruckTab();
@@ -2350,7 +2289,7 @@
       openReportModal('Elektrik, Amper & kW Raporu', buildLoadReport());
     });
     document.getElementById('exportTruckReportBtn').addEventListener('click', () => {
-      openReportModal('Paydos & Arıza Raporu', buildTruckReport());
+      openReportModal('Kamyon Malzeme & Ekip Raporu', buildTruckReport());
     });
     document.getElementById('exportOrderListBtn').addEventListener('click', () => {
       openReportModal('Sarf Malzeme Sipariş Listesi', buildOrderReport());
@@ -2516,7 +2455,7 @@
     setTab(state.activeTab);
 
     if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
-      navigator.serviceWorker.register('./sw.js?v=21').then((reg) => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=22').then((reg) => reg.update()).catch(() => {});
     }
   });
 })();

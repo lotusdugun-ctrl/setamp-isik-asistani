@@ -734,6 +734,19 @@ body.theme-light #riskBanner .bar-track::after {
   );
 }
 
+.hero-meta-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
 .gauge-scale {
   display: flex;
   justify-content: space-between;
@@ -1625,8 +1638,6 @@ body.theme-light .section-card {
   border-left: 3px solid transparent;
   transition: background 0.12s ease;
 }
-.inv-item.st-ok { border-left-color: var(--safe); }
-.inv-item.st-ok .inv-item-name { color: var(--text-muted); }
 .inv-item.st-missing { border-left-color: var(--caution); background: rgba(245, 158, 11, 0.06); }
 .inv-item.st-faulty { border-left-color: var(--danger); background: rgba(239, 68, 68, 0.07); }
 
@@ -1749,11 +1760,75 @@ body.theme-light .section-card {
   white-space: normal;
   word-break: break-word;
 }
-.inv-item.st-ok .inv-item-title {
-  color: var(--text-muted);
-}
-.inv-item.st-ok .inv-qty-prefix {
+
+.inv-ret-inline-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 3px;
+  font-size: 10.5px;
+  font-weight: 700;
   color: var(--safe);
+  background: var(--safe-soft);
+  border: 1px solid var(--safe-border);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.inv-ret-inline-btn:hover {
+  background: rgba(34, 197, 94, 0.25);
+}
+
+.inv-quick-lend-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.inv-quick-lend-lbl {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 0.03em;
+}
+.inv-quick-lend-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.inv-dept-chip {
+  height: 26px !important;
+  padding: 0 9px !important;
+  font-size: 11.5px !important;
+}
+
+.distro-view-seg {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.distro-view-seg .seg-btn {
+  text-align: center;
+  height: 31px;
+  font-size: 12px;
+}
+
+.distro-quick-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.distro-instant-chip {
+  height: 29px !important;
+  padding: 0 9px !important;
+  font-size: 12px !important;
+  border-color: var(--accent-border) !important;
+  background: linear-gradient(180deg, rgba(245, 183, 26, 0.10), var(--input-bg)) !important;
+}
+.distro-instant-chip:hover {
+  border-color: var(--accent) !important;
+  background: var(--accent-soft) !important;
 }
 
 .inv-meta-line {

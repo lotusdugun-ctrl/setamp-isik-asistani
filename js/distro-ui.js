@@ -487,20 +487,28 @@
     const newDeptWrap = document.getElementById('distroNewDeptWrap');
     if (newDeptWrap) newDeptWrap.style.display = dState.addingDept ? 'flex' : 'none';
 
-    // 2. Temiz tek satır hızlı malzeme şeridi
+    const activeDeptHint = document.getElementById('distroActiveDeptHint');
+    if (activeDeptHint) {
+      activeDeptHint.textContent = `→ ${dState.selectedDept.split('/')[0].trim()}`;
+    }
+
+    // 2. Tek dokunuşla ANINDA VER (+1) hızlı malzeme butonları
     const itemPicker = document.getElementById('distroQuickItemPicker');
     if (itemPicker) {
-      itemPicker.innerHTML = getAllQuickItems().map((q) => {
+      itemPicker.innerHTML = getAllQuickItems().slice(0, 12).map((q) => {
         const stock = findTruckTotalQty(q.name);
-        const active = dState.selectedItemName.toLowerCase() === q.name.toLowerCase();
-        return `<button type="button" class="quick-strip-chip ${active ? 'active' : ''}" data-pick-item="${esc(q.name)}">${esc(q.short || q.name)}${stock !== null ? ` <span class="mono" style="opacity:0.7;">(${stock})</span>` : ''}</button>`;
+        const outQty = getOutCountForLoanName(q.name);
+        const rem = stock !== null ? Math.max(0, stock - outQty) : null;
+        return `<button type="button" class="quick-strip-chip distro-instant-chip" data-instant-item="${esc(q.name)}" title="${esc(dState.selectedDept)} birimine +1 ${esc(q.name)} ver">+ ${esc(q.short || q.name)}${rem !== null ? ` <span class="mono" style="opacity:0.75;">(${rem})</span>` : ''}</button>`;
       }).join('');
-      itemPicker.querySelectorAll('[data-pick-item]').forEach((b) => {
+      itemPicker.querySelectorAll('[data-instant-item]').forEach((b) => {
         b.addEventListener('click', () => {
-          dState.selectedItemName = b.dataset.pickItem;
+          const itemName = b.dataset.instantItem;
+          const noteInp = document.getElementById('distroNoteInput');
+          const note = noteInp ? noteInp.value.trim() : '';
           const inp = document.getElementById('distroCustomItemInput');
-          if (inp) inp.value = dState.selectedItemName;
-          renderDistroPanel();
+          if (inp) inp.value = itemName;
+          addLoan(dState.selectedDept, itemName, 1, note);
         });
       });
     }
@@ -517,7 +525,7 @@
     const noteWrap = document.getElementById('distroNoteWrap');
     if (noteWrap) noteWrap.style.display = dState.showNote ? 'block' : 'none';
 
-    // 3. Başlık Özeti (Her zaman doğrudan "Kimde Ne Var?" birim listesi)
+    // 3. Başlık Özeti + Birime Göre / Malzemeye Göre Görünüm Seçici
     const activeDepts = allDepts.filter((d) => (deptCounts[d] || 0) > 0);
     const hdrEl = document.getElementById('distroHeaderSummary');
     if (hdrEl) {
@@ -526,23 +534,45 @@
         : 'Kimde Ne Var?';
     }
 
-    const filterRow = document.getElementById('distroDeptFilterRow');
-    if (filterRow) {
+    if (dState.filterDept !== 'Tümü' && (deptCounts[dState.filterDept] || 0) === 0) {
       dState.filterDept = 'Tümü';
-      filterRow.style.display = 'none';
-      filterRow.innerHTML = '';
     }
 
-    dState.viewMode = 'byDept';
     document.querySelectorAll('[data-dview]').forEach((b) => {
       b.classList.toggle('active', b.dataset.dview === dState.viewMode);
     });
 
-    // 4. Net "Kimde Ne Var?" Liste Alanı
+    const filterRow = document.getElementById('distroDeptFilterRow');
+    if (filterRow) {
+      if (dState.viewMode === 'byDept' && activeDepts.length > 1) {
+        filterRow.style.display = 'flex';
+        filterRow.innerHTML = [
+          `<button type="button" class="quick-strip-chip ${dState.filterDept === 'Tümü' ? 'active' : ''}" data-filter-dept="Tümü">Tüm Birimler (${outCount})</button>`,
+          ...activeDepts.map((d) => {
+            const shortD = d.split('/')[0].trim();
+            return `<button type="button" class="quick-strip-chip ${dState.filterDept === d ? 'active' : ''}" data-filter-dept="${esc(d)}">${esc(shortD)} (${deptCounts[d]})</button>`;
+          })
+        ].join('');
+        filterRow.querySelectorAll('[data-filter-dept]').forEach((b) => {
+          b.addEventListener('click', () => {
+            dState.filterDept = b.dataset.filterDept;
+            renderDistroPanel();
+          });
+        });
+      } else {
+        filterRow.style.display = 'none';
+        filterRow.innerHTML = '';
+      }
+    }
+
+    // 4. Net "Kimde Ne Var?" Liste Alanı (Birime Göre veya Malzemeye Göre)
     const listContainer = document.getElementById('distroSummaryList');
     if (!listContainer) return;
 
-    const visibleLoans = dState.loans.filter((l) => dState.filterDept === 'Tümü' || l.dept === dState.filterDept);
+    const visibleLoans = dState.viewMode === 'byDept'
+      ? dState.loans.filter((l) => dState.filterDept === 'Tümü' || l.dept === dState.filterDept)
+      : dState.loans;
+
     if (visibleLoans.length === 0) {
       listContainer.innerHTML = `
         <div class="empty-box" style="padding:18px 10px;">
@@ -563,29 +593,25 @@
 
       listContainer.innerHTML = Array.from(grouped.entries()).map(([itemName, g]) => {
         const truckQty = findTruckTotalQty(itemName);
-        const remaining = truckQty !== null ? truckQty - g.totalOut : null;
-        const overStock = remaining !== null && remaining < 0;
+        const remaining = truckQty !== null ? Math.max(0, truckQty - g.totalOut) : null;
+        const overStock = truckQty !== null && truckQty - g.totalOut < 0;
 
         const stockBadges = truckQty !== null
-          ? `<span class="tag mono">Toplam: ${truckQty}</span>
-             <span class="tag ${overStock ? 'tag-danger' : 'tag-caution'} mono">Dışarıda: ${g.totalOut}</span>
-             <span class="tag ${overStock ? 'tag-danger' : 'tag-safe'} mono">Kamyonda: ${remaining}</span>`
-          : `<span class="tag tag-caution mono">${g.totalOut} adet dışarıda</span>`;
+          ? `<span class="tag ${overStock ? 'tag-danger' : 'tag-caution'} mono">Dışarıda: ${g.totalOut}</span>
+             <span class="tag ${overStock ? 'tag-danger' : 'tag-safe'} mono">Kamyonda: ${remaining}/${truckQty}</span>`
+          : `<span class="tag tag-caution mono">Dışarıda: ${g.totalOut} adet</span>`;
 
         const rows = g.entries.map((l) => `
           <div class="distro-entry-row">
             <div style="flex:1; min-width:110px;">
-              <strong style="font-size:13px;">📍 ${esc(l.dept)}: ${l.qty} adet</strong>
-              <span class="mono" style="font-size:10.5px; color:var(--text-dim); margin-left:5px;">Saat ${l.time}</span>
-              ${l.note ? `<div style="font-size:11px; color:var(--text-muted);">${esc(l.note)}</div>` : ''}
-            </div>
-            <div style="display:flex; align-items:center; gap:6px;">
-              <div class="stepper">
-                <button type="button" data-ln-dec="${l.id}">−</button>
-                <span class="mono">${l.qty}</span>
-                <button type="button" data-ln-inc="${l.id}">+</button>
+              <div style="font-size:13px;"><strong>📍 ${esc(l.dept)}: ${l.qty} adet</strong></div>
+              <div class="mono" style="font-size:10.5px; color:var(--text-muted); margin-top:2px;">
+                Saat ${l.time}${l.note ? ` · ${esc(l.note)}` : ''}
               </div>
-              <button type="button" class="st-pill active-ok" data-ln-ret="${l.id}">✓ Geri Geldi</button>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+              ${l.qty > 1 ? `<button type="button" class="btn btn-soft btn-xs mono" data-ln-dec="${l.id}" title="1 adet azalt">−1</button>` : ''}
+              <button type="button" class="st-pill active-ok" data-ln-ret="${l.id}">✓ Geldi</button>
             </div>
           </div>
         `).join('');
@@ -593,8 +619,11 @@
         return `
           <div class="distro-group-card ${overStock ? 'over-stock' : ''}">
             <div class="distro-group-head">
-              <div style="font-weight:700; font-size:13.5px;">${esc(itemName)}</div>
-              <div style="display:flex; gap:8px; flex-wrap:wrap;">${stockBadges}</div>
+              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                <strong style="font-size:13.5px;">🔌 ${esc(itemName)}</strong>
+                ${stockBadges}
+              </div>
+              <button type="button" class="btn btn-soft btn-xs" data-item-ret-all="${esc(itemName)}">Tümünü Geri Al</button>
             </div>
             <div class="distro-entries">${rows}</div>
           </div>
@@ -655,6 +684,9 @@
     );
     listContainer.querySelectorAll('[data-dept-ret-all]').forEach((b) =>
       b.addEventListener('click', () => returnAllForDept(b.dataset.deptRetAll))
+    );
+    listContainer.querySelectorAll('[data-item-ret-all]').forEach((b) =>
+      b.addEventListener('click', () => returnAllForTruckItem(b.dataset.itemRetAll))
     );
   }
 
@@ -783,6 +815,52 @@
     }
   }
 
+  function returnAllForTruckItem(truckItemName) {
+    const matching = dState.loans.filter((l) => doesLoanMatchTruckItem(l.itemName, truckItemName));
+    if (matching.length === 0) return;
+    const totalReturned = matching.reduce((s, l) => s + (Number(l.qty) || 0), 0);
+    dState.loans = dState.loans.filter((l) => !doesLoanMatchTruckItem(l.itemName, truckItemName));
+    saveDistroState();
+    renderDistroPanel();
+    if (window.SetAppRefreshBadges) window.SetAppRefreshBadges();
+    toast(`Kamyona geri alındı: ${totalReturned}× ${truckItemName}`);
+  }
+
+  function getQuickDepts() {
+    const priority = [
+      'Kamera / DIT',
+      'Ronin / Steadicam',
+      'Reji / Monitör',
+      'Ses',
+      'Jeneratör',
+      'Sanat',
+      'Prodüksiyon',
+      'Grip'
+    ];
+    const seen = new Set();
+    const out = [];
+    for (const d of [...dState.customDepts, ...priority]) {
+      if (!seen.has(d)) {
+        seen.add(d);
+        out.push(d);
+      }
+    }
+    return out.slice(0, 8);
+  }
+
+  function getLoansSummaryLines() {
+    if (dState.loans.length === 0) return [];
+    const lines = [];
+    const allDepts = getAllDepartments();
+    for (const dept of allDepts) {
+      const items = dState.loans.filter((l) => l.dept === dept);
+      if (items.length === 0) continue;
+      const sum = items.reduce((s, x) => s + x.qty, 0);
+      lines.push(`▸ ${dept} (${sum} adet): ${items.map((it) => `${it.qty}× ${it.itemName}`).join(', ')}`);
+    }
+    return lines;
+  }
+
   window.SetDistroUI = {
     init() {
       bindDistroEvents();
@@ -797,6 +875,12 @@
       if (inp) inp.value = clean;
       renderDistroPanel();
     },
+    quickLend(dept, itemName, qty = 1) {
+      addLoan(dept || dState.selectedDept, itemName, qty, '');
+    },
+    returnAllForTruckItem,
+    getQuickDepts,
+    getLoansSummaryLines,
     getTotalOutCount,
     getActiveDeptCount,
     getOutInfoForItem

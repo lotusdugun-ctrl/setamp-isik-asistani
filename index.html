@@ -7,7 +7,7 @@
   <title>SetAmp — Işık Ekibi</title>
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
-  <link rel="stylesheet" href="./css/styles.css?v=21" />
+  <link rel="stylesheet" href="./css/styles.css?v=22" />
 </head>
 <body>
   <div class="app-shell">
@@ -91,7 +91,7 @@
               </span>
               <span>
                 Kamyon
-                <span class="side-nav-sub">Envanter ve paydos</span>
+                <span class="side-nav-sub">Malzeme ve ekip takibi</span>
               </span>
             </span>
             <span id="sideTruckBadge" class="count-pill" style="display:none;">0</span>
@@ -351,39 +351,22 @@
             </div>
           </div>
 
-          <!-- Sade Kategori Sekmeleri + Tek Satır Paydos Çubuğu + Kağıt Liste -->
+          <!-- Sade Kategori Sekmeleri + Kağıt Liste (Paydos sayımı kaldırıldı) -->
           <div class="section-card truck-list-card">
             <div id="truckCategoryPills" class="chip-row" style="margin-bottom:6px;"></div>
-
-            <div class="truck-wrap-bar">
-              <div class="truck-wrap-left">
-                <span id="wrapProgressText" class="tag mono" style="font-size:11px; flex-shrink:0;">✓ 0/0</span>
-                <div id="wrapStatusCounters" class="stat-tabs-compact"></div>
-              </div>
-              <div class="truck-wrap-inline">
-                <button type="button" id="markAllOkBtn" class="btn btn-safe btn-xs" title="Bekleyenleri Tamamla">Tümünü ✓</button>
-                <button type="button" id="resetWrapBtn" class="btn btn-soft btn-xs" title="Paydos Sayımını Sıfırla">Sıfırla</button>
-              </div>
-            </div>
-
-            <span id="wrapProgressSub" style="display:none;"></span>
-            <div class="bar-track bar-track-thin" style="margin-bottom:4px;">
-              <div id="wrapProgressBar" class="bar-fill SAFE" style="width:0%;"></div>
-            </div>
-
             <div id="truckList"></div>
           </div>
         </div>
 
-        <!-- ALT SEKME 2: BAŞKA EKİBE VERİLEN (3 BASİT ADIM + KİMDE NE VAR?) -->
+        <!-- ALT SEKME 2: BAŞKA EKİBE VERİLEN (2 TIKLA ANINDA KAYIT + KİMDE NE VAR?) -->
         <div id="truck-subtab-distro" style="display:none;">
           <div class="section-card quick-list-card" style="margin-bottom:8px;">
             <form id="distroAddForm" class="distro-simple-form">
               <select id="distroDeptSelect" class="select" aria-label="Birim Seç" style="display:none;"></select>
 
-              <!-- 1. Hangi Ekibe? -->
+              <!-- 1. Ekip Seç -->
               <div class="distro-step-head">
-                <span class="distro-step-label">1. HANGİ EKİBE?</span>
+                <span class="distro-step-label">1. EKİP SEÇ</span>
                 <button type="button" id="distroToggleNewDeptBtn" class="distro-note-toggle">+ Yeni Ekip</button>
               </div>
               <div id="distroDeptQuickStrip" class="quick-strip-scroll" aria-label="Hızlı ekip seç"></div>
@@ -392,15 +375,16 @@
                 <button type="button" id="distroSaveNewDeptBtn" class="btn btn-primary btn-sm" style="height:36px;">Ekle</button>
               </div>
 
-              <!-- 2. Hangi Malzeme? -->
+              <!-- 2. Dokun -> Anında Ver (+1) -->
               <div class="distro-step-head">
-                <span class="distro-step-label">2. HANGİ MALZEME?</span>
+                <span class="distro-step-label">2. DOKUN → ANINDA VER (+1)</span>
+                <span id="distroActiveDeptHint" class="mono" style="font-size:11px; color:var(--accent); font-weight:700;">→ Kamera</span>
               </div>
-              <div id="distroQuickItemPicker" class="quick-strip-scroll" aria-label="Hızlı malzeme seç"></div>
+              <div id="distroQuickItemPicker" class="distro-quick-grid" aria-label="Tek tıkla malzeme ver"></div>
 
-              <!-- 3. Adet & Ver -->
+              <!-- 3. Farklı Malzeme / Çoklu Adet -->
               <div class="distro-action-row" style="position:relative;">
-                <input id="distroCustomItemInput" class="input" autocomplete="off" required placeholder="Malzeme adı yaz veya seç..." />
+                <input id="distroCustomItemInput" class="input" autocomplete="off" required placeholder="Başka malzeme ara veya yaz..." />
                 <div id="distroItemSuggest" class="pro-suggest-menu" style="display:none;"></div>
                 <div class="stepper distro-qty-stepper">
                   <button type="button" id="distroQtyDec" aria-label="Azalt">−</button>
@@ -424,15 +408,15 @@
             <div class="section-head" style="margin-bottom:8px;">
               <h2 class="section-title" id="distroHeaderSummary">Kimde Ne Var?</h2>
               <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
-                <div class="segmented" style="display:none;">
-                  <button class="seg-btn active" data-dview="byDept">Birim Bazlı</button>
-                  <button class="seg-btn" data-dview="byItem">Malzeme Bazlı</button>
-                </div>
                 <button id="exportDistroReportBtn" class="btn btn-soft btn-sm">Rapor</button>
                 <button id="clearAllDistroBtn" class="btn btn-danger-soft btn-sm">Hepsi Geldi</button>
               </div>
             </div>
-            <div id="distroDeptFilterRow" style="display:none;"></div>
+            <div class="segmented distro-view-seg" style="margin-bottom:8px;">
+              <button type="button" class="seg-btn active" data-dview="byDept">👥 Birime Göre</button>
+              <button type="button" class="seg-btn" data-dview="byItem">🔌 Malzemeye Göre</button>
+            </div>
+            <div id="distroDeptFilterRow" class="quick-strip-scroll" style="display:none; margin-bottom:8px;"></div>
             <div id="distroSummaryList" class="clean-list" style="gap:8px;"></div>
           </div>
         </div>
@@ -862,13 +846,13 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script src="./js/data-cables.js?v=21"></script>
-  <script src="./js/data-fixtures.js?v=21"></script>
-  <script src="./js/data-templates.js?v=21"></script>
-  <script src="./js/calc.js?v=21"></script>
-  <script src="./js/solar.js?v=21"></script>
-  <script src="./js/solar-ui.js?v=21"></script>
-  <script src="./js/distro-ui.js?v=21"></script>
-  <script src="./js/app.js?v=21"></script>
+  <script src="./js/data-cables.js?v=22"></script>
+  <script src="./js/data-fixtures.js?v=22"></script>
+  <script src="./js/data-templates.js?v=22"></script>
+  <script src="./js/calc.js?v=22"></script>
+  <script src="./js/solar.js?v=22"></script>
+  <script src="./js/solar-ui.js?v=22"></script>
+  <script src="./js/distro-ui.js?v=22"></script>
+  <script src="./js/app.js?v=22"></script>
 </body>
 </html>
