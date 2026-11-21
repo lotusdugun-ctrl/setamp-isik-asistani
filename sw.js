@@ -1,4 +1,4 @@
-const CACHE_NAME = 'setamp-pro-v14';
+const CACHE_NAME = 'setamp-pro-v16';
 const ASSETS = [
   './',
   './index.html',

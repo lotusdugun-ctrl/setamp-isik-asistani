@@ -11,7 +11,7 @@
   const NAMED_BRANDS = ['ARRI', 'Aputure', 'Godox', 'Nanlux', 'Astera', 'Creamsource', 'Kino Flo'];
   const BRANDS = ['Tümü', ...NAMED_BRANDS, 'Diğer'];
   const FIXTURE_TYPES = ['Tümü', 'HMI', 'LED COB', 'LED Panel', 'LED Tüp', 'Tungsten'];
-  const TRUCK_CATEGORIES = ['Tümü', 'Lamba', 'Kablo', 'Stand & Grip', 'Aksesuar'];
+  const TRUCK_CATEGORIES = ['Tümü', 'Lamba', 'Ayak', 'Aksesuar', 'Kablo + Pano', 'Grip & Çerçeve'];
   const EXP_CATEGORIES = ['Tümü', 'Bant', 'Difüzyon', 'Renk Jelatini', 'Kontrol', 'Aksesuar', 'Güvenlik'];
 
   function uid(prefix = 'id') {
@@ -71,8 +71,8 @@
       fixtureId: item.fixtureId || null,
       cableId: item.cableId || null,
       qty: item.qty,
-      status: 'pending',
-      note: ''
+      status: item.status || 'pending',
+      note: item.note || ''
     }));
   }
 
@@ -86,6 +86,17 @@
     };
     const mapped = legacyMap[id] || id;
     return CABLES.some((c) => c.id === mapped) ? mapped : '16a-mono';
+  }
+
+  function normalizeTruckCategory(cat, name = '') {
+    if (['Lamba', 'Ayak', 'Aksesuar', 'Kablo + Pano', 'Grip & Çerçeve'].includes(cat)) return cat;
+    const n = String(name || '').toLowerCase();
+    if (cat === 'Kablo') return 'Kablo + Pano';
+    if (cat === 'Stand & Grip') {
+      if (/stand|ayak|boom|autopol|extension/.test(n)) return 'Ayak';
+      return 'Grip & Çerçeve';
+    }
+    return 'Aksesuar';
   }
 
   function mergeSinglePhaseLoad(items) {
@@ -109,6 +120,13 @@
         const selId = normalizeCableId(parsed.selectedCableId || '16a-mono');
         const selCable = CABLES.find((c) => c.id === selId) || CABLES[0];
         const savedSection = Number(parsed.cableSection);
+        const shouldSeedEnfes = !parsed.enfesSeeded;
+        const truckItems = shouldSeedEnfes
+          ? buildInitialTruckItems()
+          : (Array.isArray(parsed.truckItems)
+              ? parsed.truckItems.map((it) => ({ ...it, category: normalizeTruckCategory(it.category, it.name) }))
+              : buildInitialTruckItems());
+
         return {
           activeTab: parsed.activeTab || 'calc',
           catalogSubtab: parsed.catalogSubtab || 'lamps',
@@ -119,10 +137,11 @@
           cableSection: selCable.availableSections.includes(savedSection) ? savedSection : selCable.defaultCrossSection,
           loadItems: Array.isArray(parsed.loadItems) ? mergeSinglePhaseLoad(parsed.loadItems) : [],
           customFixtures: Array.isArray(parsed.customFixtures) ? parsed.customFixtures : [],
-          projectName: parsed.projectName ?? 'Örnek Set — Dizi 1. Ünite',
-          rentalHouse: parsed.rentalHouse ?? 'Standart Işık Kamyonu',
-          truckItems: Array.isArray(parsed.truckItems) ? parsed.truckItems : buildInitialTruckItems(),
-          expendables: Array.isArray(parsed.expendables) ? parsed.expendables : DEFAULT_EXPENDABLES.map((e) => ({ ...e }))
+          projectName: shouldSeedEnfes ? 'Enfes Bir Akşam' : (parsed.projectName ?? 'Enfes Bir Akşam'),
+          rentalHouse: shouldSeedEnfes ? 'Tam Set Malzeme Listesi' : (parsed.rentalHouse ?? 'Tam Set Malzeme Listesi'),
+          truckItems,
+          expendables: Array.isArray(parsed.expendables) ? parsed.expendables : DEFAULT_EXPENDABLES.map((e) => ({ ...e })),
+          enfesSeeded: true
         };
       }
     } catch (_) {
@@ -142,10 +161,11 @@
         { uid: uid('ld'), fixtureId: 'aputure-600d-pro', qty: 1, phase: 0 }
       ],
       customFixtures: [],
-      projectName: 'Örnek Set — Dizi 1. Ünite',
-      rentalHouse: 'Standart Işık Kamyonu',
+      projectName: 'Enfes Bir Akşam',
+      rentalHouse: 'Tam Set Malzeme Listesi',
       truckItems: buildInitialTruckItems(),
-      expendables: DEFAULT_EXPENDABLES.map((e) => ({ ...e }))
+      expendables: DEFAULT_EXPENDABLES.map((e) => ({ ...e })),
+      enfesSeeded: true
     };
   }
 
@@ -457,6 +477,10 @@
     renderCableStrip('calcCableSelector', cable.id, (id) => selectCalcCable(id));
 
     // 2. Hero Güç & Risk Göstergesi
+    const wasLenFocused = document.activeElement && document.activeElement.id === 'cableLengthInput';
+    const selStart = wasLenFocused ? document.activeElement.selectionStart : null;
+    const selEnd = wasLenFocused ? document.activeElement.selectionEnd : null;
+
     const riskBanner = document.getElementById('riskBanner');
     riskBanner.className = `hero-card status-${ev.status}`;
 
@@ -576,10 +600,29 @@
 
     const lenInput = document.getElementById('cableLengthInput');
     lenInput.addEventListener('input', (e) => {
-      state.cableLength = Math.max(1, Number(e.target.value) || 1);
+      const raw = e.target.value.trim();
+      if (!raw) return;
+      state.cableLength = Math.max(1, Number(raw) || 1);
       saveState();
       renderCalcTab();
     });
+    lenInput.addEventListener('blur', (e) => {
+      if (!e.target.value.trim()) {
+        state.cableLength = cable.defaultLength || 20;
+        saveState();
+        renderCalcTab();
+      }
+    });
+    if (wasLenFocused) {
+      const val = lenInput.value;
+      lenInput.focus();
+      if (lenInput.type === 'number') {
+        lenInput.value = '';
+        lenInput.value = val;
+      } else if (selStart !== null) {
+        try { lenInput.setSelectionRange(selStart, selEnd ?? selStart); } catch (_) {}
+      }
+    }
     riskBanner.querySelectorAll('[data-len]').forEach((b) => {
       b.addEventListener('click', () => {
         state.cableLength = Number(b.dataset.len);
@@ -1012,47 +1055,257 @@
 
   // ==================== RENDER: TAB 3 (KAMYON & PAYDOS) ====================
   const TRUCK_QUICK_CHIPS = [
-    { label: '+ 16A Kablo', name: '16A Uzatma Kablo (20m)', category: 'Kablo', cableId: '16a-mono' },
-    { label: '+ Üçlü Priz', name: 'Türk Kablo (Üçlü Grup Priz - 5m)', category: 'Kablo', cableId: 'turk-uclu' },
-    { label: '+ Kablo Yolu', name: 'Kablo Yolu (Ramp / Yellow Jacket)', category: 'Aksesuar' },
-    { label: '+ 32A Kablo', name: '32A Kablo (25m)', category: 'Kablo', cableId: '32a-mono' },
-    { label: '+ 63A Kablo', name: '63A Kablo (25m)', category: 'Kablo', cableId: '63a-mono' },
-    { label: '+ Distro', name: 'Distro Kutusu', category: 'Kablo' },
-    { label: '+ Adaptör', name: 'Adaptör / Çevirici', category: 'Kablo' },
-    { label: '+ C-Stand', name: 'C-Stand (40" Komple)', category: 'Stand & Grip' },
-    { label: '+ Kum Torbası', name: 'Kum Torbası (10kg)', category: 'Stand & Grip' },
-    { label: '+ Floppy', name: '4x4 Floppy (Siyah Bayrak)', category: 'Stand & Grip' },
-    { label: '+ M18', name: 'ARRI M18 (1.8K HMI)', category: 'Lamba', fixtureId: 'arri-m18' },
-    { label: '+ 600d', name: 'Aputure LS 600d Pro', category: 'Lamba', fixtureId: 'aputure-600d-pro' },
-    { label: '+ SkyPanel', name: 'ARRI SkyPanel S60-C', category: 'Lamba', fixtureId: 'arri-skypanel-s60' },
-    { label: '+ Titan Tüp', name: 'Astera Titan Tube (8li Set)', category: 'Lamba', fixtureId: 'astera-titan-case' }
+    { label: '+ XT52', name: 'Aputure STORM XT52', category: 'Lamba', fixtureId: 'aputure-xt52' },
+    { label: '+ MG4K', name: 'Godox KNOWLED MG4K', category: 'Lamba', fixtureId: 'godox-mg4k' },
+    { label: '+ 1000c', name: 'Aputure STORM 1000c', category: 'Lamba', fixtureId: 'aputure-storm-1000c' },
+    { label: '+ SkyPanel S60', name: 'ARRI SkyPanel S60-C', category: 'Lamba', fixtureId: 'arri-skypanel-s60' },
+    { label: '+ Çelik A100', name: 'Çelik A100 Ayak', category: 'Ayak' },
+    { label: '+ Uzun C-Stand', name: 'Uzun C-Stand', category: 'Ayak' },
+    { label: '+ Baba Ayak', name: 'Baba Ayak (4 Kademe)', category: 'Ayak' },
+    { label: '+ Oynar Kafa', name: 'Oynar Kafa (Grip Head)', category: 'Aksesuar' },
+    { label: '+ Kardelini', name: 'Kardelini', category: 'Aksesuar' },
+    { label: '+ 32A Kablo', name: '32A Kablo', category: 'Kablo + Pano', cableId: '32a-mono' },
+    { label: '+ 16A Kablo', name: '16A Kablo', category: 'Kablo + Pano', cableId: '16a-mono' },
+    { label: '+ Türk Kablo', name: 'Türk Kablo (Üçlü Grup Priz)', category: 'Kablo + Pano', cableId: 'turk-uclu' },
+    { label: '+ 63A Gecekondu Pano', name: '63A Gecekondu Pano', category: 'Kablo + Pano', cableId: '63a-mono' },
+    { label: '+ Kum Torbası', name: 'Kum Torbası', category: 'Grip & Çerçeve' },
+    { label: '+ Flag', name: 'Flag', category: 'Grip & Çerçeve' }
   ];
 
-  function detectTruckCategory(name) {
-    const n = name.toLowerCase();
-    const matchedFix = getAllFixtures().find((f) => `${f.brand} ${f.model}`.toLowerCase() === n || f.model.toLowerCase() === n);
+  function matchFixtureFromText(text) {
+    const n = String(text || '').toLowerCase();
+    const aliasRules = [
+      [/xt\s*52/, 'aputure-xt52'],
+      [/xt\s*26/, 'aputure-xt26'],
+      [/mg\s*4k/, 'godox-mg4k'],
+      [/mg\s*2400/, 'godox-mg2400bi'],
+      [/mg\s*1200/, 'godox-mg1200bi'],
+      [/1000\s*c\b/, 'aputure-storm-1000c'],
+      [/1200\s*d/, 'aputure-1200d-pro'],
+      [/1200\s*x/, 'aputure-storm-1200x'],
+      [/700\s*x/, 'aputure-700x'],
+      [/600\s*d/, 'aputure-600d-pro'],
+      [/300\s*c\b/, 'aputure-amaran-300c'],
+      [/150\s*c\b/, 'aputure-amaran-150c'],
+      [/80\s*c\b/, 'aputure-storm-80c'],
+      [/astera|titan/, 'astera-titan-case'],
+      [/22\s*c\b|f22/, 'aputure-amaran-f22c'],
+      [/skypanel\s*s60|\bs60\b/, 'arri-skypanel-s60'],
+      [/mc\s*pro/, 'aputure-mcpro-kit'],
+      [/godox\s*bulb/, 'godox-bulb-kit'],
+      [/par\s*64/, 'par64-1k'],
+      [/dedo/, 'dedolight-24v-kit'],
+      [/mizar\s*650/, 'mizar-650w'],
+      [/mizar\s*300/, 'mizar-300w'],
+      [/\bm18\b/, 'arri-m18'],
+      [/\bm40\b/, 'arri-m40'],
+      [/\bm90\b/, 'arri-m90']
+    ];
+    const fMap = getFixtureMap();
+    for (const [re, fid] of aliasRules) {
+      if (re.test(n) && fMap[fid]) return fMap[fid];
+    }
+    return getAllFixtures().find((f) => `${f.brand} ${f.model}`.toLowerCase() === n || n.includes(f.model.toLowerCase())) || null;
+  }
+
+  function detectTruckCategory(name, sectionHint = null) {
+    const n = String(name || '').toLowerCase();
+    const matchedFix = matchFixtureFromText(name);
     if (matchedFix) return { category: 'Lamba', fixtureId: matchedFix.id, cableId: null };
-    if (/kablo yolu|ramp|yellow jacket/.test(n)) return { category: 'Aksesuar', fixtureId: null, cableId: null };
-    if (/kablo|priz|üçlü|distro|adaptör|çevirici|dmx|16a|32a|63a|125a/.test(n)) return { category: 'Kablo', fixtureId: null, cableId: null };
-    if (/stand|kum|floppy|klemp|cardellini|maşa|apple|kafa|butterfly|çerçeve|ayak/.test(n)) return { category: 'Stand & Grip', fixtureId: null, cableId: null };
-    if (/arri|aputure|godox|nanlux|nanlite|astera|skypanel|hmi|led|tungsten|fresnel|kafa/.test(n)) return { category: 'Lamba', fixtureId: null, cableId: null };
+
+    if (/butterfly|reflector|çerçeve|tül|\bflag\b|floppy|kum torbası/.test(n) && !/çerçeve aparatı/.test(n)) {
+      return { category: 'Grip & Çerçeve', fixtureId: null, cableId: null };
+    }
+    if (/kablo|pano|çatal|makara|dimmer|priz|üçlü|distro|adaptör|çevirici|aparat|magliner|dmx|16\s*a|32\s*a|63\s*a|125\s*a/.test(n) && !/adaptör pim/.test(n)) {
+      let cableId = null;
+      if (/125\s*a\s*kablo/.test(n)) cableId = '125a-mono';
+      else if (/63\s*a\s*kablo/.test(n)) cableId = '63a-mono';
+      else if (/32\s*a\s*kablo/.test(n)) cableId = '32a-mono';
+      else if (/16\s*a\s*kablo|16a uzatma/.test(n)) cableId = '16a-mono';
+      else if (/türk\s*kablo|üçlü/.test(n)) cableId = 'turk-uclu';
+      return { category: 'Kablo + Pano', fixtureId: null, cableId };
+    }
+    if (/ayak|baba|b250|a100|çelik|boom|autopol|extension|cstand|c-stand/.test(n) && !/baba ayak kolu/.test(n)) {
+      return { category: 'Ayak', fixtureId: null, cableId: null };
+    }
+    if (/oynar kafa|klips|pim|kardelini|cardellini|maşa|magic arm|macig arm|c-clamp|c clamp|pelikan|aparati|aparatı|kol\b|sidus|tablet|akü|v-?mount|v-?mound/.test(n)) {
+      return { category: 'Aksesuar', fixtureId: null, cableId: null };
+    }
+    if (sectionHint) return { category: sectionHint, fixtureId: null, cableId: null };
+    if (/arri|aputure|godox|nanlux|nanlite|astera|skypanel|hmi|led|tungsten|fresnel|amaran|mizar|dedo|par64/.test(n)) {
+      return { category: 'Lamba', fixtureId: null, cableId: null };
+    }
     return { category: 'Aksesuar', fixtureId: null, cableId: null };
   }
 
-  function populateTruckQuickHelpers() {
-    const dl = document.getElementById('truckQuickDatalist');
-    if (dl && dl.options.length === 0) {
-      const defaults = [
-        '16A Uzatma Kablo (20m)', 'Türk Kablo (Üçlü Grup Priz - 5m)', 'Kablo Yolu (Ramp / Yellow Jacket)',
-        '32A Kablo (25m)', '63A Kablo (25m)', '125A Ana Kablo (25m)', 'Distro Kutusu', 'Adaptör / Çevirici',
-        'C-Stand (40" Komple)', 'Combo Stand', 'Kum Torbası (10kg)', '4x4 Floppy (Siyah Bayrak)',
-        'Cardellini / Klemp', 'DMX Kablosu', 'Apple Box Seti', '12x12 Butterfly Çerçeve'
-      ];
-      const fixNames = getAllFixtures().map((f) => `${f.brand} ${f.model}`);
-      const allOpts = [...new Set([...defaults, ...fixNames])];
-      dl.innerHTML = allOpts.map((n) => `<option value="${esc(n)}"></option>`).join('');
+  /**
+   * WhatsApp / metin formatındaki ham malzeme listesini otomatik ayrıştırır
+   */
+  function parseRawEquipmentList(rawText) {
+    const lines = String(rawText || '').split(/\r?\n/);
+    const parsedItems = [];
+    let currentSection = null;
+    let sawFirstLine = false;
+
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (!line) continue;
+
+      const low = line.toLowerCase();
+      if (/^ayak\s*listesi/.test(low)) { currentSection = 'Ayak'; sawFirstLine = true; continue; }
+      if (/^aksesuar\s*listesi/.test(low)) { currentSection = 'Aksesuar'; sawFirstLine = true; continue; }
+      if (/^kablo\s*\+?\s*pano/.test(low)) { currentSection = 'Kablo + Pano'; sawFirstLine = true; continue; }
+      if (/^lamba\s*listesi|^ışık\s*listesi/.test(low)) { currentSection = 'Lamba'; sawFirstLine = true; continue; }
+      if (/^grip|^çerçeve/.test(low) && line.split(/\s+/).length <= 3) { currentSection = 'Grip & Çerçeve'; sawFirstLine = true; continue; }
+
+      // Parantez içinde devam satırı (ör. "(2x Chimera +2 xBalon teslim edildi)")
+      if (line.startsWith('(') && parsedItems.length > 0) {
+        const prev = parsedItems[parsedItems.length - 1];
+        const extra = line.replace(/^\(|\)$/g, '').trim();
+        prev.note = prev.note ? `${prev.note} • ${extra}` : extra;
+        if (/teslim edilmedi|eksik/i.test(extra)) prev.status = 'missing';
+        else if (/ezik|arıza|bozuk|kırık/i.test(extra)) prev.status = 'faulty';
+        continue;
+      }
+
+      // İlk satır proje başlığıysa ve başında sayı yoksa atla
+      if (!sawFirstLine && !/^\d/.test(line) && !/teslim edilmedi/i.test(line)) {
+        sawFirstLine = true;
+        continue;
+      }
+      sawFirstLine = true;
+
+      let qty = 1;
+      let cleanName = line;
+      const m = line.match(/^(\d+)\s*(?:[x×*]|adet\b)?\s*(?:set\b\s*)?(.+)$/i);
+      if (m) {
+        qty = Math.max(1, Number(m[1]) || 1);
+        cleanName = m[2].trim();
+      } else {
+        cleanName = cleanName.replace(/^[•\-▸]\s*/, '').trim();
+      }
+
+      let status = 'pending';
+      let note = '';
+      if (/teslim edilmedi/i.test(cleanName)) {
+        status = 'missing';
+        note = cleanName;
+        cleanName = cleanName.replace(/teslim edilmedi/i, '').trim() || cleanName;
+      }
+      const paren = cleanName.match(/\(([^)]+)\)/);
+      if (paren && /ezik|arıza|bozuk|kırık|sadece|teslim edilmedi/i.test(paren[1])) {
+        if (/ezik|arıza|bozuk|kırık/i.test(paren[1])) status = 'faulty';
+        note = note ? `${note} — ${paren[1].trim()}` : paren[1].trim();
+      }
+
+      const detected = detectTruckCategory(cleanName, currentSection);
+      parsedItems.push({
+        id: uid('inv'),
+        category: detected.category,
+        name: cleanName,
+        fixtureId: detected.fixtureId,
+        cableId: detected.cableId,
+        qty,
+        status,
+        note
+      });
+    }
+    return parsedItems;
+  }
+
+  function buildTruckSuggestCandidates() {
+    const defaults = [
+      { name: 'Baba Ayak (4 Kademe)', category: 'Ayak', info: 'Ayak' },
+      { name: 'B250 Ayak', category: 'Ayak', info: 'Ayak' },
+      { name: 'Çelik A100 Ayak', category: 'Ayak', info: 'Ayak' },
+      { name: 'Bodur Çelik', category: 'Ayak', info: 'Ayak' },
+      { name: 'Uzun C-Stand', category: 'Ayak', info: 'Ayak' },
+      { name: 'Kısa C-Stand', category: 'Ayak', info: 'Ayak' },
+      { name: 'Oynar Kafa (Grip Head)', category: 'Aksesuar', info: 'Aksesuar' },
+      { name: 'Kardelini', category: 'Aksesuar', info: 'Aksesuar' },
+      { name: 'Plastik Maşa', category: 'Aksesuar', info: 'Aksesuar' },
+      { name: 'Magic Arm', category: 'Aksesuar', info: 'Aksesuar' },
+      { name: 'C-Clamp', category: 'Aksesuar', info: 'Aksesuar' },
+      { name: '125A Kablo', category: 'Kablo + Pano', cableId: '125a-mono', info: '28.8 kW · Kablo' },
+      { name: '125A Çatal', category: 'Kablo + Pano', info: 'Pano/Çatal' },
+      { name: '63A Kablo', category: 'Kablo + Pano', cableId: '63a-mono', info: '14.5 kW · Kablo' },
+      { name: '63A Gecekondu Pano', category: 'Kablo + Pano', info: 'Pano' },
+      { name: '32A Kablo', category: 'Kablo + Pano', cableId: '32a-mono', info: '7.36 kW · Kablo' },
+      { name: '16A Kablo', category: 'Kablo + Pano', cableId: '16a-mono', info: '3.68 kW · Kablo' },
+      { name: 'Türk Kablo (Üçlü Grup Priz)', category: 'Kablo + Pano', cableId: 'turk-uclu', info: 'Üçlü Priz' },
+      { name: '5 kW Dimmer', category: 'Kablo + Pano', info: 'Dimmer' },
+      { name: '16A Makara', category: 'Kablo + Pano', info: 'Makara' },
+      { name: '32A Makara', category: 'Kablo + Pano', info: 'Makara' },
+      { name: 'Kablo Kanalı (Kablo Yolu)', category: 'Kablo + Pano', info: 'Kablo Yolu' },
+      { name: 'Magliner', category: 'Kablo + Pano', info: 'Taşıma' },
+      { name: 'Flag', category: 'Grip & Çerçeve', info: 'Bayrak' },
+      { name: 'Kum Torbası', category: 'Grip & Çerçeve', info: 'Grip' },
+      { name: '6x6 Butterfly', category: 'Grip & Çerçeve', info: 'Çerçeve' },
+      { name: '4x4 Butterfly', category: 'Grip & Çerçeve', info: 'Çerçeve' }
+    ];
+    const fixItems = getAllFixtures().map((f) => ({
+      name: `${f.brand} ${f.model}`,
+      category: 'Lamba',
+      fixtureId: f.id,
+      info: `${f.type} · ${Calc.formatKW(f.watts)}`
+    }));
+    const seen = new Set();
+    const out = [];
+    for (const item of [...defaults, ...fixItems]) {
+      const k = item.name.toLowerCase();
+      if (!seen.has(k)) {
+        seen.add(k);
+        out.push(item);
+      }
+    }
+    return out;
+  }
+
+  function renderTruckQuickSuggest(queryText = '') {
+    const box = document.getElementById('truckQuickSuggest');
+    if (!box) return;
+    const q = queryText.trim().toLowerCase();
+    const candidates = buildTruckSuggestCandidates()
+      .filter((c) => !q || `${c.name} ${c.category} ${c.info || ''}`.toLowerCase().includes(q))
+      .slice(0, 7);
+
+    if (candidates.length === 0) {
+      box.style.display = 'none';
+      box.innerHTML = '';
+      return;
     }
 
+    box.style.display = 'block';
+    box.innerHTML = candidates.map((c, idx) => `
+      <button type="button" class="pro-suggest-item" data-tsug-idx="${idx}">
+        <span class="pro-suggest-name">${esc(c.name)}</span>
+        <span class="pro-suggest-meta mono">${esc(c.category)}${c.info ? ` · ${esc(c.info)}` : ''}</span>
+      </button>
+    `).join('');
+
+    box.querySelectorAll('[data-tsug-idx]').forEach((btn) => {
+      btn.addEventListener('mousedown', (e) => e.preventDefault());
+      btn.addEventListener('click', () => {
+        const picked = candidates[Number(btn.dataset.tsugIdx)];
+        if (!picked) return;
+        const qtyInp = document.getElementById('truckQuickQtyInput');
+        const inp = document.getElementById('truckQuickAddInput');
+        const qty = Math.max(1, Number(qtyInp?.value) || 1);
+        addTruckItem({
+          category: picked.category,
+          name: picked.name,
+          fixtureId: picked.fixtureId || null,
+          cableId: picked.cableId || null,
+          qty
+        });
+        if (inp) inp.value = '';
+        if (qtyInp) qtyInp.value = '1';
+        box.style.display = 'none';
+      });
+    });
+  }
+
+  function populateTruckQuickHelpers() {
     const chipBox = document.getElementById('truckQuickChips');
     if (chipBox && chipBox.childElementCount === 0) {
       chipBox.innerHTML = TRUCK_QUICK_CHIPS.map((c, idx) =>
@@ -1185,37 +1438,43 @@
 
     listEl.innerHTML = list.map((item) => {
       const f = item.fixtureId ? fMap[item.fixtureId] : null;
+      const outInfo = window.SetDistroUI?.getOutInfoForItem?.(item.name);
+      const outBadge = outInfo && outInfo.totalOut > 0
+        ? `<span class="tag tag-caution mono" title="Diğer birimlerde bekleyen">Dışarıda: ${outInfo.totalOut} (${esc(outInfo.summaryText)})</span>`
+        : '';
+
       return `
         <div class="inv-item st-${item.status}">
-          <div class="inv-item-top">
-            <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:190px;">
+          <div class="inv-item-main">
+            <div class="inv-item-left">
               ${f ? `
                 <button class="lamp-thumb lamp-thumb-sm" data-preview-fix="${f.id}">
                   <img src="${esc(getFixtureImage(f))}" alt="${esc(item.name)}" />
                 </button>
               ` : ''}
-              <div>
-                <span class="tag">${esc(item.category)}</span>
-                <div style="font-weight:700; margin-top:3px;">${esc(item.name)}</div>
+              <div style="min-width:0; flex:1;">
+                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                  <span class="tag">${esc(item.category)}</span>
+                  ${outBadge}
+                </div>
+                <div class="inv-item-name">${esc(item.name)}</div>
               </div>
             </div>
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <div class="stepper">
-                <button data-inv-dec="${item.id}">−</button>
-                <span class="mono">${item.qty}</span>
-                <button data-inv-inc="${item.id}">+</button>
-              </div>
-              <div class="st-group">
-                <button class="st-pill ${item.status === 'ok' ? 'active-ok' : ''}" data-inv-st="${item.id}|ok">Tamam</button>
-                <button class="st-pill ${item.status === 'missing' ? 'active-missing' : ''}" data-inv-st="${item.id}|missing">Eksik</button>
-                <button class="st-pill ${item.status === 'faulty' ? 'active-faulty' : ''}" data-inv-st="${item.id}|faulty">Arıza</button>
-                <button class="st-pill" data-inv-del="${item.id}" title="Sil">✕</button>
-              </div>
+            <div class="stepper">
+              <button data-inv-dec="${item.id}" aria-label="Azalt">−</button>
+              <span class="mono">${item.qty}</span>
+              <button data-inv-inc="${item.id}" aria-label="Artır">+</button>
             </div>
           </div>
+          <div class="inv-item-actions st-group">
+            <button class="st-pill ${item.status === 'ok' ? 'active-ok' : ''}" data-inv-st="${item.id}|ok">✓ Tamam</button>
+            <button class="st-pill ${item.status === 'missing' ? 'active-missing' : ''}" data-inv-st="${item.id}|missing">Eksik</button>
+            <button class="st-pill ${item.status === 'faulty' ? 'active-faulty' : ''}" data-inv-st="${item.id}|faulty">Arıza</button>
+            <button class="st-pill inv-del-btn" data-inv-del="${item.id}" title="Listeden Sil">✕</button>
+          </div>
           ${(item.status === 'missing' || item.status === 'faulty' || item.note) ? `
-            <div style="margin-top:8px;">
-              <input class="input" style="min-height:34px; font-size:12px;" data-inv-note="${item.id}" value="${esc(item.note)}"
+            <div style="margin-top:7px;">
+              <input class="input" style="min-height:33px; height:33px; font-size:12px;" data-inv-note="${item.id}" value="${esc(item.note)}"
                 placeholder="${item.status === 'faulty' ? 'Arıza detayı yazın (ör. Balast soketi gevşek / lamba patlak)...' : 'Eksik / konum notu yazın...'}" />
             </div>
           ` : ''}
@@ -1277,7 +1536,69 @@
   }
 
   // ==================== RENDER: TAB 4 (SARF STOK) ====================
+  const EXP_QUICK_CHIPS = [
+    { label: '+ Siyah Gaffer', name: 'Siyah Gaffer Bant (50m)', category: 'Bant', unit: 'Rulo', minQty: 2 },
+    { label: '+ Beyaz Gaffer', name: 'Beyaz Gaffer Bant (50m)', category: 'Bant', unit: 'Rulo', minQty: 1 },
+    { label: '+ 216 Difüzyon', name: 'Lee 216 Full White Diffusion', category: 'Difüzyon', unit: 'Rulo', minQty: 1 },
+    { label: '+ 250 Half White', name: 'Lee 250 Half White Diffusion', category: 'Difüzyon', unit: 'Rulo', minQty: 1 },
+    { label: '+ Full CTO', name: 'Lee 204 Full CTO', category: 'Renk Jelatini', unit: 'Metre', minQty: 3 },
+    { label: '+ 1/2 CTO', name: 'Lee 205 1/2 CTO', category: 'Renk Jelatini', unit: 'Metre', minQty: 3 },
+    { label: '+ Full CTB', name: 'Lee 201 Full CTB', category: 'Renk Jelatini', unit: 'Metre', minQty: 3 },
+    { label: '+ ND 0.6', name: 'Lee 210 0.6 ND', category: 'Kontrol', unit: 'Metre', minQty: 2 },
+    { label: '+ Duvetyne', name: 'Siyah Duvetyne Kumaş', category: 'Kontrol', unit: 'Metre', minQty: 5 },
+    { label: '+ Mandal C-47', name: 'Tahta Mandal (C-47 Paket)', category: 'Aksesuar', unit: 'Paket', minQty: 1 }
+  ];
+
+  function detectExpCategoryAndUnit(name) {
+    const n = name.toLowerCase();
+    if (/gaffer|bant|izole|kağıt/.test(n)) return { category: 'Bant', unit: 'Rulo', minQty: 1 };
+    if (/216|250|251|252|grid|difüzyon|frost|opal|muslin/.test(n)) return { category: 'Difüzyon', unit: 'Rulo', minQty: 1 };
+    if (/cto|ctb|plusgreen|minusgreen|jelatin|gel/.test(n)) return { category: 'Renk Jelatini', unit: 'Metre', minQty: 2 };
+    if (/nd|duvetyne|blackwrap|folyo|scrim/.test(n)) return { category: 'Kontrol', unit: 'Metre', minQty: 2 };
+    if (/eldiven|sigorta|sprey/.test(n)) return { category: 'Güvenlik', unit: 'Adet', minQty: 1 };
+    return { category: 'Aksesuar', unit: 'Adet', minQty: 1 };
+  }
+
+  function addOrIncrementExpendable({ name, category, unit, qty = 1, minQty = 1 }) {
+    const cleanName = String(name || '').trim();
+    if (!cleanName) return;
+    const addQty = Math.max(0.5, Number(qty) || 1);
+    const existing = state.expendables.find((e) => e.name.toLowerCase() === cleanName.toLowerCase());
+    if (existing) {
+      existing.qty = Math.round((Number(existing.qty) + addQty) * 10) / 10;
+    } else {
+      state.expendables.unshift({
+        id: uid('exp'),
+        name: cleanName,
+        category: category || 'Aksesuar',
+        unit: unit || 'Adet',
+        qty: addQty,
+        minQty: Number(minQty) || 1
+      });
+    }
+    saveState();
+    renderLiveBadges();
+    renderExpendablesTab();
+    showToast(`Sarf eklendi: +${addQty} ${cleanName}`);
+  }
+
+  function populateExpQuickHelpers() {
+    const chipBox = document.getElementById('expQuickChips');
+    if (chipBox && chipBox.childElementCount === 0) {
+      chipBox.innerHTML = EXP_QUICK_CHIPS.map((c, idx) =>
+        `<button type="button" class="quick-strip-chip" data-equick="${idx}">${esc(c.label)}</button>`
+      ).join('');
+      chipBox.querySelectorAll('[data-equick]').forEach((b) => {
+        b.addEventListener('click', () => {
+          const item = EXP_QUICK_CHIPS[Number(b.dataset.equick)];
+          if (item) addOrIncrementExpendable({ ...item, qty: 1 });
+        });
+      });
+    }
+  }
+
   function renderExpendablesTab() {
+    populateExpQuickHelpers();
     const lowItems = state.expendables.filter((e) => Number(e.qty) <= Number(e.minQty));
     const banner = document.getElementById('lowStockBanner');
     if (lowItems.length > 0) {
@@ -1505,7 +1826,7 @@
       wrap.style.display = 'block';
       sel.innerHTML = `<option value="">— Katalogdan seç veya aşağıya yaz —</option>` +
         getAllFixtures().map((f) => `<option value="fix:${f.id}">${esc(f.brand)} ${esc(f.model)} (${Calc.formatKW(f.watts)})</option>`).join('');
-    } else if (cat === 'Kablo') {
+    } else if (cat === 'Kablo + Pano' || cat === 'Kablo') {
       wrap.style.display = 'block';
       sel.innerHTML = `<option value="">— Kablo standardı seç —</option>` +
         CABLES.map((c) => `<option value="cab:${c.id}">${esc(c.name)} (${Calc.calcCablePower(c).ratedTotalKWText})</option>`).join('');
@@ -1586,7 +1907,7 @@
         if (f) addTruckItem({ category: 'Lamba', name: `${f.brand} ${f.model}`, fixtureId: fid, qty });
       });
       addTruckItem({
-        category: 'Kablo',
+        category: 'Kablo + Pano',
         name: `${cable.name} (${state.cableLength}m - ${state.cableSection}mm²)`,
         cableId: cable.id,
         qty: 1
@@ -1631,18 +1952,27 @@
         document.querySelectorAll('[data-truck-subtab]').forEach((b) => b.classList.toggle('active', b.dataset.truckSubtab === sub));
         document.getElementById('truck-subtab-inventory').style.display = sub === 'inventory' ? 'block' : 'none';
         document.getElementById('truck-subtab-distro').style.display = sub === 'distro' ? 'block' : 'none';
+        if (sub === 'inventory') renderTruckTab();
         if (sub === 'distro' && window.SetDistroUI) window.SetDistroUI.render();
       });
     });
 
-    // Kamyon Hızlı Tek Satır Ekleme (Modal açmadan saniyeler içinde liste yap)
+    // Kamyon Hızlı Tek Satır Ekleme + Özel Canlı Öneri Menüsü
     const quickForm = document.getElementById('truckQuickAddForm');
+    const quickInp = document.getElementById('truckQuickAddInput');
+    const quickSugBox = document.getElementById('truckQuickSuggest');
+    if (quickInp) {
+      quickInp.addEventListener('focus', () => renderTruckQuickSuggest(quickInp.value));
+      quickInp.addEventListener('input', (e) => renderTruckQuickSuggest(e.target.value));
+      quickInp.addEventListener('blur', () => {
+        setTimeout(() => { if (quickSugBox) quickSugBox.style.display = 'none'; }, 160);
+      });
+    }
     if (quickForm) {
       quickForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const inp = document.getElementById('truckQuickAddInput');
         const qtyInp = document.getElementById('truckQuickQtyInput');
-        const name = inp ? inp.value.trim() : '';
+        const name = quickInp ? quickInp.value.trim() : '';
         const qty = Math.max(1, Number(qtyInp?.value) || 1);
         if (!name) return;
         const detected = detectTruckCategory(name);
@@ -1653,8 +1983,115 @@
           cableId: detected.cableId,
           qty
         });
-        if (inp) { inp.value = ''; inp.focus(); }
+        if (quickInp) { quickInp.value = ''; quickInp.focus(); }
         if (qtyInp) qtyInp.value = '1';
+        if (quickSugBox) quickSugBox.style.display = 'none';
+      });
+    }
+
+    const markAllBtn = document.getElementById('markAllOkBtn');
+    if (markAllBtn) {
+      markAllBtn.addEventListener('click', () => {
+        let changed = 0;
+        state.truckItems.forEach((it) => {
+          if (it.status === 'pending') {
+            it.status = 'ok';
+            changed += 1;
+          }
+        });
+        if (changed === 0) {
+          showToast('Bekleyen (sayılmamış) ekipman yok');
+          return;
+        }
+        saveState();
+        renderLiveBadges();
+        renderTruckTab();
+        showToast(`${changed} ekipman Tamam olarak işaretlendi`);
+      });
+    }
+
+    // Sarf Hızlı Ekleme Formu
+    const expQuickForm = document.getElementById('expQuickAddForm');
+    if (expQuickForm) {
+      expQuickForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const nInp = document.getElementById('expQuickNameInput');
+        const qInp = document.getElementById('expQuickQtyInput');
+        const name = nInp ? nInp.value.trim() : '';
+        const qty = Math.max(0.5, Number(qInp?.value) || 1);
+        if (!name) return;
+        const meta = detectExpCategoryAndUnit(name);
+        addOrIncrementExpendable({ name, category: meta.category, unit: meta.unit, qty, minQty: meta.minQty });
+        if (nInp) { nInp.value = ''; nInp.focus(); }
+        if (qInp) qInp.value = '1';
+      });
+    }
+
+    const openPasteBtn = document.getElementById('openPasteListModalBtn');
+    if (openPasteBtn) {
+      openPasteBtn.addEventListener('click', () => {
+        openModal('pasteTruckListModal');
+        const ta = document.getElementById('pasteListTextarea');
+        if (ta) ta.focus();
+      });
+    }
+
+    const applyPasteBtn = document.getElementById('applyPasteListBtn');
+    if (applyPasteBtn) {
+      applyPasteBtn.addEventListener('click', () => {
+        const ta = document.getElementById('pasteListTextarea');
+        const modeSel = document.getElementById('pasteListModeSelect');
+        const rawText = ta ? ta.value : '';
+        const parsed = parseRawEquipmentList(rawText);
+        if (parsed.length === 0) {
+          showToast('Listeden çözümlenecek malzeme bulunamadı');
+          return;
+        }
+        const firstLine = rawText.split(/\r?\n/).map((l) => l.trim()).find(Boolean) || '';
+        const looksLikeTitle = firstLine && !/^\d/.test(firstLine) && !/listesi|teslim edilmedi/i.test(firstLine);
+        if (modeSel && modeSel.value === 'append') {
+          state.truckItems = [...parsed, ...state.truckItems];
+        } else {
+          state.truckItems = parsed;
+          if (looksLikeTitle) state.projectName = firstLine;
+        }
+        ui.truckStatusFilter = 'all';
+        ui.truckCatFilter = 'Tümü';
+        saveState();
+        renderLiveBadges();
+        renderTruckTab();
+        if (window.SetDistroUI) window.SetDistroUI.render();
+        if (ta) ta.value = '';
+        closeModal('pasteTruckListModal');
+        showToast(`${parsed.length} kalem malzeme listeye aktarıldı`);
+      });
+    }
+
+    const loadEnfesBtn = document.getElementById('loadEnfesPresetBtn');
+    if (loadEnfesBtn) {
+      loadEnfesBtn.addEventListener('click', () => {
+        const tpl = TEMPLATES.find((t) => t.id === 'enfes-bir-aksam') || TEMPLATES[0];
+        if (!tpl) return;
+        state.projectName = 'Enfes Bir Akşam';
+        state.rentalHouse = 'Tam Set Malzeme Listesi';
+        state.truckItems = tpl.items.map((item) => ({
+          id: uid('inv'),
+          category: item.category,
+          name: item.name,
+          fixtureId: item.fixtureId || null,
+          cableId: item.cableId || null,
+          qty: item.qty,
+          status: item.status || 'pending',
+          note: item.note || ''
+        }));
+        ui.truckStatusFilter = 'all';
+        ui.truckCatFilter = 'Tümü';
+        saveState();
+        renderLiveBadges();
+        renderTruckTab();
+        if (window.SetDistroUI) window.SetDistroUI.render();
+        closeModal('pasteTruckListModal');
+        showToast(`Enfes Bir Akşam yüklendi (${state.truckItems.length} kalem)`);
       });
     }
 
@@ -1686,15 +2123,21 @@
           fixtureId: item.fixtureId || null,
           cableId: item.cableId || null,
           qty: item.qty,
-          status: 'pending',
-          note: ''
+          status: item.status || 'pending',
+          note: item.note || ''
         }));
+        if (tpl.id === 'enfes-bir-aksam') {
+          state.projectName = 'Enfes Bir Akşam';
+          state.rentalHouse = 'Tam Set Malzeme Listesi';
+        }
       }
       ui.truckStatusFilter = 'all';
+      ui.truckCatFilter = 'Tümü';
       ui.truckSettingsOpen = false;
       saveState();
       renderLiveBadges();
       renderTruckTab();
+      if (window.SetDistroUI) window.SetDistroUI.render();
       showToast('Kamyon şablonu yüklendi');
     });
     document.getElementById('truckToCalcBtn').addEventListener('click', () => {
@@ -1734,6 +2177,17 @@
     document.getElementById('exportOrderListBtn').addEventListener('click', () => {
       openReportModal('Sarf Malzeme Sipariş Listesi', buildOrderReport());
     });
+    const waBtn = document.getElementById('shareWhatsappBtn');
+    if (waBtn) {
+      waBtn.addEventListener('click', () => {
+        const text = document.getElementById('reportPreviewText').textContent.trim();
+        if (!text) {
+          showToast('Paylaşılacak rapor boş');
+          return;
+        }
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+      });
+    }
     document.getElementById('copyReportBtn').addEventListener('click', async () => {
       const text = document.getElementById('reportPreviewText').textContent;
       try {
@@ -1875,7 +2329,7 @@
     setTab(state.activeTab);
 
     if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
-      navigator.serviceWorker.register('./sw.js?v=14').then((reg) => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=16').then((reg) => reg.update()).catch(() => {});
     }
   });
 })();

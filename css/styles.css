@@ -137,6 +137,13 @@ html, body {
 
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; border: none; background: none; padding: 0; }
+button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.btn:active, .brand-btn:active, .quick-strip-chip:active, .st-pill:active, .ar-hud-btn:active {
+  transform: translateY(1px);
+}
 
 .mono {
   font-family: var(--font-mono);
@@ -563,6 +570,7 @@ button { cursor: pointer; border: none; background: none; padding: 0; }
   border-radius: var(--radius);
   padding: 18px 20px;
   margin-bottom: 18px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 2px 6px rgba(0, 0, 0, 0.18);
 }
 .hero-card.status-SAFE { border-left-color: var(--safe); }
 .hero-card.status-CAUTION { border-left-color: var(--caution); }
@@ -753,6 +761,11 @@ button { cursor: pointer; border: none; background: none; padding: 0; }
   border-radius: var(--radius);
   padding: 16px 18px;
   margin-bottom: 18px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 2px 6px rgba(0, 0, 0, 0.18);
+}
+body.theme-light .hero-card,
+body.theme-light .section-card {
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.07);
 }
 
 .section-head {
@@ -965,7 +978,8 @@ button { cursor: pointer; border: none; background: none; padding: 0; }
 .btn-primary { background: var(--accent); color: var(--accent-text); }
 .btn-primary:hover { filter: brightness(1.06); }
 
-.btn-safe { background: var(--safe); color: #052e16; }
+.btn-safe { background: var(--safe); color: #052e16; font-weight: 700; }
+.btn-safe:hover { filter: brightness(1.06); }
 
 .btn-soft { background: var(--surface-2); border-color: var(--border-strong); color: var(--text); }
 .btn-soft:hover { background: var(--surface-hover); }
@@ -1172,12 +1186,40 @@ button { cursor: pointer; border: none; background: none; padding: 0; }
 .inv-item.st-missing { border-left-color: var(--caution); }
 .inv-item.st-faulty { border-left-color: var(--danger); }
 
-.inv-item-top {
+.inv-item-main {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  flex-wrap: wrap;
+}
+
+.inv-item-left {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  min-width: 0;
+}
+
+.inv-item-name {
+  font-weight: 700;
+  font-size: 13.5px;
+  margin-top: 2px;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.inv-item-actions {
+  display: flex;
+  gap: 5px;
+  margin-top: 8px;
+  align-items: center;
+}
+
+.inv-del-btn {
+  margin-left: auto;
+  min-width: 30px;
+  padding: 0 8px !important;
 }
 
 .st-group { display: flex; gap: 4px; flex-wrap: wrap; }
@@ -1915,6 +1957,71 @@ body.night-red .lightbox-img {
 .distro-note-toggle:hover {
   color: var(--accent);
 }
+
+.solar-play-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+  font-weight: 700;
+}
+
+/* Özel Canlı Öneri Menüsü (Mobilde güvenilir autocomplete) */
+.pro-suggest-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 65;
+  background: var(--surface-2);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.48);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.pro-suggest-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  text-align: left;
+  border-top: 1px solid var(--border);
+}
+
+.pro-suggest-item:first-child {
+  border-top: none;
+}
+
+.pro-suggest-item:hover {
+  background: var(--surface-hover);
+}
+
+.pro-suggest-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pro-suggest-meta {
+  font-size: 11px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.distro-stock-hint {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.distro-stock-hint.hint-safe { color: var(--safe); }
+.distro-stock-hint.hint-caution { color: var(--caution); }
+.distro-stock-hint.hint-danger { color: var(--danger); }
 
 .distro-group-card {
   background: var(--input-bg);

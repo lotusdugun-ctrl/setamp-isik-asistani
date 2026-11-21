@@ -1,11 +1,107 @@
-// Kamyon Envanter Şablonları ve Standart Sarf Malzemeleri (Modül 3 — Tek Fazlı 230V Set Standardı)
+// Kamyon Envanter Şablonları ve Standart Sarf Malzemeleri (Modül 3 — Gerçek Set Listesi Düzeni)
 window.TRUCK_TEMPLATES = [
+  {
+    id: 'enfes-bir-aksam',
+    name: 'Enfes Bir Akşam (Tam Set Listesi)',
+    description: 'Son işin tam ekipman listesi: XT52/MG4K/1000c/SkyPanel + 18 çeşit ayak + 14 aksesuar + kablo/pano + grip/çerçeve.',
+    items: [
+      // ==================== LAMBALAR ====================
+      { category: 'Lamba', name: 'Aputure STORM XT52 + Balon + Chimera', fixtureId: 'aputure-xt52', qty: 3, status: 'pending', note: '' },
+      { category: 'Lamba', name: 'Godox KNOWLED MG4K + Balon + Chimera', fixtureId: 'godox-mg4k', qty: 2, status: 'pending', note: '' },
+      { category: 'Lamba', name: 'Aputure STORM 1000c + Balon + Chimera', fixtureId: 'aputure-storm-1000c', qty: 3, status: 'pending', note: '' },
+      { category: 'Lamba', name: 'Aputure STORM 700x + Balon + Chimera', fixtureId: 'aputure-700x', qty: 2, status: 'pending', note: '' },
+      { category: 'Lamba', name: 'Amaran 300c + Balon + Chimera', fixtureId: 'aputure-amaran-300c', qty: 2, status: 'pending', note: '' },
+      { category: 'Lamba', name: 'Amaran 80c + Balon + Chimera + Fresnel', fixtureId: 'aputure-storm-80c', qty: 2, status: 'pending', note: '' },
+      { category: 'Lamba', name: 'Amaran 150c (2x Chimera + 2x Balon Teslim Edildi)', fixtureId: 'aputure-amaran-150c', qty: 2, status: 'missing', note: 'Amaran 150c teslim edilmedi (2x Chimera + 2x Balon teslim edildi)' },
+      { category: 'Lamba', name: 'Astera Titan Set + Softbox + 16x Grid + 16x Mıknatıs + 4x Plate', fixtureId: 'astera-titan-case', qty: 2, status: 'pending', note: '' },
+      { category: 'Lamba', name: 'Amaran 22c / F22c', fixtureId: 'aputure-amaran-f22c', qty: 2, status: 'pending', note: '' },
+      { category: 'Lamba', name: 'ARRI SkyPanel S60 + Chimera+Grid + 2x Yağmurluk + 6x DMX', fixtureId: 'arri-skypanel-s60', qty: 4, status: 'pending', note: '' },
+      { category: 'Lamba', name: 'Aputure MC Pro Set', fixtureId: 'aputure-mcpro-kit', qty: 1, status: 'pending', note: '' },
+      { category: 'Lamba', name: 'Godox Bulb Seti', fixtureId: 'godox-bulb-kit', qty: 1, status: 'faulty', note: 'Ampul duylarında ezikler mevcut' },
+      { category: 'Lamba', name: 'PAR64 (1000W)', fixtureId: 'par64-1k', qty: 6, status: 'pending', note: '' },
+      { category: 'Lamba', name: 'Dedo 24V Set + Loop', fixtureId: 'dedolight-24v-kit', qty: 1, status: 'pending', note: '' },
+      { category: 'Lamba', name: 'Mizar 650W', fixtureId: 'mizar-650w', qty: 4, status: 'pending', note: '' },
+      { category: 'Lamba', name: 'Mizar 300W', fixtureId: 'mizar-300w', qty: 4, status: 'pending', note: '' },
+
+      // ==================== KONTROL & AKÜ ====================
+      { category: 'Aksesuar', name: 'Sidus One + Tabla', qty: 1, status: 'pending', note: '' },
+      { category: 'Aksesuar', name: 'Tablet (Kontrol)', qty: 1, status: 'pending', note: '' },
+      { category: 'Aksesuar', name: 'V-Mount Akü (4\'lü Set)', qty: 1, status: 'pending', note: '' },
+
+      // ==================== AYAK LİSTESİ ====================
+      { category: 'Ayak', name: 'Baba Ayak (4 Kademe)', qty: 2, status: 'pending', note: '' },
+      { category: 'Ayak', name: 'B250 Ayak', qty: 6, status: 'pending', note: '' },
+      { category: 'Ayak', name: 'Çelik A100 Ayak', qty: 18, status: 'pending', note: '' },
+      { category: 'Ayak', name: '2 Kademe Hafif Ayak', qty: 4, status: 'pending', note: '' },
+      { category: 'Ayak', name: 'Büyük Boom', qty: 2, status: 'pending', note: '' },
+      { category: 'Ayak', name: 'Baba Ayak Kolu', qty: 2, status: 'pending', note: '' },
+      { category: 'Ayak', name: 'Bodur Çelik', qty: 4, status: 'pending', note: '' },
+      { category: 'Ayak', name: 'Takip Ayağı', qty: 1, status: 'pending', note: '' },
+      { category: 'Ayak', name: 'Mini Boom', qty: 2, status: 'pending', note: '' },
+      { category: 'Ayak', name: 'Yer Ayağı', qty: 2, status: 'pending', note: '' },
+      { category: 'Ayak', name: 'Baby Ayak', qty: 1, status: 'pending', note: '' },
+      { category: 'Ayak', name: 'Yelpaze Ayak', qty: 1, status: 'pending', note: '' },
+      { category: 'Ayak', name: 'Uzun Extension', qty: 2, status: 'pending', note: '' },
+      { category: 'Ayak', name: 'Uzun Autopol', qty: 3, status: 'pending', note: '' },
+      { category: 'Ayak', name: 'Orta Autopol', qty: 3, status: 'pending', note: '' },
+      { category: 'Ayak', name: 'Kısa Autopol', qty: 3, status: 'pending', note: '' },
+      { category: 'Ayak', name: 'Uzun C-Stand', qty: 16, status: 'pending', note: '' },
+      { category: 'Ayak', name: 'Kısa C-Stand', qty: 10, status: 'pending', note: '' },
+
+      // ==================== AKSESUAR LİSTESİ ====================
+      { category: 'Aksesuar', name: 'Oynar Kafa (Grip Head)', qty: 30, status: 'pending', note: '' },
+      { category: 'Aksesuar', name: 'Klips', qty: 15, status: 'pending', note: '' },
+      { category: 'Aksesuar', name: 'Uzun Pim', qty: 10, status: 'pending', note: '' },
+      { category: 'Aksesuar', name: 'Sarı Pim', qty: 5, status: 'pending', note: '' },
+      { category: 'Aksesuar', name: 'Adaptör Pim (07\'den 04\'e)', qty: 2, status: 'pending', note: '' },
+      { category: 'Aksesuar', name: 'Kardelini', qty: 6, status: 'pending', note: '' },
+      { category: 'Aksesuar', name: 'Plastik Maşa', qty: 10, status: 'pending', note: '' },
+      { category: 'Aksesuar', name: 'Magic Arm', qty: 7, status: 'pending', note: '' },
+      { category: 'Aksesuar', name: 'C-Clamp', qty: 10, status: 'pending', note: '' },
+      { category: 'Aksesuar', name: 'Pelikan', qty: 1, status: 'pending', note: '' },
+      { category: 'Aksesuar', name: 'Çerçeve Aparatı', qty: 11, status: 'pending', note: '' },
+      { category: 'Aksesuar', name: 'L Kol', qty: 2, status: 'pending', note: '' },
+      { category: 'Aksesuar', name: 'Uzun Kol', qty: 5, status: 'pending', note: '' },
+      { category: 'Aksesuar', name: 'Kısa Kol', qty: 4, status: 'pending', note: '' },
+
+      // ==================== KABLO + PANO ====================
+      { category: 'Kablo + Pano', name: '125A Kablo', cableId: '125a-mono', qty: 4, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '125A Çatal', qty: 2, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '63A Kablo', cableId: '63a-mono', qty: 7, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '63A Gecekondu Pano', qty: 1, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '5x32A Pano', qty: 2, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '63A Pano (Gobo)', qty: 1, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '63A Çatal', qty: 1, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '5x32A Kablo', qty: 3, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '32A Kablo', cableId: '32a-mono', qty: 20, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: 'Türk Kablo (Üçlü Grup Priz)', cableId: 'turk-uclu', qty: 20, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '32A Makara', qty: 1, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '16A Makara', qty: 1, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '16A Kablo', cableId: '16a-mono', qty: 20, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '5 kW Dimmer', qty: 4, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '32A Pano', qty: 5, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '16A Pano', qty: 5, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: 'Karışık Aparat (Çevirici)', qty: 12, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: 'Kablo Kanalı (Kablo Yolu)', qty: 4, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: 'Magliner', qty: 2, status: 'pending', note: '' },
+
+      // ==================== GRİP & ÇERÇEVE ====================
+      { category: 'Grip & Çerçeve', name: '6x6 Butterfly (Silk+Grid+Reflector+Ultra Bounce)', qty: 1, status: 'pending', note: '' },
+      { category: 'Grip & Çerçeve', name: '4x4 Butterfly (Silk+Grid+Reflector+Ultra Bounce+DoPchoice)', qty: 1, status: 'pending', note: '' },
+      { category: 'Grip & Çerçeve', name: '3x3 Butterfly Bezi (Sadece Grid Cloth Verildi)', qty: 1, status: 'pending', note: 'Sadece bez verildi (Grid Cloth), çerçeve yok' },
+      { category: 'Grip & Çerçeve', name: 'Tahta Reflector', qty: 4, status: 'pending', note: '' },
+      { category: 'Grip & Çerçeve', name: '1x1 Çerçeve', qty: 11, status: 'pending', note: '' },
+      { category: 'Grip & Çerçeve', name: '2x1 Çerçeve', qty: 5, status: 'pending', note: '' },
+      { category: 'Grip & Çerçeve', name: 'Tül', qty: 8, status: 'pending', note: '' },
+      { category: 'Grip & Çerçeve', name: 'Flag', qty: 18, status: 'pending', note: '' },
+      { category: 'Grip & Çerçeve', name: 'Kum Torbası', qty: 25, status: 'pending', note: '' }
+    ]
+  },
   {
     id: 'dizi-standart',
     name: 'Dizi Standart Işık Kamyonu',
     description: 'İç/dış mekan dizi setleri için dengeli ARRI + Aputure + Godox + Astera + 16A/32A/63A kablo paketi.',
     items: [
-      // Lambalar
       { category: 'Lamba', name: 'ARRI M18 (1.8K HMI) + Balast', fixtureId: 'arri-m18', qty: 2, status: 'pending', note: '' },
       { category: 'Lamba', name: 'ARRI M40 (4K HMI) + Balast', fixtureId: 'arri-m40', qty: 1, status: 'pending', note: '' },
       { category: 'Lamba', name: 'ARRI SkyPanel S60-C', fixtureId: 'arri-skypanel-s60', qty: 2, status: 'pending', note: '' },
@@ -15,23 +111,21 @@ window.TRUCK_TEMPLATES = [
       { category: 'Lamba', name: 'Godox KNOWLED MG1200Bi', fixtureId: 'godox-mg1200bi', qty: 1, status: 'pending', note: '' },
       { category: 'Lamba', name: 'Astera Titan Tube (8\'li Kasa)', fixtureId: 'astera-titan-case', qty: 2, status: 'pending', note: '' },
       { category: 'Lamba', name: 'Astera NYX Bulb (8\'li Kasa)', fixtureId: 'astera-nyx-case', qty: 1, status: 'pending', note: '' },
-      // Kablolar & Dağıtım
-      { category: 'Kablo', name: '16A Uzatma Kablo (20m - 3×2.5mm²)', cableId: '16a-mono', qty: 15, status: 'pending', note: '' },
-      { category: 'Kablo', name: 'Türk Kablo (Üçlü Grup Priz - 5m)', cableId: 'turk-uclu', qty: 8, status: 'pending', note: '' },
-      { category: 'Kablo', name: '32A Kablo (25m - 3×6mm²)', cableId: '32a-mono', qty: 6, status: 'pending', note: '' },
-      { category: 'Kablo', name: '63A Kablo (25m - 3×16mm²)', cableId: '63a-mono', qty: 3, status: 'pending', note: '' },
-      { category: 'Kablo', name: '63A -> 32A/16A Dağıtım Kutusu (Distro)', cableId: '63a-mono', qty: 1, status: 'pending', note: '' },
-      { category: 'Kablo', name: '32A -> 16A Ara Distro Kutusu', cableId: '32a-mono', qty: 2, status: 'pending', note: '' },
-      { category: 'Kablo', name: '32A -> 16A / 63A -> 32A Adaptör / Çevirici', cableId: '32a-mono', qty: 4, status: 'pending', note: '' },
-      { category: 'Kablo', name: 'Kablo Yolu (Ramp / Yellow Jacket)', qty: 6, status: 'pending', note: '' },
-      // Grip & Stand
-      { category: 'Stand & Grip', name: 'C-Stand (40" + Kol + Grip Head)', qty: 14, status: 'pending', note: '' },
-      { category: 'Stand & Grip', name: 'Combo Stand (3 Kademeli)', qty: 6, status: 'pending', note: '' },
-      { category: 'Stand & Grip', name: 'Wind-Up / Crank Stand (M40/1200d)', qty: 2, status: 'pending', note: '' },
-      { category: 'Stand & Grip', name: '4x4 Floppy (Siyah Bayrak)', qty: 6, status: 'pending', note: '' },
-      { category: 'Stand & Grip', name: '8x8 Frame Seti (Full Grid / Ultra Bounce / Siyah)', qty: 1, status: 'pending', note: '' },
-      { category: 'Stand & Grip', name: 'Cardellini / Süper Klemp / Maşa Seti', qty: 12, status: 'pending', note: '' },
-      { category: 'Stand & Grip', name: 'Kum Torbası (10kg)', qty: 20, status: 'pending', note: '' }
+      { category: 'Kablo + Pano', name: '16A Kablo (20m - 3×2.5mm²)', cableId: '16a-mono', qty: 15, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: 'Türk Kablo (Üçlü Grup Priz)', cableId: 'turk-uclu', qty: 8, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '32A Kablo (25m - 3×6mm²)', cableId: '32a-mono', qty: 6, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '63A Kablo (25m - 3×16mm²)', cableId: '63a-mono', qty: 3, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '63A Gecekondu Pano', cableId: '63a-mono', qty: 1, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '32A Pano', cableId: '32a-mono', qty: 2, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: 'Karışık Aparat (Çevirici)', cableId: '32a-mono', qty: 4, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: 'Kablo Kanalı (Kablo Yolu)', qty: 6, status: 'pending', note: '' },
+      { category: 'Ayak', name: 'Uzun C-Stand', qty: 14, status: 'pending', note: '' },
+      { category: 'Ayak', name: 'Çelik A100 Ayak', qty: 6, status: 'pending', note: '' },
+      { category: 'Ayak', name: 'Baba Ayak', qty: 2, status: 'pending', note: '' },
+      { category: 'Grip & Çerçeve', name: 'Flag', qty: 6, status: 'pending', note: '' },
+      { category: 'Grip & Çerçeve', name: '8x8 Butterfly Seti', qty: 1, status: 'pending', note: '' },
+      { category: 'Aksesuar', name: 'Kardelini / Süper Klemp', qty: 12, status: 'pending', note: '' },
+      { category: 'Grip & Çerçeve', name: 'Kum Torbası', qty: 20, status: 'pending', note: '' }
     ]
   },
   {
@@ -46,15 +140,15 @@ window.TRUCK_TEMPLATES = [
       { category: 'Lamba', name: 'ARRI SkyPanel X21', fixtureId: 'arri-skypanel-x21', qty: 2, status: 'pending', note: '' },
       { category: 'Lamba', name: 'Godox KNOWLED F800R (8x4 Mat)', fixtureId: 'godox-f800r', qty: 1, status: 'pending', note: '' },
       { category: 'Lamba', name: 'Astera Titan Tube (8\'li Kasa)', fixtureId: 'astera-titan-case', qty: 2, status: 'pending', note: '' },
-      { category: 'Kablo', name: '16A Uzatma Kablo (20m - 3×2.5mm²)', cableId: '16a-mono', qty: 16, status: 'pending', note: '' },
-      { category: 'Kablo', name: '32A Kablo (25m - 3×6mm²)', cableId: '32a-mono', qty: 6, status: 'pending', note: '' },
-      { category: 'Kablo', name: '63A Kablo (25m - 3×16mm²)', cableId: '63a-mono', qty: 3, status: 'pending', note: '' },
-      { category: 'Kablo', name: '63A -> 32A/16A Distro Kutusu', cableId: '63a-mono', qty: 2, status: 'pending', note: '' },
-      { category: 'Kablo', name: '5-Pin DMX Kablosu (10m/20m) + CRMX TX', qty: 10, status: 'pending', note: '' },
-      { category: 'Stand & Grip', name: 'C-Stand (40")', qty: 16, status: 'pending', note: '' },
-      { category: 'Stand & Grip', name: 'High Roller / Combo Stand', qty: 8, status: 'pending', note: '' },
-      { category: 'Stand & Grip', name: '12x12 Frame Seti (1/2 Grid + Ultrabounce + Bleached)', qty: 1, status: 'pending', note: '' },
-      { category: 'Stand & Grip', name: '4x4 Floppy & Diff Frame', qty: 8, status: 'pending', note: '' }
+      { category: 'Kablo + Pano', name: '16A Kablo (20m - 3×2.5mm²)', cableId: '16a-mono', qty: 16, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '32A Kablo (25m - 3×6mm²)', cableId: '32a-mono', qty: 6, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '63A Kablo (25m - 3×16mm²)', cableId: '63a-mono', qty: 3, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '63A Pano', cableId: '63a-mono', qty: 2, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '5-Pin DMX Kablosu + CRMX TX', qty: 10, status: 'pending', note: '' },
+      { category: 'Ayak', name: 'Uzun C-Stand', qty: 16, status: 'pending', note: '' },
+      { category: 'Ayak', name: 'Çelik A100 Ayak', qty: 8, status: 'pending', note: '' },
+      { category: 'Grip & Çerçeve', name: '12x12 Butterfly Seti', qty: 1, status: 'pending', note: '' },
+      { category: 'Grip & Çerçeve', name: 'Flag', qty: 8, status: 'pending', note: '' }
     ]
   },
   {
@@ -69,15 +163,15 @@ window.TRUCK_TEMPLATES = [
       { category: 'Lamba', name: 'Nanlux Evoke 2400B', fixtureId: 'nanlux-evoke-2400b', qty: 2, status: 'pending', note: '' },
       { category: 'Lamba', name: 'ARRI True Blue T5 (5K Tungsten)', fixtureId: 'arri-t5', qty: 2, status: 'pending', note: '' },
       { category: 'Lamba', name: 'Astera Titan Tube (8\'li Kasa)', fixtureId: 'astera-titan-case', qty: 3, status: 'pending', note: '' },
-      { category: 'Kablo', name: '125A Ana Kablo (25m - 3×35mm²)', cableId: '125a-mono', qty: 4, status: 'pending', note: '' },
-      { category: 'Kablo', name: '125A -> 63A/32A Ana Distro Kutusu', cableId: '125a-mono', qty: 1, status: 'pending', note: '' },
-      { category: 'Kablo', name: '63A Kablo (25m - 3×16mm²)', cableId: '63a-mono', qty: 6, status: 'pending', note: '' },
-      { category: 'Kablo', name: '32A Kablo (25m - 3×6mm²)', cableId: '32a-mono', qty: 6, status: 'pending', note: '' },
-      { category: 'Kablo', name: '16A Uzatma Kablo (20m - 3×2.5mm²)', cableId: '16a-mono', qty: 24, status: 'pending', note: '' },
-      { category: 'Stand & Grip', name: 'Mombo Combo / Crank Stand (M90/S360)', qty: 4, status: 'pending', note: '' },
-      { category: 'Stand & Grip', name: '20x20 Frame Seti (Full Grid / Siyah / Unbleached)', qty: 1, status: 'pending', note: '' },
-      { category: 'Stand & Grip', name: '12x12 Frame Seti', qty: 2, status: 'pending', note: '' },
-      { category: 'Stand & Grip', name: 'C-Stand (40")', qty: 20, status: 'pending', note: '' }
+      { category: 'Kablo + Pano', name: '125A Kablo (25m - 3×35mm²)', cableId: '125a-mono', qty: 4, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '125A Ana Dağıtım Panosu', cableId: '125a-mono', qty: 1, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '63A Kablo (25m - 3×16mm²)', cableId: '63a-mono', qty: 6, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '32A Kablo (25m - 3×6mm²)', cableId: '32a-mono', qty: 6, status: 'pending', note: '' },
+      { category: 'Kablo + Pano', name: '16A Kablo (20m - 3×2.5mm²)', cableId: '16a-mono', qty: 24, status: 'pending', note: '' },
+      { category: 'Ayak', name: 'Baba Ayak (4 Kademe)', qty: 4, status: 'pending', note: '' },
+      { category: 'Grip & Çerçeve', name: '20x20 Butterfly Seti', qty: 1, status: 'pending', note: '' },
+      { category: 'Grip & Çerçeve', name: '12x12 Butterfly Seti', qty: 2, status: 'pending', note: '' },
+      { category: 'Ayak', name: 'Uzun C-Stand', qty: 20, status: 'pending', note: '' }
     ]
   }
 ];

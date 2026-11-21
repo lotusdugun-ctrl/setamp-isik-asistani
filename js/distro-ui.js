@@ -20,20 +20,22 @@
   ];
 
   const DEFAULT_QUICK_ITEMS = [
-    { name: '16A Uzatma Kablo (20m)', short: '16A Uzatma', matches: ['16a uzatma', '16a monofaze uzatma', 'stinger'] },
-    { name: 'Türk Kablo (Üçlü Priz)', short: 'Üçlü Priz', matches: ['türk kablo', 'üçlü', "3'lü", 'çoklu priz', 'örümcek'] },
-    { name: 'Kablo Yolu (Ramp)', short: 'Kablo Yolu', matches: ['kablo yolu', 'ramp', 'yellow jacket'] },
+    { name: '16A Kablo', short: '16A Kablo', matches: ['16a kablo', '16a uzatma', '16a monofaze', 'stinger'] },
+    { name: 'Türk Kablo (Üçlü Grup Priz)', short: 'Türk Kablo', matches: ['türk kablo', 'üçlü', "3'lü", 'çoklu priz'] },
     { name: '32A Kablo', short: '32A Kablo', matches: ['32a kablo', '32a monofaze', '32a trifaze'] },
     { name: '63A Kablo', short: '63A Kablo', matches: ['63a kablo', '63a trifaze'] },
-    { name: '125A Ana Kablo', short: '125A Kablo', matches: ['125a ana kablo', '125a kablo', '125a trifaze'] },
-    { name: 'Distro Kutusu', short: 'Distro', matches: ['distro'] },
-    { name: 'Adaptör / Çevirici', short: 'Adaptör', matches: ['adaptör', 'çevirici'] },
-    { name: 'C-Stand', short: 'C-Stand', matches: ['c-stand'] },
-    { name: 'Combo Stand', short: 'Combo', matches: ['combo stand'] },
+    { name: '125A Kablo', short: '125A Kablo', matches: ['125a kablo', '125a ana kablo', '125a trifaze'] },
+    { name: '16A / 32A Makara', short: 'Makara', matches: ['makara'] },
+    { name: '16A / 32A Pano', short: '16/32 Pano', matches: ['16a pano', '32a pano'] },
+    { name: '63A Gecekondu Pano', short: 'Gecekondu', matches: ['gecekondu', '63a pano'] },
+    { name: 'Kablo Kanalı (Kablo Yolu)', short: 'Kablo Kanalı', matches: ['kablo kanalı', 'kablo yolu', 'ramp', 'yellow jacket'] },
+    { name: 'Uzun / Kısa C-Stand', short: 'C-Stand', matches: ['c-stand', 'cstand'] },
+    { name: 'Çelik Ayak (A100)', short: 'Çelik A100', matches: ['çelik a100', 'çelik ayak', 'a100'] },
     { name: 'Kum Torbası', short: 'Kum Torbası', matches: ['kum torbası'] },
-    { name: 'Cardellini / Klemp', short: 'Klemp', matches: ['cardellini', 'klemp', 'maşa'] },
-    { name: '4x4 Floppy', short: 'Floppy', matches: ['floppy'] },
-    { name: 'DMX Kablosu', short: 'DMX', matches: ['dmx'] }
+    { name: 'Plastik Maşa / Kardelini', short: 'Maşa/Kardelini', matches: ['plastik maşa', 'kardelini', 'cardellini', 'klemp'] },
+    { name: 'Flag (Siyah Bayrak)', short: 'Flag', matches: ['flag', 'floppy'] },
+    { name: 'V-Mount Akü', short: 'V-Mount Akü', matches: ['v-mount', 'v mound', 'akü'] },
+    { name: 'Magliner', short: 'Magliner', matches: ['magliner'] }
   ];
 
   function uid() {
@@ -84,7 +86,7 @@
     customDepts: saved.customDepts,
     customItems: saved.customItems,
     selectedDept: 'Kamera / DIT',
-    selectedItemName: '16A Uzatma Kablo (20m)',
+    selectedItemName: '16A Kablo',
     qtyDraft: 1,
     filterDept: 'Tümü',
     viewMode: 'byItem',
@@ -142,13 +144,142 @@
 
     const matches = inv.filter((i) => {
       const n = i.name.toLowerCase();
+      if (n.includes('5x32') && !norm.includes('5x32')) return false;
+      if (n.includes('makara') && !norm.includes('makara')) return false;
+      if (n.includes('pano') && !norm.includes('pano') && !norm.includes('gecekondu')) return false;
+      if (n.includes('çatal') && !norm.includes('çatal')) return false;
       if (n.includes('distro') && !norm.includes('distro')) return false;
       if (n.includes('adaptör') && !norm.includes('adaptör') && !norm.includes('çevirici')) return false;
-      if (n.includes('kablo yolu') && !norm.includes('kablo yolu') && !norm.includes('ramp')) return false;
+      if ((n.includes('kablo yolu') || n.includes('kablo kanalı')) && !norm.includes('kablo yolu') && !norm.includes('kablo kanalı') && !norm.includes('ramp')) return false;
       return keys.some((k) => n.includes(k));
     });
     if (matches.length === 0) return null;
     return matches.reduce((sum, x) => sum + (Number(x.qty) || 0), 0);
+  }
+
+  function doesLoanMatchTruckItem(loanItemName, truckItemName) {
+    const ln = String(loanItemName || '').trim().toLowerCase();
+    const tn = String(truckItemName || '').trim().toLowerCase();
+    if (!ln || !tn) return false;
+    if (ln === tn) return true;
+    if (tn.includes('5x32') && !ln.includes('5x32')) return false;
+    if (tn.includes('makara') && !ln.includes('makara')) return false;
+    if (tn.includes('pano') && !ln.includes('pano') && !ln.includes('gecekondu')) return false;
+    if (tn.includes('çatal') && !ln.includes('çatal')) return false;
+    if (tn.includes('distro') && !ln.includes('distro')) return false;
+    if (tn.includes('adaptör') && !ln.includes('adaptör') && !ln.includes('çevirici')) return false;
+    if ((tn.includes('kablo yolu') || tn.includes('kablo kanalı')) && !ln.includes('kablo yolu') && !ln.includes('kablo kanalı') && !ln.includes('ramp')) return false;
+
+    const q = getAllQuickItems().find((qi) => qi.name.toLowerCase() === ln);
+    if (q && q.matches.some((k) => tn.includes(k))) return true;
+    const base = ln.split('(')[0].trim();
+    return base.length >= 3 && tn.includes(base);
+  }
+
+  function getOutInfoForItem(truckItemName) {
+    const byDept = new Map();
+    let totalOut = 0;
+    for (const l of dState.loans) {
+      if (doesLoanMatchTruckItem(l.itemName, truckItemName)) {
+        const qty = Number(l.qty) || 0;
+        totalOut += qty;
+        const shortDept = String(l.dept || '').split('/')[0].trim();
+        byDept.set(shortDept, (byDept.get(shortDept) || 0) + qty);
+      }
+    }
+    const summaryText = Array.from(byDept.entries()).map(([d, q]) => `${d}: ${q}`).join(', ');
+    return { totalOut, summaryText };
+  }
+
+  function getOutCountForLoanName(itemName) {
+    const norm = String(itemName || '').trim().toLowerCase();
+    return dState.loans
+      .filter((l) => l.itemName.trim().toLowerCase() === norm)
+      .reduce((s, l) => s + (Number(l.qty) || 0), 0);
+  }
+
+  function updateLiveStockHint(itemName) {
+    const hintEl = document.getElementById('distroLiveStockHint');
+    if (!hintEl) return;
+    const clean = String(itemName || '').trim();
+    if (!clean) {
+      hintEl.textContent = 'Malzeme seçildiğinde kamyon stoğu görünür.';
+      hintEl.className = 'distro-stock-hint mono';
+      return;
+    }
+    const truckQty = findTruckTotalQty(clean);
+    const outQty = getOutCountForLoanName(clean);
+    if (truckQty === null) {
+      hintEl.textContent = outQty > 0
+        ? `Özel kalem • Şu an dışarıda: ${outQty} adet`
+        : 'Özel malzeme • Kamyon stoğundan bağımsız takip';
+      hintEl.className = 'distro-stock-hint mono';
+      return;
+    }
+    const remaining = truckQty - outQty;
+    hintEl.textContent = `Kamyon Toplam: ${truckQty} • Dışarıda: ${outQty} • Kalan: ${remaining}`;
+    hintEl.className = `distro-stock-hint mono ${remaining < 0 ? 'hint-danger' : outQty > 0 ? 'hint-caution' : 'hint-safe'}`;
+  }
+
+  function buildDistroSuggestCandidates() {
+    const seen = new Set();
+    const list = [];
+    for (const q of getAllQuickItems()) {
+      const k = q.name.toLowerCase();
+      if (!seen.has(k)) {
+        seen.add(k);
+        list.push({ name: q.name, category: 'Hızlı' });
+      }
+    }
+    for (const it of getTruckInventory()) {
+      const k = it.name.toLowerCase();
+      if (!seen.has(k)) {
+        seen.add(k);
+        list.push({ name: it.name, category: it.category || 'Kamyon' });
+      }
+    }
+    return list;
+  }
+
+  function renderDistroSuggestMenu(queryText = '') {
+    const box = document.getElementById('distroItemSuggest');
+    if (!box) return;
+    const q = queryText.trim().toLowerCase();
+    const candidates = buildDistroSuggestCandidates()
+      .filter((c) => !q || `${c.name} ${c.category}`.toLowerCase().includes(q))
+      .slice(0, 7);
+
+    if (candidates.length === 0) {
+      box.style.display = 'none';
+      box.innerHTML = '';
+      return;
+    }
+
+    box.style.display = 'block';
+    box.innerHTML = candidates.map((c, idx) => {
+      const truckQty = findTruckTotalQty(c.name);
+      const outQty = getOutCountForLoanName(c.name);
+      const stockTxt = truckQty !== null ? `Kalan: ${truckQty - outQty}/${truckQty}` : c.category;
+      return `
+        <button type="button" class="pro-suggest-item" data-dsug-idx="${idx}">
+          <span class="pro-suggest-name">${esc(c.name)}</span>
+          <span class="pro-suggest-meta mono">${esc(stockTxt)}</span>
+        </button>
+      `;
+    }).join('');
+
+    box.querySelectorAll('[data-dsug-idx]').forEach((btn) => {
+      btn.addEventListener('mousedown', (e) => e.preventDefault());
+      btn.addEventListener('click', () => {
+        const picked = candidates[Number(btn.dataset.dsugIdx)];
+        if (!picked) return;
+        dState.selectedItemName = picked.name;
+        const inp = document.getElementById('distroCustomItemInput');
+        if (inp) inp.value = picked.name;
+        box.style.display = 'none';
+        renderDistroPanel();
+      });
+    });
   }
 
   function addCustomDepartment(name) {
@@ -317,18 +448,11 @@
       });
     }
 
-    // Datalist: hızlı kalemler + kamyondaki tüm ekipmanlar
-    const dl = document.getElementById('distroItemDatalist');
-    if (dl) {
-      const names = new Set(getAllQuickItems().map((x) => x.name));
-      for (const it of getTruckInventory()) names.add(it.name);
-      dl.innerHTML = Array.from(names).map((n) => `<option value="${esc(n)}"></option>`).join('');
-    }
-
     const customInp = document.getElementById('distroCustomItemInput');
     if (customInp && !customInp.value) {
       customInp.value = dState.selectedItemName;
     }
+    updateLiveStockHint(customInp ? customInp.value : dState.selectedItemName);
 
     const qtyValEl = document.getElementById('distroQtyVal');
     if (qtyValEl) qtyValEl.textContent = dState.qtyDraft;
@@ -551,17 +675,31 @@
       });
     }
 
+    const itemInp = document.getElementById('distroCustomItemInput');
+    const sugBox = document.getElementById('distroItemSuggest');
+    if (itemInp) {
+      itemInp.addEventListener('focus', () => renderDistroSuggestMenu(itemInp.value));
+      itemInp.addEventListener('input', (e) => {
+        dState.selectedItemName = e.target.value;
+        updateLiveStockHint(e.target.value);
+        renderDistroSuggestMenu(e.target.value);
+      });
+      itemInp.addEventListener('blur', () => {
+        setTimeout(() => { if (sugBox) sugBox.style.display = 'none'; }, 160);
+      });
+    }
+
     const form = document.getElementById('distroAddForm');
     if (form) {
       form.addEventListener('submit', (e) => {
         e.preventDefault();
-        const itemInp = document.getElementById('distroCustomItemInput');
         const noteInp = document.getElementById('distroNoteInput');
         const name = itemInp ? itemInp.value.trim() : dState.selectedItemName;
         const note = noteInp ? noteInp.value.trim() : '';
         if (!name) return;
         addLoan(dState.selectedDept, name, dState.qtyDraft, note);
         if (noteInp) noteInp.value = '';
+        if (sugBox) sugBox.style.display = 'none';
       });
     }
 
@@ -600,6 +738,7 @@
       renderDistroPanel();
     },
     render: renderDistroPanel,
-    getTotalOutCount
+    getTotalOutCount,
+    getOutInfoForItem
   };
 })();

@@ -422,7 +422,7 @@ window.SET_FIXTURES = [
   {
     id: 'aputure-storm-80c',
     brand: 'Aputure',
-    model: 'STORM 80c',
+    model: 'STORM 80c / Amaran 80c',
     type: 'LED COB',
     watts: 100,
     pf: 0.95,
@@ -431,6 +431,32 @@ window.SET_FIXTURES = [
     socketLabel: '16A Schuko',
     colorTemp: '1800K–20000K BLAIR-CG',
     notes: 'Ultra kompakt IP65 renkli nokta kaynak (~0.46A / 0.10 kW). Dar mekanların kurtarıcısı.'
+  },
+  {
+    id: 'aputure-amaran-150c',
+    brand: 'Aputure',
+    model: 'Amaran 150c (RGBWW COB)',
+    type: 'LED COB',
+    watts: 180,
+    pf: 0.95,
+    inrushMultiplier: 1.0,
+    minSocketAmps: 16,
+    socketLabel: '16A Schuko',
+    colorTemp: '2500K–7500K RGBWW',
+    notes: 'Kompakt renkli 150W COB (~0.82A / 0.18 kW). 16A hatta 14 adet güvenli.'
+  },
+  {
+    id: 'aputure-amaran-300c',
+    brand: 'Aputure',
+    model: 'Amaran 300c (RGBWW COB)',
+    type: 'LED COB',
+    watts: 330,
+    pf: 0.95,
+    inrushMultiplier: 1.0,
+    minSocketAmps: 16,
+    socketLabel: '16A Schuko',
+    colorTemp: '2500K–7500K RGBWW',
+    notes: 'Bowens mount tam renkli 300W COB (~1.5A / 0.33 kW). 16A hatta 8 adet güvenli.'
   },
   {
     id: 'aputure-300d2',
@@ -509,6 +535,19 @@ window.SET_FIXTURES = [
     socketLabel: '16A TRUE1',
     colorTemp: '2300K–10000K RGBWW',
     notes: 'Renkli 600W COB (~3.3A / 0.72 kW). V-Mount batarya veya 16A şebeke ile çalışır.'
+  },
+  {
+    id: 'aputure-700x',
+    brand: 'Aputure',
+    model: 'STORM 700x / LS 700x',
+    type: 'LED COB',
+    watts: 850,
+    pf: 0.95,
+    inrushMultiplier: 1.0,
+    minSocketAmps: 16,
+    socketLabel: '16A TRUE1',
+    colorTemp: '2500K–10000K BLAIR',
+    notes: '700W yüksek çıkışlı Bi-Color COB (~3.9A / 0.85 kW). 16A hatta 3 adet güvenli.'
   },
   {
     id: 'aputure-storm-1000c',
@@ -630,7 +669,7 @@ window.SET_FIXTURES = [
   {
     id: 'aputure-amaran-f22c',
     brand: 'Aputure',
-    model: 'Amaran F22c (2x2 Mat)',
+    model: 'Amaran F22c / 22c (2x2 Mat)',
     type: 'LED Panel',
     watts: 240,
     pf: 0.95,
@@ -786,6 +825,19 @@ window.SET_FIXTURES = [
     notes: 'Tam renkli 2400W dev COB (~13.1A / 2.90 kW). Aynı 16A hatta yanına başka cihaz bağlanmamalı.'
   },
   {
+    id: 'godox-mg4k',
+    brand: 'Godox',
+    model: 'KNOWLED MG4K (4K LED)',
+    type: 'LED COB',
+    watts: 4200,
+    pf: 0.96,
+    inrushMultiplier: 1.0,
+    minSocketAmps: 32,
+    socketLabel: '32A CEE',
+    colorTemp: '2800K–10000K',
+    notes: 'M40 muadili yüksek güçlü G-Mount LED kafa (~19.0A / 4.20 kW). 16A prizde çalışmaz, 32A hat gerekir.'
+  },
+  {
     id: 'godox-mg6k',
     brand: 'Godox',
     model: 'KNOWLED MG6K (4.3K+ LED)',
@@ -927,6 +979,19 @@ window.SET_FIXTURES = [
     socketLabel: '16A Schuko',
     colorTemp: '2000K–10000K RGBWW',
     notes: '4 adet 2.4m uzun piksel tüp kiti (~2.2A / 0.48 kW).'
+  },
+  {
+    id: 'godox-bulb-kit',
+    brand: 'Godox',
+    model: 'KNOWLED C7R / C10R Bulb (Set)',
+    type: 'LED Tüp',
+    watts: 100,
+    pf: 0.94,
+    inrushMultiplier: 1.0,
+    minSocketAmps: 16,
+    socketLabel: '16A Schuko',
+    colorTemp: '2000K–10000K RGBWW',
+    notes: 'Pratik duy/avize tipi RGBWW ampul şarj çantası (~0.46A / 0.10 kW).'
   },
 
   // ======================== NANLUX / NANLITE ========================
@@ -1431,6 +1496,58 @@ window.SET_FIXTURES = [
     socketLabel: '16A Schuko',
     colorTemp: '3200K',
     notes: '3 adet 150W dimmerli hassas tungsten set (~2.0A / 0.45 kW).'
+  },
+  {
+    id: 'dedolight-24v-kit',
+    brand: 'Diğer',
+    model: 'Dedo 24V 150W Set + Loop',
+    type: 'Tungsten',
+    watts: 450,
+    pf: 0.98,
+    inrushMultiplier: 1.05,
+    minSocketAmps: 16,
+    socketLabel: '16A Schuko',
+    colorTemp: '3200K',
+    notes: '24V trafolu hassas Dedolight + Loop optik set (~2.0A / 0.45 kW).'
+  },
+  {
+    id: 'mizar-300w',
+    brand: 'Diğer',
+    model: 'Mizar 300W (Tungsten Fresnel)',
+    type: 'Tungsten',
+    watts: 300,
+    pf: 1.0,
+    inrushMultiplier: 1.05,
+    minSocketAmps: 16,
+    socketLabel: '16A Schuko',
+    colorTemp: '3200K',
+    notes: 'Setlerin klasik 300W kompakt tungsten Fresnel kafası (~1.3A / 0.30 kW). 16A hatta 9 adet güvenli.'
+  },
+  {
+    id: 'mizar-650w',
+    brand: 'Diğer',
+    model: 'Mizar 650W (Tungsten Fresnel)',
+    type: 'Tungsten',
+    watts: 650,
+    pf: 1.0,
+    inrushMultiplier: 1.05,
+    minSocketAmps: 16,
+    socketLabel: '16A Schuko',
+    colorTemp: '3200K',
+    notes: 'Setlerin klasik 650W tungsten Fresnel kafası (~2.8A / 0.65 kW). 16A hatta 4 adet güvenli.'
+  },
+  {
+    id: 'par64-1k',
+    brand: 'Diğer',
+    model: 'PAR64 (1000W Tekli Tungsten)',
+    type: 'Tungsten',
+    watts: 1000,
+    pf: 1.0,
+    inrushMultiplier: 1.05,
+    minSocketAmps: 16,
+    socketLabel: '16A Schuko',
+    colorTemp: '3200K',
+    notes: 'Klasik 1000W tekli PAR64 (~4.35A / 1.00 kW). 5 kW dimmer veya 16A hat ile kullanılır.'
   },
   {
     id: 'chinaball-1k',

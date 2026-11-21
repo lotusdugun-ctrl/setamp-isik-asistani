@@ -7,7 +7,7 @@
   <title>SetAmp — Işık Ekibi</title>
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
-  <link rel="stylesheet" href="./css/styles.css?v=14" />
+  <link rel="stylesheet" href="./css/styles.css?v=16" />
 </head>
 <body>
   <div class="app-shell">
@@ -307,11 +307,11 @@
 
         <!-- ALT SEKME 1: KAMYON LİSTEM & PAYDOS -->
         <div id="truck-subtab-inventory">
-          <!-- 1 Satırda Hızlı Liste Ekleme (Modal açmadan saniyeler içinde liste yap) -->
+          <!-- 1 Satırda Hızlı Liste Ekleme (Özel canlı arama menülü) -->
           <div class="section-card quick-list-card">
-            <form id="truckQuickAddForm" class="quick-add-row">
-              <input id="truckQuickAddInput" class="input" list="truckQuickDatalist" autocomplete="off" placeholder="Ekipman yaz veya seç (M18, 16A, C-Stand, Kablo Yolu)..." required />
-              <datalist id="truckQuickDatalist"></datalist>
+            <form id="truckQuickAddForm" class="quick-add-row" style="position:relative;">
+              <input id="truckQuickAddInput" class="input" autocomplete="off" placeholder="Ekipman yaz veya seç (M18, 16A, C-Stand, Kablo Yolu)..." required />
+              <div id="truckQuickSuggest" class="pro-suggest-menu" style="display:none;"></div>
               <input id="truckQuickQtyInput" class="input mono" type="number" min="1" max="500" value="1" aria-label="Adet" />
               <button type="submit" class="btn btn-primary">+ Ekle</button>
             </form>
@@ -321,8 +321,10 @@
 
             <!-- Kompakt Yardımcı Çubuk -->
             <div class="quick-tools-row">
+              <button type="button" id="openPasteListModalBtn" class="btn btn-soft btn-sm">📋 Liste Yapıştır</button>
               <button type="button" id="toggleTruckSettingsBtn" class="btn btn-soft btn-sm">Şablon / Proje</button>
               <button type="button" id="truckToCalcBtn" class="btn btn-soft btn-sm">Yük Hesabına</button>
+              <button type="button" id="markAllOkBtn" class="btn btn-safe btn-sm">Tümünü Tamamla</button>
               <button type="button" id="openAddTruckItemBtn" class="btn btn-soft btn-sm">+ Detaylı</button>
               <button type="button" id="resetWrapBtn" class="btn btn-soft btn-sm">Sayımı Sıfırla</button>
             </div>
@@ -393,10 +395,10 @@
               <!-- Tek satır yatay hızlı malzeme şeridi -->
               <div id="distroQuickItemPicker" class="quick-strip-scroll" aria-label="Hızlı malzeme seç"></div>
 
-              <!-- Satır 2: Malzeme (kamyon + özel) + Adet stepper + Ver -->
-              <div class="distro-action-row">
-                <input id="distroCustomItemInput" class="input" list="distroItemDatalist" autocomplete="off" required placeholder="Malzeme seç veya yaz..." />
-                <datalist id="distroItemDatalist"></datalist>
+              <!-- Satır 2: Malzeme (özel canlı önerili) + Adet stepper + Ver -->
+              <div class="distro-action-row" style="position:relative;">
+                <input id="distroCustomItemInput" class="input" autocomplete="off" required placeholder="Malzeme seç veya yaz..." />
+                <div id="distroItemSuggest" class="pro-suggest-menu" style="display:none;"></div>
                 <div class="stepper distro-qty-stepper">
                   <button type="button" id="distroQtyDec" aria-label="Azalt">−</button>
                   <span id="distroQtyVal" class="mono">1</span>
@@ -405,10 +407,10 @@
                 <button type="submit" class="btn btn-primary" style="height:37px; padding:0 16px;">Ver</button>
               </div>
 
-              <!-- Opsiyonel Not satırı (varsayılan gizli) -->
-              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-                <button type="button" id="distroToggleNoteBtn" class="distro-note-toggle">+ Kişi / yer notu ekle</button>
-                <span style="font-size:11px; color:var(--text-dim);">Kamyon stoğundan otomatik düşer</span>
+              <!-- Anlık Kamyon Stok İpucu + Opsiyonel Not -->
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+                <div id="distroLiveStockHint" class="distro-stock-hint mono">Kamyondaki stok kontrol ediliyor...</div>
+                <button type="button" id="distroToggleNoteBtn" class="distro-note-toggle">+ Kişi / yer notu</button>
               </div>
               <div id="distroNoteWrap" style="display:none;">
                 <input id="distroNoteInput" class="input" placeholder="Kişi veya yer notu (ör. Ahmet - Kamera arabası)..." />
@@ -450,6 +452,16 @@
         </div>
 
         <div id="lowStockBanner" class="hero-card status-CAUTION" style="display:none; padding:14px 16px;"></div>
+
+        <!-- Hızlı Sarf Ekleme (Tek Satır + Sık Kullanılanlar) -->
+        <div class="section-card quick-list-card">
+          <form id="expQuickAddForm" class="quick-add-row">
+            <input id="expQuickNameInput" class="input" autocomplete="off" placeholder="Sarf adı yaz (ör. Siyah Gaffer, 216, CTO, C-47)..." required />
+            <input id="expQuickQtyInput" class="input mono" type="number" min="0.5" max="200" step="0.5" value="1" aria-label="Miktar" />
+            <button type="submit" class="btn btn-primary">+ Ekle</button>
+          </form>
+          <div id="expQuickChips" class="quick-strip-scroll" aria-label="Hızlı sarf ekle"></div>
+        </div>
 
         <div class="section-card">
           <div id="expCategoryPills" class="chip-row" style="margin-bottom:12px;"></div>
@@ -530,7 +542,10 @@
                 <span id="solarSelectedTime" class="mono" style="font-size:18px; font-weight:700;">12:00</span>
                 <span id="solarPhaseBadge" class="status-pill">Gün Işığı</span>
               </div>
-              <span id="solarNextCountdown" class="mono" style="font-size:11px; color:var(--text-muted);"></span>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <button type="button" id="solarPlayDayBtn" class="btn btn-soft btn-sm solar-play-btn">▶ Günü Oynat</button>
+                <span id="solarNextCountdown" class="mono" style="font-size:11px; color:var(--text-muted);"></span>
+              </div>
             </div>
 
             <div class="solar-slider-wrap" style="margin-top:0; padding:7px 10px;">
@@ -719,9 +734,10 @@
           <label class="field-label">Kategori</label>
           <select name="category" id="truckItemCategorySelect" class="select">
             <option value="Lamba">Lamba</option>
-            <option value="Kablo">Kablo</option>
-            <option value="Stand & Grip">Stand &amp; Grip</option>
+            <option value="Ayak">Ayak</option>
             <option value="Aksesuar">Aksesuar</option>
+            <option value="Kablo + Pano">Kablo + Pano</option>
+            <option value="Grip & Çerçeve">Grip &amp; Çerçeve</option>
           </select>
         </div>
         <div id="truckPresetLampWrap">
@@ -790,6 +806,36 @@
     </div>
   </div>
 
+  <!-- ==================== MODAL: WHATSAPP LİSTE YAPIŞTIR / İÇE AKTAR ==================== -->
+  <div id="pasteTruckListModal" class="modal-backdrop">
+    <div class="modal" style="max-width:520px;">
+      <div class="section-head">
+        <h3 class="section-title">WhatsApp Listesi Yapıştır</h3>
+        <button class="icon-pill-btn" data-close-modal="pasteTruckListModal">✕</button>
+      </div>
+      <div class="modal-form">
+        <div style="font-size:12px; color:var(--text-muted);">
+          Setten gelen ham malzeme listesini yapıştırın; adetler, kategoriler (Ayak, Aksesuar, Kablo + Pano), eksik (teslim edilmedi) ve hasar notları otomatik ayrıştırılır.
+        </div>
+        <div>
+          <label class="field-label" for="pasteListTextarea">Malzeme Listesi Metni</label>
+          <textarea id="pasteListTextarea" class="input" rows="8" style="height:auto; padding:10px 12px; font-size:12.5px; line-height:1.45;" placeholder="Ör:&#10;3 x Xt 52 + 3 x Balon&#10;Ayak Listesi&#10;16 x Uzun Cstand&#10;20 x 32 A Kablo..."></textarea>
+        </div>
+        <div>
+          <label class="field-label" for="pasteListModeSelect">Aktarım Şekli</label>
+          <select id="pasteListModeSelect" class="select">
+            <option value="replace">Mevcut listeyi silip yeni liste yap</option>
+            <option value="append">Mevcut listenin üzerine ekle</option>
+          </select>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" id="applyPasteListBtn" class="btn btn-primary" style="flex:1;">Listeyi Çözümle ve Aktar</button>
+          <button type="button" id="loadEnfesPresetBtn" class="btn btn-soft">Enfes Bir Akşam Listesini Yükle</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== MODAL: RAPOR ÖNİZLEME ==================== -->
   <div id="reportModal" class="modal-backdrop">
     <div class="modal">
@@ -799,7 +845,8 @@
       </div>
       <pre id="reportPreviewText" class="report-preview mono"></pre>
       <div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
-        <button id="copyReportBtn" class="btn btn-primary" style="flex:1;">WhatsApp İçin Kopyala</button>
+        <button id="shareWhatsappBtn" class="btn btn-safe" style="flex:1;">WhatsApp Gönder</button>
+        <button id="copyReportBtn" class="btn btn-primary" style="flex:1;">Kopyala</button>
         <button id="printReportBtn" class="btn btn-soft">PDF / Yazdır</button>
       </div>
     </div>
@@ -807,13 +854,13 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script src="./js/data-cables.js?v=14"></script>
-  <script src="./js/data-fixtures.js?v=14"></script>
-  <script src="./js/data-templates.js?v=14"></script>
-  <script src="./js/calc.js?v=14"></script>
-  <script src="./js/solar.js?v=14"></script>
-  <script src="./js/solar-ui.js?v=14"></script>
-  <script src="./js/distro-ui.js?v=14"></script>
-  <script src="./js/app.js?v=14"></script>
+  <script src="./js/data-cables.js?v=16"></script>
+  <script src="./js/data-fixtures.js?v=16"></script>
+  <script src="./js/data-templates.js?v=16"></script>
+  <script src="./js/calc.js?v=16"></script>
+  <script src="./js/solar.js?v=16"></script>
+  <script src="./js/solar-ui.js?v=16"></script>
+  <script src="./js/distro-ui.js?v=16"></script>
+  <script src="./js/app.js?v=16"></script>
 </body>
 </html>

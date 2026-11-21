@@ -112,6 +112,9 @@
     weatherLoading: false,
     weatherError: null,
     weather: null,
+    // Günü Oynat Animasyonu
+    playingDay: false,
+    playDayTimer: null,
     // Bulut Giriş / Çıkış Saniye Sayacı
     cloudPhase: 'idle',
     tStart: null,
@@ -608,16 +611,70 @@
 
     ctx.clearRect(0, 0, W, H);
 
-    // 1. Arka Plan (Kamera kapalıysa temiz 3D gökyüzü/ufuk gradyanı çiz)
+    // 1. Arka Plan (Kamera kapalıysa 3D gökyüzü/ufuk gradyanı + perspektif zemin ızgarası & silüet)
     if (!live.cameraActive) {
-      const horizY = cy + Math.tan(look.el * DEG) * focal;
+      const horizVec = projectSky(skyVec(look.az, 0), basis, cx, cy, focal);
+      const horizY = horizVec ? horizVec.y : cy + Math.tan(look.el * DEG) * focal;
+      const clampedStop = Math.max(0.05, Math.min(0.95, horizY / H));
       const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
-      skyGrad.addColorStop(0, '#0c1526');
-      skyGrad.addColorStop(Math.max(0.05, Math.min(0.95, horizY / H)), '#1d3252');
-      skyGrad.addColorStop(Math.max(0.06, Math.min(0.98, (horizY + 4) / H)), '#161b22');
-      skyGrad.addColorStop(1, '#0e1116');
+      skyGrad.addColorStop(0, '#0a1220');
+      skyGrad.addColorStop(clampedStop, '#1c314e');
+      skyGrad.addColorStop(Math.min(0.99, clampedStop + 0.015), '#131820');
+      skyGrad.addColorStop(1, '#0b0e14');
       ctx.fillStyle = skyGrad;
       ctx.fillRect(0, 0, W, H);
+
+      // Hafif ufuk silüeti
+      ctx.beginPath();
+      let silStarted = false;
+      for (let azOff = -45; azOff <= 45; azOff += 3) {
+        const az = Solar.normalizeDeg(look.az + azOff);
+        const ridgeEl = Math.max(0, 1.4 + Math.sin(az * 0.14) * 1.1 + Math.cos(az * 0.31) * 0.6);
+        const pr = projectSky(skyVec(az, ridgeEl), basis, cx, cy, focal);
+        const pb = projectSky(skyVec(az, 0), basis, cx, cy, focal);
+        if (pr && pb) {
+          if (!silStarted) { ctx.moveTo(pr.x, pb.y + 4); silStarted = true; }
+          ctx.lineTo(pr.x, pr.y);
+        }
+      }
+      if (silStarted) {
+        ctx.lineTo(W + 40, H);
+        ctx.lineTo(-40, H);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(13, 18, 26, 0.72)';
+        ctx.fill();
+      }
+
+      // Zemin perspektif ızgarası (0° altı)
+      [-8, -18, -32].forEach((gEl) => {
+        ctx.beginPath();
+        let gDown = false;
+        for (let az = 0; az <= 360; az += 8) {
+          const pt = projectSky(skyVec(az, gEl), basis, cx, cy, focal);
+          if (pt && pt.x > -100 && pt.x < W + 100 && pt.y > -40 && pt.y < H + 80) {
+            if (!gDown) { ctx.moveTo(pt.x, pt.y); gDown = true; }
+            else ctx.lineTo(pt.x, pt.y);
+          } else {
+            gDown = false;
+          }
+        }
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+
+      for (let az = 0; az < 360; az += 30) {
+        const pTop = projectSky(skyVec(az, 0), basis, cx, cy, focal);
+        const pBot = projectSky(skyVec(az, -32), basis, cx, cy, focal);
+        if (pTop && pBot) {
+          ctx.beginPath();
+          ctx.moveTo(pTop.x, pTop.y);
+          ctx.lineTo(pBot.x, pBot.y);
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      }
     }
 
     // 2. İnce Yükseklik Referans Yayları (+30°, +60°)
@@ -708,26 +765,37 @@
       scr: projectSky(pt.vec, basis, cx, cy, focal)
     }));
 
-    // Kontrast gölge çizgisi + altın güneş yolu çizgisi
-    const drawSunArc = (strokeStyle, lineWidth) => {
-      ctx.beginPath();
-      let started = false;
-      for (const p of projPath) {
-        if (p.scr && p.scr.x > -180 && p.scr.x < W + 180 && p.scr.y > -180 && p.scr.y < H + 180) {
-          if (!started) { ctx.moveTo(p.scr.x, p.scr.y); started = true; }
-          else ctx.lineTo(p.scr.x, p.scr.y);
-        } else {
-          started = false;
-        }
+    // Kontrast dış hat + faz renkli güneş yolu (Mavi Saat: mavi, Altın Saat: kehribar, Gün Işığı: altın)
+    ctx.beginPath();
+    let started = false;
+    for (const p of projPath) {
+      if (p.scr && p.scr.x > -180 && p.scr.x < W + 180 && p.scr.y > -180 && p.scr.y < H + 180) {
+        if (!started) { ctx.moveTo(p.scr.x, p.scr.y); started = true; }
+        else ctx.lineTo(p.scr.x, p.scr.y);
+      } else {
+        started = false;
       }
-      ctx.strokeStyle = strokeStyle;
-      ctx.lineWidth = lineWidth;
+    }
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.72)';
+    ctx.lineWidth = 7;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    for (let i = 0; i < projPath.length - 1; i++) {
+      const p0 = projPath[i];
+      const p1 = projPath[i + 1];
+      if (!p0.scr || !p1.scr) continue;
+      if ((p0.scr.x < -180 && p1.scr.x < -180) || (p0.scr.x > W + 180 && p1.scr.x > W + 180)) continue;
+      const avgEl = (p0.elevation + p1.elevation) / 2;
+      ctx.beginPath();
+      ctx.moveTo(p0.scr.x, p0.scr.y);
+      ctx.lineTo(p1.scr.x, p1.scr.y);
+      ctx.strokeStyle = avgEl <= 0 ? '#38bdf8' : avgEl <= 6 ? '#fb923c' : '#f5b71a';
+      ctx.lineWidth = 3.2;
       ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
       ctx.stroke();
-    };
-    drawSunArc('rgba(0, 0, 0, 0.65)', 6.5);
-    drawSunArc('#f5b71a', 3);
+    }
 
     // Seçili saatten sonraki +1 saatlik GİDİŞ YÖNÜ vurgusu
     const nextArcPts = projPath.filter((p) => p.minute >= sState.minute && p.minute <= sState.minute + 70 && p.scr);
@@ -843,7 +911,19 @@
         }
       }
 
-      // Güneş diski
+      // Güneş ışın halkası + disk
+      ctx.save();
+      ctx.strokeStyle = sunCol;
+      ctx.lineWidth = 1.6;
+      for (let k = 0; k < 8; k++) {
+        const ang = (k * Math.PI) / 4;
+        ctx.beginPath();
+        ctx.moveTo(selScr.x + Math.cos(ang) * 14, selScr.y + Math.sin(ang) * 14);
+        ctx.lineTo(selScr.x + Math.cos(ang) * 20, selScr.y + Math.sin(ang) * 20);
+        ctx.stroke();
+      }
+      ctx.restore();
+
       ctx.beginPath();
       ctx.arc(selScr.x, selScr.y, 17, 0, Math.PI * 2);
       ctx.fillStyle = selPos.phaseKey === 'GOLDEN' ? 'rgba(251, 146, 60, 0.28)' : 'rgba(245, 183, 26, 0.28)';
@@ -891,7 +971,7 @@
       drawPill(ctx, gx, gy, guideText, 'rgba(245, 183, 26, 0.94)', '#111827', '#ffffff', '700 11px ui-monospace, monospace');
     }
 
-    // 8. Orta Nişangah Artısı (Kalibrasyon & Açı Ölçümü için)
+    // 8. Orta Nişangah Artısı & Üst Vizör Pusula Cetveli
     ctx.strokeStyle = 'rgba(255,255,255,0.65)';
     ctx.lineWidth = 1.25;
     ctx.beginPath();
@@ -900,6 +980,50 @@
     ctx.moveTo(cx, cy - 10); ctx.lineTo(cx, cy - 4);
     ctx.moveTo(cx, cy + 4); ctx.lineTo(cx, cy + 10);
     ctx.stroke();
+
+    // Vizör üst derece cetveli (profesyonel kamera HUD)
+    const tapeW = Math.min(220, W - 40);
+    const tapeLeft = cx - tapeW / 2;
+    const tapeY = 44;
+    ctx.fillStyle = 'rgba(10, 14, 22, 0.62)';
+    ctx.beginPath();
+    ctx.roundRect(tapeLeft, tapeY, tapeW, 18, 4);
+    ctx.fill();
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(tapeLeft + 2, tapeY, tapeW - 4, 18);
+    ctx.clip();
+    const pxPerDeg = 3.1;
+    const baseAz = Math.floor((look.az - 40) / 5) * 5;
+    ctx.font = '700 8.5px ui-monospace, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (let deg = baseAz; deg <= look.az + 45; deg += 5) {
+      const diff = shortestAngleDelta(look.az, Solar.normalizeDeg(deg));
+      const tx = cx + diff * pxPerDeg;
+      if (tx < tapeLeft || tx > tapeLeft + tapeW) continue;
+      const major = ((deg % 15) + 15) % 15 === 0;
+      ctx.strokeStyle = major ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.32)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(tx, tapeY + 18);
+      ctx.lineTo(tx, tapeY + (major ? 12 : 14.5));
+      ctx.stroke();
+      if (major) {
+        const dNorm = Math.round(Solar.normalizeDeg(deg));
+        const dLbl = dNorm === 0 ? 'K' : dNorm === 90 ? 'D' : dNorm === 180 ? 'G' : dNorm === 270 ? 'B' : `${dNorm}°`;
+        ctx.fillStyle = dNorm % 90 === 0 ? '#f5b71a' : '#cbd5e1';
+        ctx.fillText(dLbl, tx, tapeY + 7);
+      }
+    }
+    ctx.restore();
+    ctx.fillStyle = '#f5b71a';
+    ctx.beginPath();
+    ctx.moveTo(cx, tapeY + 18);
+    ctx.lineTo(cx - 3.5, tapeY + 23);
+    ctx.lineTo(cx + 3.5, tapeY + 23);
+    ctx.closePath();
+    ctx.fill();
 
     ctx.restore();
   }
@@ -1198,6 +1322,7 @@
       <button class="btn btn-soft btn-sm" id="ctEnterCloud">Güneş Buluta Girdi</button>
     `;
 
+    let countdownBarHtml = '';
     if (live.cloudPhase === 'approach_measuring') {
       statusBadge = 'YAKLAŞMA ÖLÇÜLÜYOR';
       statusCls = 'tag-caution';
@@ -1210,6 +1335,9 @@
       `;
     } else if (live.cloudPhase === 'approach_countdown') {
       const remSec = (live.tTarget - now) / 1000;
+      const totalMs = Math.max(1000, live.tTarget - live.tHalf);
+      const progPct = Math.min(100, Math.max(0, ((now - live.tHalf) / totalMs) * 100));
+      countdownBarHtml = `<div class="bar-track" style="margin-top:8px;"><div class="bar-fill ${remSec <= 10 ? 'DANGER' : 'CAUTION'}" style="width:${progPct.toFixed(0)}%;"></div></div>`;
       statusBadge = remSec <= 10 ? 'BULUTA GİRİYOR!' : 'BULUTA GERİ SAYIM';
       statusCls = remSec <= 10 ? 'tag-danger' : 'tag-caution';
       bigMain = remSec > 0 ? `-${formatSec(remSec)}` : `+${formatSec(-remSec)}`;
@@ -1233,6 +1361,9 @@
     } else if (live.cloudPhase === 'in_cloud_countdown') {
       const elSec = (now - live.tStart) / 1000;
       const remSec = (live.tTarget - now) / 1000;
+      const totalMs = Math.max(1000, live.tTarget - live.tStart);
+      const progPct = Math.min(100, Math.max(0, ((now - live.tStart) / totalMs) * 100));
+      countdownBarHtml = `<div class="bar-track" style="margin-top:8px;"><div class="bar-fill ${remSec <= 12 ? 'SAFE' : 'CAUTION'}" style="width:${progPct.toFixed(0)}%;"></div></div>`;
       statusBadge = remSec <= 12 ? 'GÜNEŞ ÇIKIYOR!' : 'ÇIKIŞA GERİ SAYIM';
       statusCls = remSec <= 12 ? 'tag-safe' : 'tag-caution';
       bigMain = remSec > 0 ? `-${formatSec(remSec)}` : `+${formatSec(-remSec)}`;
@@ -1273,11 +1404,14 @@
 
     box.innerHTML = `
       <div class="cloud-timer-display">
-        <div>
-          <span class="tag ${statusCls} mono" style="font-size:11px; letter-spacing:0.05em;">${statusBadge}</span>
-          <div class="cloud-big-clock mono">${bigMain}</div>
+        <div style="width:100%; display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+          <div>
+            <span class="tag ${statusCls} mono" style="font-size:11px; letter-spacing:0.05em;">${statusBadge}</span>
+            <div class="cloud-big-clock mono">${bigMain}</div>
+          </div>
+          <div style="flex:1; min-width:170px; font-size:12px; color:var(--text-muted);">${esc(mainSub)}</div>
         </div>
-        <div style="flex:1; min-width:170px; font-size:12px; color:var(--text-muted);">${esc(mainSub)}</div>
+        ${countdownBarHtml ? `<div style="width:100%;">${countdownBarHtml}</div>` : ''}
       </div>
       <div style="display:flex; gap:7px; flex-wrap:wrap; margin-top:10px;">${primaryActions}</div>
       <div class="cloud-quick-sizes">
@@ -1415,8 +1549,58 @@
     );
   }
 
+  // ==================== GÜNÜ OYNAT ANİMASYONU ====================
+  function stopPlayDay() {
+    if (live.playDayTimer) {
+      clearInterval(live.playDayTimer);
+      live.playDayTimer = null;
+    }
+    if (live.playingDay) {
+      live.playingDay = false;
+      updatePlayBtnUI();
+    }
+  }
+
+  function updatePlayBtnUI() {
+    const playBtn = document.getElementById('solarPlayDayBtn');
+    if (playBtn) {
+      playBtn.classList.toggle('active', live.playingDay);
+      playBtn.textContent = live.playingDay ? '⏸ Durdur' : '▶ Günü Oynat';
+    }
+  }
+
+  function togglePlayDay() {
+    if (live.playingDay) {
+      stopPlayDay();
+      return;
+    }
+    ensureDayCache();
+    const startMin = Math.max(300, Math.floor((live.cachedSummary?.sunriseMin || 390) - 20));
+    const endMin = Math.min(1320, Math.ceil((live.cachedSummary?.sunsetMin || 1110) + 20));
+    if (sState.minute < startMin || sState.minute >= endMin - 5) {
+      sState.minute = startMin;
+    }
+    live.playingDay = true;
+    updatePlayBtnUI();
+
+    const stepMin = Math.max(5, Math.round((endMin - startMin) / 100));
+    live.playDayTimer = setInterval(() => {
+      sState.minute += stepMin;
+      if (sState.minute >= endMin) {
+        sState.minute = endMin;
+        if (!live.sensorActive) aimManualAtSun();
+        renderSolarTab();
+        stopPlayDay();
+        return;
+      }
+      if (!live.sensorActive) aimManualAtSun();
+      renderSolarTab();
+    }, 80);
+  }
+
   // ==================== ALT SEKME GEÇİŞİ & ANA RENDER ====================
   function setSolarSubtab(sub) {
+    stopPlayDay();
     live.subtab = sub;
     document.querySelectorAll('[data-solar-subtab]').forEach((b) => {
       b.classList.toggle('active', b.dataset.solarSubtab === sub);
@@ -1579,6 +1763,7 @@
     `;
 
     updateArControlsUI();
+    updatePlayBtnUI();
     renderCloudTimerCard();
     renderCloudWeatherPanel();
     if (live.subtab === 'camera' && rootEl.classList.contains('active')) {
@@ -1698,15 +1883,20 @@
     });
 
     const onTimeSlide = (val) => {
+      stopPlayDay();
       sState.minute = Number(val);
       renderSolarTab();
     };
+    const playDayBtn = document.getElementById('solarPlayDayBtn');
+    if (playDayBtn) playDayBtn.addEventListener('click', togglePlayDay);
+
     const slider = document.getElementById('solarTimeSlider');
     if (slider) slider.addEventListener('input', (e) => onTimeSlide(e.target.value));
     const fsSlider = document.getElementById('solarArFsSlider');
     if (fsSlider) fsSlider.addEventListener('input', (e) => onTimeSlide(e.target.value));
 
     const resetNow = () => {
+      stopPlayDay();
       sState.dateIso = todayIso();
       sState.minute = nowMinutes();
       if (!live.sensorActive) aimManualAtSun();
@@ -1781,6 +1971,7 @@
       }
     },
     onTabHide() {
+      stopPlayDay();
       stopArLoop();
       if (live.cameraActive) stopLiveCamera();
     }
