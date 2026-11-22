@@ -4055,6 +4055,210 @@ body.night-red .lightbox-img {
   }
 }
 
+/* ==================== V26 HIZLI SET NOTU & TEK CÜMLEDE ÇOKLU VERME ==================== */
+
+.quick-cap-top-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 27px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #141004;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
+  white-space: nowrap;
+}
+
+.fab-quick-note {
+  position: fixed;
+  right: 12px;
+  bottom: calc(var(--bottomnav-h, 54px) + 10px);
+  z-index: 95;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #141004;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  border: 1.5px solid #fde68a;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55), 0 0 14px rgba(245, 183, 26, 0.35);
+  transition: transform 0.1s ease;
+}
+.fab-quick-note:active {
+  transform: scale(0.95);
+}
+@media (min-width: 980px) {
+  .fab-quick-note {
+    right: 22px;
+    bottom: 20px;
+  }
+}
+
+.step-box-smart {
+  border-color: rgba(245, 183, 26, 0.45) !important;
+  border-left: 4px solid #f5b71a !important;
+  background: linear-gradient(180deg, rgba(245, 183, 26, 0.10), var(--input-bg)) !important;
+}
+
+.qc-sentence-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.qc-sentence-row .input {
+  flex: 1;
+  min-width: 0;
+  height: 37px;
+  font-size: 13px;
+}
+.qc-mic-btn {
+  width: 37px;
+  height: 37px;
+  padding: 0 !important;
+  font-size: 16px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+.qc-mic-btn.listening {
+  background: var(--danger) !important;
+  border-color: var(--danger) !important;
+  color: #fff !important;
+  animation: pulseMic 1s infinite alternate;
+}
+@keyframes pulseMic {
+  from { transform: scale(1); }
+  to { transform: scale(1.08); }
+}
+
+.qc-inline-preview {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+  font-size: 11.5px;
+}
+
+.qc-examples-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+.qc-example-chip {
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #fde68a;
+  background: rgba(245, 183, 26, 0.14);
+  border: 1px solid rgba(245, 183, 26, 0.32);
+}
+.qc-example-chip:hover {
+  background: rgba(245, 183, 26, 0.25);
+}
+
+.qc-mini-note {
+  max-width: 170px;
+  height: 26px !important;
+  min-height: 26px !important;
+  padding: 0 8px !important;
+  font-size: 11.5px !important;
+}
+
+.qc-items-multi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 4px;
+}
+.qc-multi-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  height: 30px;
+  padding: 0 7px;
+  border-radius: 5px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.qc-multi-chip.qitem-cable { border-left: 3px solid #38bdf8; }
+.qc-multi-chip.qitem-power { border-left: 3px solid #f5b71a; }
+.qc-multi-chip.qitem-stand { border-left: 3px solid #34d399; }
+.qc-multi-chip.qitem-grip { border-left: 3px solid #fb923c; }
+.qc-multi-chip.qitem-acc { border-left: 3px solid #a78bfa; }
+.qc-multi-chip.selected {
+  border-color: #34d399 !important;
+  background: rgba(52, 211, 153, 0.18) !important;
+}
+.qc-chip-cnt {
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 800;
+  background: #34d399;
+  color: #052e16;
+  flex-shrink: 0;
+}
+
+.qc-preview-box {
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(34, 197, 94, 0.09);
+  border: 1px solid rgba(34, 197, 94, 0.38);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.qc-prev-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 12px;
+}
+.qc-prev-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.qc-prev-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 11.5px;
+  background: var(--surface-2);
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  color: var(--text);
+}
+.qc-pill-rem {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  padding: 0 2px;
+}
+.qc-pill-rem:hover {
+  color: var(--danger);
+}
+
 /* ==================== YAZDIR ==================== */
 @media print {
   body { background: #fff !important; color: #000 !important; }

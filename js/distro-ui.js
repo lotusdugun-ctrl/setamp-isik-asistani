@@ -20,22 +20,24 @@
   ];
 
   const DEFAULT_QUICK_ITEMS = [
-    { name: '16A Kablo', short: '16A Kablo', matches: ['16a kablo', '16a uzatma', '16a monofaze', 'stinger'] },
     { name: 'Türk Kablo (Üçlü Grup Priz)', short: 'Türk Kablo', matches: ['türk kablo', 'üçlü', "3'lü", 'çoklu priz'] },
+    { name: '16A Kablo', short: '16A Kablo', matches: ['16a kablo', '16a uzatma', '16a monofaze', 'stinger'] },
     { name: '32A Kablo', short: '32A Kablo', matches: ['32a kablo', '32a monofaze', '32a trifaze'] },
     { name: '63A Kablo', short: '63A Kablo', matches: ['63a kablo', '63a trifaze'] },
-    { name: '125A Kablo', short: '125A Kablo', matches: ['125a kablo', '125a ana kablo', '125a trifaze'] },
-    { name: '16A / 32A Makara', short: 'Makara', matches: ['makara'] },
-    { name: '16A / 32A Pano', short: '16/32 Pano', matches: ['16a pano', '32a pano'] },
-    { name: '63A Gecekondu Pano', short: 'Gecekondu', matches: ['gecekondu', '63a pano'] },
-    { name: 'Kablo Kanalı (Kablo Yolu)', short: 'Kablo Kanalı', matches: ['kablo kanalı', 'kablo yolu', 'ramp', 'yellow jacket'] },
+    { name: 'Çelik Ayak (A100)', short: 'A100 Ayak', matches: ['çelik a100', 'çelik ayak', 'a100'] },
     { name: 'Uzun / Kısa C-Stand', short: 'C-Stand', matches: ['c-stand', 'cstand'] },
-    { name: 'Çelik Ayak (A100)', short: 'Çelik A100', matches: ['çelik a100', 'çelik ayak', 'a100'] },
+    { name: '1000W Mizar', short: "1000'lik Mizar", matches: ['mizar 1000', '1000w mizar', '1000 lik mizar', 'mizar'] },
+    { name: '650W Mizar', short: "650'lik Mizar", matches: ['mizar 650', '650w mizar', '650 lik mizar'] },
     { name: 'Kum Torbası', short: 'Kum Torbası', matches: ['kum torbası'] },
     { name: 'Plastik Maşa / Kardelini', short: 'Maşa/Kardelini', matches: ['plastik maşa', 'kardelini', 'cardellini', 'klemp'] },
+    { name: 'Kablo Kanalı (Kablo Yolu)', short: 'Kablo Yolu', matches: ['kablo kanalı', 'kablo yolu', 'ramp', 'yellow jacket'] },
+    { name: '16A / 32A Makara', short: 'Makara', matches: ['makara'] },
+    { name: 'Autopol', short: 'Autopol', matches: ['autopol'] },
     { name: 'Flag (Siyah Bayrak)', short: 'Flag', matches: ['flag', 'floppy'] },
     { name: 'V-Mount Akü', short: 'V-Mount Akü', matches: ['v-mount', 'v mound', 'akü'] },
-    { name: 'Magliner', short: 'Magliner', matches: ['magliner'] }
+    { name: 'Amaran 80c / 300c', short: 'Amaran 80/300c', matches: ['80c', '300c', 'amaran'] },
+    { name: 'Astera Titan Set', short: 'Titan Tüp', matches: ['astera', 'titan'] },
+    { name: '63A Gecekondu Pano', short: 'Gecekondu', matches: ['gecekondu', '63a pano'] }
   ];
 
   function uid() {
@@ -437,11 +439,133 @@
 
   function getQuickItemColorClass(name) {
     const n = String(name || '').toLowerCase();
-    if (/16a|türk|makara|kablo kanalı/.test(n)) return 'qitem-cable';
-    if (/32a|63a|125a|pano|gecekondu/.test(n)) return 'qitem-power';
-    if (/c-stand|cstand|çelik|a100|ayak/.test(n)) return 'qitem-stand';
+    if (/16a|türk|makara|kablo/.test(n) && !/32a|63a|125a/.test(n)) return 'qitem-cable';
+    if (/32a|63a|125a|pano|gecekondu|mizar|amaran|titan|lamba/.test(n)) return 'qitem-power';
+    if (/c-stand|cstand|çelik|a100|ayak|autopol/.test(n)) return 'qitem-stand';
     if (/kum torbası|flag|bayrak/.test(n)) return 'qitem-grip';
     return 'qitem-acc';
+  }
+
+  // ==================== AKILLI TEK CÜMLE ÇOKLU MALZEME ÇÖZÜMLEYİCİ ====================
+  const DEPT_EXTRACT_RULES = [
+    { dept: 'Prodüksiyon', re: /\b(?:prod[üu]ksiyon|produksiyon|prod)\s*(?:ekibi(?:ne)?|birimi(?:ne)?)?\b/i },
+    { dept: 'Kamera / DIT', re: /\b(?:kamera(?:\s*ekibi)?|dit|focus)\b/i },
+    { dept: 'Ronin / Steadicam', re: /\b(?:ronin|steadicam|stedi|gimbal)\s*(?:ekibi)?\b/i },
+    { dept: 'Drone / Jimmy Jib', re: /\b(?:drone|dron|jimmy\s*jib|jib)\s*(?:ekibi)?\b/i },
+    { dept: 'Reji / Monitör', re: /\b(?:reji|monit[öo]r(?:\s*ekibi)?)\b/i },
+    { dept: 'Ses', re: /\b(?:ses(?:\s*ekibi)?|ses[çc]i)\b/i },
+    { dept: 'Sanat', re: /\b(?:sanat(?:\s*ekibi)?|dekor)\b/i },
+    { dept: 'Makyaj / Saç', re: /\b(?:makyaj|sa[çc]\s*ekibi|kuaf[öo]r)\b/i },
+    { dept: 'Kostüm', re: /\b(?:kost[üu]m(?:\s*ekibi)?)\b/i },
+    { dept: 'Jeneratör', re: /\b(?:jenerat[öo]r(?:c[üu])?|jen)\b/i },
+    { dept: 'Grip', re: /\b(?:grip(?:\s*ekibi)?|[şs]aryo)\b/i },
+    { dept: 'Karavan / Mekan', re: /\b(?:karavan|mekan)\b/i },
+    { dept: 'Catering / Çaycı', re: /\b(?:catering|[çc]ayc[ıi]|[çc]ay\s*oca[ğg][ıi])\b/i }
+  ];
+
+  const ITEM_EXTRACT_PATTERNS = [
+    { name: '1000W Mizar', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:1000\s*['’]?\s*l[iıuü]k\s*mizar|mizar\s*1000\s*w?|1000\s*w\s*mizar)/gi },
+    { name: '650W Mizar', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:650\s*['’]?\s*l[iıuü]k\s*mizar|mizar\s*650\s*w?|650\s*w\s*mizar)/gi },
+    { name: '300W Mizar', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:300\s*['’]?\s*l[iıuü]k\s*mizar|mizar\s*300\s*w?|300\s*w\s*mizar)/gi },
+    { name: '1000W Mizar', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?\bmizar\b/gi },
+    { name: 'Türk Kablo (Üçlü Grup Priz)', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:t[üu]rk+\s*(?:kablo(?:su)?|priz[i]?)?|[üu][çc]l[üu]\s*(?:grup\s*)?(?:priz|kablo)?)/gi },
+    { name: 'Kablo Kanalı (Kablo Yolu)', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?kablo\s*(?:kanal[ıi]|yolu)/gi },
+    { name: '16A / 32A Makara', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:(?:16|32)\s*a?\s*)?\bmakara\b/gi },
+    { name: '63A Gecekondu Pano', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:63\s*a?\s*)?gecekondu(?:\s*pano)?/gi },
+    { name: '16A / 32A Pano', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:(?:16|32|63)\s*a?\s*)?\bpano\b/gi },
+    { name: '16A Kablo', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?16\s*a?(?:\s*['’]?\s*l[iıuü]k)?(?:\s*kablo)?\b/gi },
+    { name: '32A Kablo', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:5\s*x\s*)?32\s*a?(?:\s*['’]?\s*l[iıuü]k)?(?:\s*kablo)?\b/gi },
+    { name: '63A Kablo', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?63\s*a?(?:\s*['’]?\s*l[iıuü]k)?(?:\s*kablo)?\b/gi },
+    { name: '125A Kablo', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?125\s*a?(?:\s*['’]?\s*l[iıuü]k)?(?:\s*kablo)?\b/gi },
+    { name: 'Çelik Ayak (A100)', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:[çc]elik\s*a\s*100(?:\s*ayak)?|a\s*100(?:\s*[çc]elik)?(?:\s*ayak|\s*aya[ğg][ıi])?|[çc]elik\s*ayak)/gi },
+    { name: 'B250 Ayak', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?b\s*250(?:\s*ayak)?/gi },
+    { name: 'Baba Ayak', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?baba\s*ayak/gi },
+    { name: 'Bodur Çelik', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?bodur(?:\s*[çc]elik)?(?:\s*ayak)?/gi },
+    { name: 'Uzun / Kısa C-Stand', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:uzun\s*|k[ıi]sa\s*)?c[\s\-]*stand/gi },
+    { name: 'Autopol', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:uzun\s*|orta\s*|k[ıi]sa\s*)?autopol/gi },
+    { name: 'Kum Torbası', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?kum\s*torbas[ıi]/gi },
+    { name: 'Plastik Maşa / Kardelini', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:plastik\s*ma[şs]a|ma[şs]a|kardelini|cardellini)/gi },
+    { name: 'Oynar Kafa', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?oynar\s*kafa/gi },
+    { name: 'Magic Arm', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:magic|macig)\s*arm/gi },
+    { name: 'Flag (Siyah Bayrak)', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:flag|bayrak|floppy)/gi },
+    { name: 'V-Mount Akü', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:v[\s\-]*moun[td]\s*)?ak[üu]/gi },
+    { name: 'Magliner', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?magliner/gi },
+    { name: 'Amaran 80c', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:amaran\s*)?80\s*c\b/gi },
+    { name: 'Amaran 150c', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:amaran\s*)?150\s*c\b/gi },
+    { name: 'Amaran 300c', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:amaran\s*)?300\s*c\b/gi },
+    { name: 'Aputure 700x', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:aputure\s*|storm\s*)?700\s*x\b/gi },
+    { name: 'Aputure 1000c', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:aputure\s*|storm\s*)?1000\s*c\b/gi },
+    { name: 'Aputure XT52', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:aputure\s*|storm\s*)?xt\s*52/gi },
+    { name: 'Godox MG4K', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:godox\s*)?mg\s*4k/gi },
+    { name: 'Astera Titan Set', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:astera|titan(?:\s*t[üu]p|\s*set)?)/gi },
+    { name: 'MC Pro Set', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?mc\s*pro/gi },
+    { name: 'Dedo 24V', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?dedo(?:light)?/gi },
+    { name: 'Godox Bulb', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:godox\s*)?bulb/gi },
+    { name: 'SkyPanel S60', re: /(?:(\d+)\s*(?:x|×|adet|tane)?\s*)?(?:skypanel|\bs60\b)/gi }
+  ];
+
+  function parseQuickLoanSentence(rawText, fallbackDept) {
+    let work = String(rawText || '').trim();
+    if (!work) return { dept: fallbackDept || dState.selectedDept, explicitDept: false, note: '', items: [] };
+
+    let detectedDept = fallbackDept || dState.selectedDept;
+    let explicitDept = false;
+    for (const rule of DEPT_EXTRACT_RULES) {
+      if (rule.re.test(work)) {
+        detectedDept = rule.dept;
+        explicitDept = true;
+        work = work.replace(rule.re, ' ');
+        break;
+      }
+    }
+
+    let note = '';
+    const icinMatch = work.match(/\b([a-zA-ZğüşöçıİĞÜŞÖÇ]+(?:\s+[a-zA-ZğüşöçıİĞÜŞÖÇ]+)?)\s+i[çc]in\b/i);
+    if (icinMatch) {
+      note = `${icinMatch[1].trim()} için`;
+      work = work.replace(icinMatch[0], ' ');
+    }
+
+    // Dolgu kelimelerini temizle
+    work = work.replace(/\b(?:ald[ıi](?:lar)?|verildi|verdik|g[öo]t[üu]rd[üu]|istedi|laz[ıi]m|sette|birim[ie]?)\b/gi, ' ');
+
+    const extracted = [];
+    const addOrMerge = (name, qty) => {
+      const q = Math.max(1, Number(qty) || 1);
+      const ex = extracted.find((x) => x.name.toLowerCase() === name.toLowerCase());
+      if (ex) ex.qty += q;
+      else extracted.push({ name, qty: q });
+    };
+
+    for (const pat of ITEM_EXTRACT_PATTERNS) {
+      pat.re.lastIndex = 0;
+      work = work.replace(pat.re, (_, qStr) => {
+        addOrMerge(pat.name, qStr ? Number(qStr) : 1);
+        return ' , ';
+      });
+    }
+
+    // Kalan parçalarda özel malzeme varsa ekle
+    const leftovers = work
+      .split(/[,+;/]|\bve\b|\bile\b|\bart[ıi]\b/i)
+      .map((s) => s.replace(/^[\s\-•:]+|[\s\-•:]+$/g, '').trim())
+      .filter((s) => s.length >= 3 && !/^\d+$/.test(s));
+
+    for (const piece of leftovers) {
+      const m = piece.match(/^(\d+)\s*(?:x|×|adet|tane)?\s+(.+)$/i);
+      if (m && m[2].trim().length >= 2) {
+        addOrMerge(m[2].trim(), Number(m[1]) || 1);
+      } else {
+        addOrMerge(piece, 1);
+      }
+    }
+
+    return {
+      dept: detectedDept,
+      explicitDept,
+      note,
+      items: extracted
+    };
   }
 
   function renderDistroPanel() {
@@ -881,6 +1005,331 @@
         toast('Tüm birim zimmetleri temizlendi');
       });
     }
+
+    // 0. Başka Ekibe Verilen sekmesi içindeki Tek Cümleyle Çoklu Kayıt
+    const dSentInp = document.getElementById('distroSentenceInput');
+    const dSentPrev = document.getElementById('distroSentencePreview');
+    const dSentCommit = document.getElementById('distroSentenceCommitBtn');
+    const dVoiceBtn = document.getElementById('distroVoiceBtn');
+
+    const updateInlineSentencePreview = () => {
+      if (!dSentInp || !dSentPrev) return;
+      const raw = dSentInp.value.trim();
+      if (!raw) {
+        dSentPrev.style.display = 'none';
+        dSentPrev.innerHTML = '';
+        return;
+      }
+      const parsed = parseQuickLoanSentence(raw, dState.selectedDept);
+      if (parsed.explicitDept) dState.selectedDept = parsed.dept;
+      const dm = getDeptVisualMeta(parsed.dept);
+      if (parsed.items.length === 0) {
+        dSentPrev.style.display = 'block';
+        dSentPrev.innerHTML = `<span style="color:var(--text-muted);">Birim: <strong>${dm.icon} ${esc(parsed.dept)}</strong> — malzeme adını yazmaya devam edin...</span>`;
+        return;
+      }
+      dSentPrev.style.display = 'flex';
+      dSentPrev.innerHTML = `
+        <span class="tag tag-brand mono">${dm.icon} ${esc(parsed.dept)}</span>
+        ${parsed.note ? `<span class="tag mono">📝 ${esc(parsed.note)}</span>` : ''}
+        ${parsed.items.map((it) => `<span class="tag tag-safe mono">+${it.qty}× ${esc(it.name)}</span>`).join('')}
+      `;
+    };
+
+    const commitInlineSentence = () => {
+      if (!dSentInp) return;
+      const raw = dSentInp.value.trim();
+      if (!raw) return;
+      const parsed = parseQuickLoanSentence(raw, dState.selectedDept);
+      if (parsed.items.length === 0) {
+        toast('Malzeme algılanamadı — örn: prodüksiyon 1000 lik mizar türk kablo');
+        return;
+      }
+      for (const it of parsed.items) {
+        addLoan(parsed.dept, it.name, it.qty, parsed.note);
+      }
+      dSentInp.value = '';
+      if (dSentPrev) {
+        dSentPrev.style.display = 'none';
+        dSentPrev.innerHTML = '';
+      }
+      toast(`${parsed.dept}: ${parsed.items.length} çeşit malzeme kaydedildi`);
+    };
+
+    if (dSentInp) {
+      dSentInp.addEventListener('input', updateInlineSentencePreview);
+      dSentInp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          commitInlineSentence();
+        }
+      });
+    }
+    if (dSentCommit) {
+      dSentCommit.addEventListener('click', commitInlineSentence);
+    }
+    if (dVoiceBtn && dSentInp) {
+      bindVoiceDictation(dVoiceBtn, dSentInp, updateInlineSentencePreview);
+    }
+
+    // Global Hızlı Not / Çoklu Ekibe Verme Modalı
+    bindQuickCaptureModal();
+  }
+
+  // ==================== SESLİ DİKTE & GLOBAL HIZLI SET NOTU MODALI ====================
+  const qcState = {
+    dept: 'Prodüksiyon',
+    manualItems: [] // [{ name, qty }]
+  };
+
+  function bindVoiceDictation(btnEl, inputEl, onResultCallback) {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec) {
+      btnEl.addEventListener('click', () => {
+        inputEl.focus();
+        toast('Klavyedeki mikrofon tuşunu veya yazmayı kullanabilirsiniz');
+      });
+      return;
+    }
+    let rec = null;
+    btnEl.addEventListener('click', () => {
+      try {
+        if (rec) {
+          rec.stop();
+          rec = null;
+          btnEl.classList.remove('listening');
+          return;
+        }
+        rec = new SpeechRec();
+        rec.lang = 'tr-TR';
+        rec.interimResults = true;
+        rec.maxAlternatives = 1;
+        btnEl.classList.add('listening');
+        toast('🎙️ Dinleniyor... (Ör: Prodüksiyon yemek için 1000 lik Mizar Türk kablo A100 ayak)');
+        rec.onresult = (ev) => {
+          const transcript = Array.from(ev.results).map((r) => r[0].transcript).join(' ');
+          inputEl.value = transcript;
+          if (onResultCallback) onResultCallback();
+        };
+        rec.onend = () => {
+          btnEl.classList.remove('listening');
+          rec = null;
+        };
+        rec.onerror = () => {
+          btnEl.classList.remove('listening');
+          rec = null;
+        };
+        rec.start();
+      } catch (_) {
+        btnEl.classList.remove('listening');
+      }
+    });
+  }
+
+  function getCombinedQcDraft() {
+    const sentInp = document.getElementById('qcSentenceInput');
+    const noteInp = document.getElementById('qcManualNoteInput');
+    const raw = sentInp ? sentInp.value.trim() : '';
+    const parsed = parseQuickLoanSentence(raw, qcState.dept);
+    const finalDept = parsed.explicitDept ? parsed.dept : qcState.dept;
+    const manualNote = noteInp ? noteInp.value.trim() : '';
+    const finalNote = [parsed.note, manualNote].filter(Boolean).join(' · ');
+
+    const combined = [];
+    const mergeItem = (name, qty, source) => {
+      const ex = combined.find((x) => x.name.toLowerCase() === name.toLowerCase());
+      if (ex) ex.qty += qty;
+      else combined.push({ name, qty, source });
+    };
+    for (const it of parsed.items) mergeItem(it.name, it.qty, 'sentence');
+    for (const it of qcState.manualItems) mergeItem(it.name, it.qty, 'manual');
+
+    return { dept: finalDept, note: finalNote, items: combined };
+  }
+
+  function renderQuickCaptureModal() {
+    const draft = getCombinedQcDraft();
+    qcState.dept = draft.dept;
+
+    const deptGrid = document.getElementById('qcDeptGrid');
+    if (deptGrid) {
+      const depts = [
+        'Prodüksiyon',
+        'Kamera / DIT',
+        'Ronin / Steadicam',
+        'Reji / Monitör',
+        'Ses',
+        'Jeneratör',
+        'Sanat',
+        'Grip'
+      ];
+      deptGrid.innerHTML = depts.map((d) => {
+        let sName = d.split('/')[0].trim();
+        if (sName === 'Prodüksiyon') sName = 'Prodük.';
+        const meta = getDeptVisualMeta(d);
+        const isActive = draft.dept === d;
+        return `
+          <button type="button" class="distro-dept-btn ${meta.cls} ${isActive ? 'active' : ''}" data-qc-dept="${esc(d)}">
+            <span class="dd-left"><span>${meta.icon}</span><span>${esc(sName)}</span></span>
+          </button>
+        `;
+      }).join('');
+      deptGrid.querySelectorAll('[data-qc-dept]').forEach((b) => {
+        b.addEventListener('click', () => {
+          qcState.dept = b.dataset.qcDept;
+          renderQuickCaptureModal();
+        });
+      });
+    }
+
+    const itemsGrid = document.getElementById('qcItemsGrid');
+    if (itemsGrid) {
+      const countByLower = new Map();
+      for (const it of draft.items) {
+        countByLower.set(it.name.toLowerCase(), it.qty);
+      }
+      itemsGrid.innerHTML = DEFAULT_QUICK_ITEMS.slice(0, 15).map((q) => {
+        const colCls = getQuickItemColorClass(q.name);
+        const curQty = countByLower.get(q.name.toLowerCase()) || 0;
+        return `
+          <button type="button" class="qc-multi-chip ${colCls} ${curQty > 0 ? 'selected' : ''}" data-qc-additem="${esc(q.name)}">
+            <span>+ ${esc(q.short || q.name)}</span>
+            ${curQty > 0 ? `<span class="qc-chip-cnt mono">${curQty}×</span>` : ''}
+          </button>
+        `;
+      }).join('');
+      itemsGrid.querySelectorAll('[data-qc-additem]').forEach((b) => {
+        b.addEventListener('click', () => {
+          const name = b.dataset.qcAdditem;
+          const ex = qcState.manualItems.find((x) => x.name.toLowerCase() === name.toLowerCase());
+          if (ex) ex.qty += 1;
+          else qcState.manualItems.push({ name, qty: 1 });
+          renderQuickCaptureModal();
+        });
+      });
+    }
+
+    const prevBox = document.getElementById('qcPreviewBox');
+    const commitBtn = document.getElementById('qcCommitBtn');
+    const dm = getDeptVisualMeta(draft.dept);
+    if (prevBox) {
+      if (draft.items.length === 0) {
+        prevBox.innerHTML = `
+          <div style="font-size:12px; color:var(--text-muted); text-align:center; padding:4px 0;">
+            Seçili Birim: <strong style="color:var(--text);">${dm.icon} ${esc(draft.dept)}</strong> — Yukarıya tek cümle yazın veya malzemelere dokunun.
+          </div>
+        `;
+      } else {
+        prevBox.innerHTML = `
+          <div class="qc-prev-head">
+            <span>Kaydedilecek: <strong>${dm.icon} ${esc(draft.dept)}</strong> ${draft.note ? `<span class="tag mono">📝 ${esc(draft.note)}</span>` : ''}</span>
+            <span class="mono" style="font-size:11px; color:var(--safe); font-weight:800;">${draft.items.length} kalem</span>
+          </div>
+          <div class="qc-prev-pills">
+            ${draft.items.map((it) => `
+              <span class="qc-prev-pill mono">
+                <strong>${it.qty}×</strong> ${esc(it.name)}
+                <button type="button" class="qc-pill-rem" data-qc-rem="${esc(it.name)}" title="Çıkar">✕</button>
+              </span>
+            `).join('')}
+          </div>
+        `;
+        prevBox.querySelectorAll('[data-qc-rem]').forEach((b) => {
+          b.addEventListener('click', () => {
+            const target = b.dataset.qcRem.toLowerCase();
+            qcState.manualItems = qcState.manualItems.filter((x) => x.name.toLowerCase() !== target);
+            const sentInp = document.getElementById('qcSentenceInput');
+            if (sentInp && sentInp.value) {
+              // Eğer cümleden geldiyse cümleyi temizle ve kalanları manualItems'a aktar
+              const rest = draft.items.filter((x) => x.name.toLowerCase() !== target);
+              sentInp.value = '';
+              qcState.manualItems = rest.map((r) => ({ name: r.name, qty: r.qty }));
+            }
+            renderQuickCaptureModal();
+          });
+        });
+      }
+    }
+    if (commitBtn) {
+      commitBtn.textContent = draft.items.length > 0
+        ? `✓ ${draft.dept.split('/')[0].trim()} İçin Kaydet (${draft.items.length} Kalem) ve İşe Dön`
+        : '✓ Kaydet ve İşe Dön';
+    }
+  }
+
+  function openQuickCaptureModal() {
+    const modal = document.getElementById('quickCaptureModal');
+    if (!modal) return;
+    modal.classList.add('open');
+    renderQuickCaptureModal();
+    const inp = document.getElementById('qcSentenceInput');
+    if (inp) setTimeout(() => inp.focus(), 60);
+  }
+
+  function bindQuickCaptureModal() {
+    ['openQuickCaptureTopBtn', 'openQuickCaptureSideBtn', 'openQuickCaptureTruckBtn', 'fabQuickCaptureBtn'].forEach((id) => {
+      const btn = document.getElementById(id);
+      if (btn) btn.addEventListener('click', openQuickCaptureModal);
+    });
+
+    const sentInp = document.getElementById('qcSentenceInput');
+    const noteInp = document.getElementById('qcManualNoteInput');
+    const clearBtn = document.getElementById('qcClearDraftBtn');
+    const commitBtn = document.getElementById('qcCommitBtn');
+    const voiceBtn = document.getElementById('qcVoiceBtn');
+
+    const commitQcDraft = () => {
+      const draft = getCombinedQcDraft();
+      if (draft.items.length === 0) {
+        toast('Önce malzeme yazın veya listeden dokunun');
+        return;
+      }
+      for (const it of draft.items) {
+        addLoan(draft.dept, it.name, it.qty, draft.note);
+      }
+      if (sentInp) sentInp.value = '';
+      if (noteInp) noteInp.value = '';
+      qcState.manualItems = [];
+      const modal = document.getElementById('quickCaptureModal');
+      if (modal) modal.classList.remove('open');
+      toast(`✓ ${draft.dept}: ${draft.items.map((x) => `${x.qty}× ${x.name}`).join(', ')} kaydedildi!`);
+    };
+
+    if (sentInp) {
+      sentInp.addEventListener('input', renderQuickCaptureModal);
+      sentInp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          commitQcDraft();
+        }
+      });
+    }
+    if (noteInp) {
+      noteInp.addEventListener('input', renderQuickCaptureModal);
+    }
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        if (sentInp) sentInp.value = '';
+        if (noteInp) noteInp.value = '';
+        qcState.manualItems = [];
+        renderQuickCaptureModal();
+      });
+    }
+    if (commitBtn) {
+      commitBtn.addEventListener('click', commitQcDraft);
+    }
+    if (voiceBtn && sentInp) {
+      bindVoiceDictation(voiceBtn, sentInp, renderQuickCaptureModal);
+    }
+
+    document.querySelectorAll('[data-qc-sample]').forEach((b) => {
+      b.addEventListener('click', () => {
+        if (sentInp) {
+          sentInp.value = b.dataset.qcSample;
+          renderQuickCaptureModal();
+        }
+      });
+    });
   }
 
   function returnAllForTruckItem(truckItemName) {
