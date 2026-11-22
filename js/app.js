@@ -1551,7 +1551,7 @@
       const lbl = TRUCK_CAT_LABELS[c] || c;
       const meta = c === 'Tümü' ? { cls: 'cat-all' } : getTruckCategoryMeta(c);
       const ic = catIcons[c] || '';
-      return `<button class="chip chip-colorful ${meta.cls} ${ui.truckCatFilter === c ? 'active' : ''}" data-tcat="${esc(c)}">${ic ? `<span>${ic}</span> ` : ''}${esc(lbl)}</button>`;
+      return `<button class="chip chip-colorful ${meta.cls} ${ui.truckCatFilter === c ? 'active' : ''}" data-tcat="${esc(c)}">${ic ? `<span class="cat-chip-ic">${ic} </span>` : ''}${esc(lbl)}</button>`;
     }).join('');
     catPills.querySelectorAll('[data-tcat]').forEach((b) => {
       b.addEventListener('click', () => {
@@ -1901,10 +1901,7 @@
       return `
         <div class="exp-item ${isLow ? 'low-stock' : ''}">
           <div class="exp-item-left">
-            <div class="inv-item-line">
-              <span class="inv-qty-box mono">${e.qty} ${esc(e.unit)}</span>
-              <span class="exp-item-name">${esc(e.name)}</span>
-            </div>
+            <div class="exp-item-name">${esc(e.name)}</div>
             <div class="exp-item-sub mono">
               <span>${esc(e.category)}</span>
               ${isLow ? `<span class="tag tag-danger">• KRİTİK (Min ${e.minQty})</span>` : `<span style="opacity:0.65;">• Min ${e.minQty}</span>`}
@@ -2606,7 +2603,7 @@
     setTab(state.activeTab);
 
     if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
-      navigator.serviceWorker.register('./sw.js?v=24').then((reg) => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=25').then((reg) => reg.update()).catch(() => {});
     }
   });
 })();

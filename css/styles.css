@@ -3465,13 +3465,14 @@ body.night-red .lightbox-img {
   }
 
   .lamp-row {
-    padding: 7px 0;
-    gap: 8px;
-    flex-wrap: nowrap;
+    padding: 7px 9px;
+    gap: 7px;
+    flex-wrap: wrap;
   }
 
   .lamp-row-info {
-    min-width: 0;
+    flex: 1 1 120px;
+    min-width: 110px;
   }
 
   .lamp-row-title {
@@ -3481,6 +3482,11 @@ body.night-red .lightbox-img {
 
   .lamp-row-sub {
     font-size: 10.5px;
+  }
+
+  .lamp-row-right {
+    gap: 6px;
+    margin-left: auto;
   }
 
   .lamp-thumb-sm {
@@ -3895,6 +3901,159 @@ body.night-red .lightbox-img {
 .distro-group-card.dept-pink { border-left: 3.5px solid #f472b6; }
 .distro-group-card.dept-indigo { border-left: 3.5px solid #818cf8; }
 .distro-group-card.dept-orange { border-left: 3.5px solid #fb923c; }
+
+/* ==================== V25 MOBİL ÖNCELİKLİ ERGONOMİ (≤ 720px) ==================== */
+@media (max-width: 720px) {
+  /* 1. Hat Yükü: 2 satırlık kaydırılabilir hızlı lamba kartları — bağlı lambalar aynı ekranda kalır */
+  .qset-grid {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(2, auto);
+    grid-auto-columns: 124px;
+    grid-template-columns: none;
+    overflow-x: auto;
+    gap: 5px;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .qset-grid::-webkit-scrollbar { display: none; }
+  .qset-tile {
+    padding: 6px 8px;
+    gap: 2px;
+  }
+  .qset-tile-name {
+    font-size: 11.5px;
+  }
+  .qset-tile-sub {
+    font-size: 9.5px;
+  }
+
+  /* 2. Kamyon: Üstteki 4'lü ekstra şeridi mobilde gizle, 6 kategoriyi tek satıra sığdır */
+  #truckLocationSummary {
+    display: none !important;
+  }
+  .cat-chip-ic {
+    display: none;
+  }
+  #truckCategoryPills {
+    gap: 4px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  #truckCategoryPills::-webkit-scrollbar { display: none; }
+  #truckCategoryPills .chip {
+    padding: 5px 8px;
+    font-size: 11.5px;
+    flex-shrink: 0;
+  }
+
+  .inv-cat-band {
+    padding: 5px 8px;
+    margin-bottom: 4px;
+  }
+  .inv-cat-band-title {
+    font-size: 11px;
+  }
+  .inv-cat-band-count {
+    font-size: 10px;
+  }
+  .inv-item {
+    padding: 6px 8px;
+  }
+  .inv-qty-box {
+    min-width: 30px;
+    height: 20px;
+    padding: 0 5px;
+    font-size: 11.5px;
+  }
+  .inv-item-title {
+    font-size: 13px;
+  }
+  .inv-action-pill {
+    height: 22px;
+    padding: 0 6px;
+    font-size: 10px;
+  }
+
+  /* Kamyon satır içi ekip butonları mobilde 4 sütunlu başparmak ızgarası */
+  .inv-quick-lend-chips {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .inv-dept-chip {
+    height: 27px !important;
+    padding: 0 4px !important;
+    font-size: 10.5px !important;
+    justify-content: center;
+    text-align: center;
+  }
+
+  /* 3. Başka Ekibe Verilen: Kompakt 2 satır birim + 2 satır malzeme => "Kimde Ne Var?" ilk ekranda! */
+  .distro-step-box {
+    padding: 7px 8px;
+    gap: 5px;
+  }
+  .distro-dept-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .distro-dept-btn {
+    height: 30px;
+    padding: 0 5px;
+    font-size: 11px;
+  }
+  .distro-dept-btn .dd-ic {
+    display: none;
+  }
+  .distro-mult-btn {
+    height: 22px;
+    padding: 0 6px;
+    font-size: 10.5px;
+  }
+
+  .distro-quick-grid {
+    display: grid !important;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(2, auto);
+    grid-auto-columns: 118px;
+    grid-template-columns: none !important;
+    overflow-x: auto;
+    gap: 5px;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .distro-quick-grid::-webkit-scrollbar { display: none; }
+  .distro-instant-tile {
+    padding: 5px 7px;
+    gap: 2px;
+  }
+  .dit-name {
+    font-size: 11.5px;
+  }
+  .dit-sub {
+    font-size: 9.5px;
+  }
+
+  /* 4. Lambalar Kataloğu & Sarf Stok mobil ferahlığı */
+  .catalog-row-card .lamp-thumb {
+    width: 36px;
+    height: 36px;
+  }
+  .catalog-row-title {
+    font-size: 12.5px;
+  }
+  .catalog-row-meta {
+    font-size: 10.5px;
+    gap: 4px;
+  }
+  .catalog-row-actions .btn-xs {
+    height: 25px;
+    padding: 0 7px;
+    font-size: 10.5px;
+  }
+}
 
 /* ==================== YAZDIR ==================== */
 @media print {

@@ -486,12 +486,13 @@
       }
       deptStrip.innerHTML = chipDepts.map((d) => {
         const cnt = deptCounts[d] || 0;
-        const shortLabel = d.split('/')[0].trim();
+        let shortLabel = d.split('/')[0].trim();
+        if (shortLabel === 'Prodüksiyon') shortLabel = 'Prodük.';
         const isActive = dState.selectedDept === d;
         const meta = getDeptVisualMeta(d);
         return `
           <button type="button" class="distro-dept-btn ${meta.cls} ${isActive ? 'active' : ''}" data-pick-dept="${esc(d)}">
-            <span class="dd-left"><span>${meta.icon}</span> <span>${esc(shortLabel)}</span></span>
+            <span class="dd-left"><span class="dd-ic">${meta.icon}</span><span>${esc(shortLabel)}</span></span>
             ${cnt > 0 ? `<span class="mono dept-chip-cnt">${cnt}</span>` : ''}
           </button>
         `;
@@ -519,14 +520,14 @@
     const activeMeta = getDeptVisualMeta(dState.selectedDept);
     const activeDeptHint = document.getElementById('distroActiveDeptHint');
     if (activeDeptHint) {
-      activeDeptHint.textContent = `${activeMeta.icon} ${dState.selectedDept.split('/')[0].trim()} (+${dState.fastMult || 1})`;
+      activeDeptHint.textContent = `${activeMeta.icon} ${dState.selectedDept.split('/')[0].trim()}`;
     }
 
-    // 2A. Tek tıkla kaç adet verileceği (+1, +2, +3, +5, +10)
+    // 2A. Tek tıkla kaç adet verileceği (+1, +2, +3, +5)
     const multRow = document.getElementById('distroFastMultRow');
     if (multRow) {
-      const mults = [1, 2, 3, 5, 10];
-      multRow.innerHTML = `<span class="distro-mult-lbl">Kaç adet?</span>` + mults.map((m) =>
+      const mults = [1, 2, 3, 5];
+      multRow.innerHTML = mults.map((m) =>
         `<button type="button" class="distro-mult-btn mono ${(dState.fastMult || 1) === m ? 'active' : ''}" data-dmult="${m}">+${m}</button>`
       ).join('');
       multRow.querySelectorAll('[data-dmult]').forEach((b) => {
