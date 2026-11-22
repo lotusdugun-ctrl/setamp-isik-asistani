@@ -7,7 +7,7 @@
   <title>SetAmp — Işık Ekibi</title>
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
-  <link rel="stylesheet" href="./css/styles.css?v=23" />
+  <link rel="stylesheet" href="./css/styles.css?v=24" />
 </head>
 <body>
   <div class="app-shell">
@@ -211,14 +211,14 @@
               <div class="section-head" style="margin-bottom:8px;">
                 <h2 class="section-title">
                   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="5"/><path d="M9 18h6M10 21h4M12 15v3"/></svg>
-                  Hatta Bağlı Lambalar <span id="connectedCount" class="tag mono">0</span>
+                  Hızlı Lamba Seç &amp; Bağlı Lambalar <span id="connectedCount" class="tag mono">0</span>
                 </h2>
                 <div style="display:flex; gap:6px; align-items:center;">
-                  <button id="openMobilePickerBtn" class="btn btn-primary btn-sm mobile-picker-head-btn">+ Lamba Seç</button>
+                  <button id="openMobilePickerBtn" class="btn btn-primary btn-sm mobile-picker-head-btn">🔍 Tüm Lambalar</button>
                   <button id="clearLoadBtn" class="btn btn-danger-soft btn-sm">Temizle</button>
                 </div>
               </div>
-              <div id="calcQuickAddStrip" class="quick-strip-scroll" style="margin-bottom:8px;"></div>
+              <div id="calcQuickAddStrip" class="qset-grid" style="margin-bottom:10px;"></div>
               <div id="connectedList" class="clean-list"></div>
             </div>
           </div>
@@ -306,7 +306,7 @@
           <span id="truckIssueTabCount" style="display:none;">0</span>
         </div>
 
-        <div id="truckLocationSummary" style="display:none;"></div>
+        <div id="truckLocationSummary" class="truck-where-strip"></div>
 
         <!-- ALT SEKME 1: KAMYON LİSTESİ -->
         <div id="truck-subtab-inventory">
@@ -364,25 +364,26 @@
             <form id="distroAddForm" class="distro-simple-form">
               <select id="distroDeptSelect" class="select" aria-label="Birim Seç" style="display:none;"></select>
 
-              <!-- 1. Ekip Seç (Ayrı Kutu) -->
-              <div class="distro-step-box">
+              <!-- 1. Ekip Seç (Ayrı Kutu - Renkli Izgara) -->
+              <div class="distro-step-box step-box-dept">
                 <div class="distro-step-head">
-                  <span class="distro-step-label">1. EKİP SEÇ</span>
+                  <span class="distro-step-label">1. HANGİ EKİBE VERİYORSUN?</span>
                   <button type="button" id="distroToggleNewDeptBtn" class="distro-note-toggle">+ Yeni Ekip</button>
                 </div>
-                <div id="distroDeptQuickStrip" class="quick-strip-scroll" aria-label="Hızlı ekip seç"></div>
+                <div id="distroDeptQuickStrip" class="distro-dept-grid" aria-label="Hızlı ekip seç"></div>
                 <div id="distroNewDeptWrap" style="display:none; gap:6px; margin-top:6px;">
                   <input id="distroNewDeptInput" class="input" placeholder="Yeni ekip adı (ör. VFX, 2. Ünite)..." />
                   <button type="button" id="distroSaveNewDeptBtn" class="btn btn-primary btn-sm" style="height:36px;">Ekle</button>
                 </div>
               </div>
 
-              <!-- 2. Dokun -> Anında Ver (+1) (Ayrı Kutu) -->
-              <div class="distro-step-box">
+              <!-- 2. Dokun -> Anında Ver (Ayrı Kutu - Adet Çarpanlı & Renkli) -->
+              <div class="distro-step-box step-box-items">
                 <div class="distro-step-head">
-                  <span class="distro-step-label">2. DOKUN → ANINDA VER (+1)</span>
-                  <span id="distroActiveDeptHint" class="mono" style="font-size:11px; color:var(--accent); font-weight:700;">→ Kamera</span>
+                  <span class="distro-step-label">2. MALZEMEYE DOKUN → ANINDA VER</span>
+                  <span id="distroActiveDeptHint" class="distro-target-pill mono">→ Kamera</span>
                 </div>
+                <div id="distroFastMultRow" class="distro-mult-bar"></div>
                 <div id="distroQuickItemPicker" class="distro-quick-grid" aria-label="Tek tıkla malzeme ver"></div>
               </div>
 
@@ -852,13 +853,13 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script src="./js/data-cables.js?v=23"></script>
-  <script src="./js/data-fixtures.js?v=23"></script>
-  <script src="./js/data-templates.js?v=23"></script>
-  <script src="./js/calc.js?v=23"></script>
-  <script src="./js/solar.js?v=23"></script>
-  <script src="./js/solar-ui.js?v=23"></script>
-  <script src="./js/distro-ui.js?v=23"></script>
-  <script src="./js/app.js?v=23"></script>
+  <script src="./js/data-cables.js?v=24"></script>
+  <script src="./js/data-fixtures.js?v=24"></script>
+  <script src="./js/data-templates.js?v=24"></script>
+  <script src="./js/calc.js?v=24"></script>
+  <script src="./js/solar.js?v=24"></script>
+  <script src="./js/solar-ui.js?v=24"></script>
+  <script src="./js/distro-ui.js?v=24"></script>
+  <script src="./js/app.js?v=24"></script>
 </body>
 </html>

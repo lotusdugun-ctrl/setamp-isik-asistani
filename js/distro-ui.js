@@ -88,6 +88,7 @@
     selectedDept: 'Kamera / DIT',
     selectedItemName: '16A Kablo',
     qtyDraft: 1,
+    fastMult: 1,
     filterDept: 'Tümü',
     viewMode: 'byDept',
     addingDept: false,
@@ -421,6 +422,28 @@
     return lines.join('\n');
   }
 
+  function getDeptVisualMeta(dept) {
+    const d = String(dept || '').toLowerCase();
+    if (d.includes('kamera') || d.includes('dit')) return { icon: '🎥', cls: 'dept-blue' };
+    if (d.includes('ronin') || d.includes('steadicam') || d.includes('drone')) return { icon: '🎯', cls: 'dept-cyan' };
+    if (d.includes('reji') || d.includes('monitör')) return { icon: '🎬', cls: 'dept-purple' };
+    if (d.includes('ses')) return { icon: '🎙️', cls: 'dept-green' };
+    if (d.includes('jeneratör')) return { icon: '⚡', cls: 'dept-amber' };
+    if (d.includes('sanat') || d.includes('makyaj') || d.includes('kostüm')) return { icon: '🎨', cls: 'dept-pink' };
+    if (d.includes('prodüksiyon') || d.includes('catering') || d.includes('karavan')) return { icon: '📋', cls: 'dept-indigo' };
+    if (d.includes('grip')) return { icon: '🔧', cls: 'dept-orange' };
+    return { icon: '📍', cls: 'dept-cyan' };
+  }
+
+  function getQuickItemColorClass(name) {
+    const n = String(name || '').toLowerCase();
+    if (/16a|türk|makara|kablo kanalı/.test(n)) return 'qitem-cable';
+    if (/32a|63a|125a|pano|gecekondu/.test(n)) return 'qitem-power';
+    if (/c-stand|cstand|çelik|a100|ayak/.test(n)) return 'qitem-stand';
+    if (/kum torbası|flag|bayrak/.test(n)) return 'qitem-grip';
+    return 'qitem-acc';
+  }
+
   function renderDistroPanel() {
     const outCount = getTotalOutCount();
     const badgeEl = document.getElementById('distroSubtabCount');
@@ -433,7 +456,7 @@
       deptCounts[l.dept] = (deptCounts[l.dept] || 0) + l.qty;
     }
 
-    // 0. 1-Dokunuş Hızlı Birim Çipleri
+    // 0. Renkli 4-Sütunlu Birim Seçici Izgara (Kaydırmasız)
     const deptStrip = document.getElementById('distroDeptQuickStrip');
     if (deptStrip) {
       const priorityDepts = [
@@ -441,22 +464,22 @@
         'Ronin / Steadicam',
         'Reji / Monitör',
         'Ses',
+        'Jeneratör',
         'Sanat',
         'Prodüksiyon',
-        'Jeneratör',
         'Grip',
         'Makyaj / Saç'
       ];
       const chipDepts = [];
       const seenD = new Set();
-      for (const d of allDepts) {
-        if ((deptCounts[d] || 0) > 0 || d === dState.selectedDept) {
+      for (const d of priorityDepts) {
+        if (allDepts.includes(d)) {
           seenD.add(d);
           chipDepts.push(d);
         }
       }
-      for (const d of priorityDepts) {
-        if (!seenD.has(d) && allDepts.includes(d)) {
+      for (const d of allDepts) {
+        if (!seenD.has(d) && ((deptCounts[d] || 0) > 0 || d === dState.selectedDept || dState.customDepts.includes(d))) {
           seenD.add(d);
           chipDepts.push(d);
         }
@@ -465,7 +488,13 @@
         const cnt = deptCounts[d] || 0;
         const shortLabel = d.split('/')[0].trim();
         const isActive = dState.selectedDept === d;
-        return `<button type="button" class="quick-strip-chip ${isActive ? 'active' : ''}" data-pick-dept="${esc(d)}">${esc(shortLabel)}${cnt > 0 ? ` <span class="mono dept-chip-cnt">${cnt}</span>` : ''}</button>`;
+        const meta = getDeptVisualMeta(d);
+        return `
+          <button type="button" class="distro-dept-btn ${meta.cls} ${isActive ? 'active' : ''}" data-pick-dept="${esc(d)}">
+            <span class="dd-left"><span>${meta.icon}</span> <span>${esc(shortLabel)}</span></span>
+            ${cnt > 0 ? `<span class="mono dept-chip-cnt">${cnt}</span>` : ''}
+          </button>
+        `;
       }).join('');
       deptStrip.querySelectorAll('[data-pick-dept]').forEach((b) => {
         b.addEventListener('click', () => {
@@ -487,19 +516,45 @@
     const newDeptWrap = document.getElementById('distroNewDeptWrap');
     if (newDeptWrap) newDeptWrap.style.display = dState.addingDept ? 'flex' : 'none';
 
+    const activeMeta = getDeptVisualMeta(dState.selectedDept);
     const activeDeptHint = document.getElementById('distroActiveDeptHint');
     if (activeDeptHint) {
-      activeDeptHint.textContent = `→ ${dState.selectedDept.split('/')[0].trim()}`;
+      activeDeptHint.textContent = `${activeMeta.icon} ${dState.selectedDept.split('/')[0].trim()} (+${dState.fastMult || 1})`;
     }
 
-    // 2. Tek dokunuşla ANINDA VER (+1) hızlı malzeme butonları
+    // 2A. Tek tıkla kaç adet verileceği (+1, +2, +3, +5, +10)
+    const multRow = document.getElementById('distroFastMultRow');
+    if (multRow) {
+      const mults = [1, 2, 3, 5, 10];
+      multRow.innerHTML = `<span class="distro-mult-lbl">Kaç adet?</span>` + mults.map((m) =>
+        `<button type="button" class="distro-mult-btn mono ${(dState.fastMult || 1) === m ? 'active' : ''}" data-dmult="${m}">+${m}</button>`
+      ).join('');
+      multRow.querySelectorAll('[data-dmult]').forEach((b) => {
+        b.addEventListener('click', () => {
+          dState.fastMult = Number(b.dataset.dmult) || 1;
+          renderDistroPanel();
+        });
+      });
+    }
+
+    // 2B. Renkli Tek Dokunuşla ANINDA VER hızlı malzeme butonları
     const itemPicker = document.getElementById('distroQuickItemPicker');
     if (itemPicker) {
+      const curMult = dState.fastMult || 1;
       itemPicker.innerHTML = getAllQuickItems().slice(0, 12).map((q) => {
         const stock = findTruckTotalQty(q.name);
         const outQty = getOutCountForLoanName(q.name);
         const rem = stock !== null ? Math.max(0, stock - outQty) : null;
-        return `<button type="button" class="quick-strip-chip distro-instant-chip" data-instant-item="${esc(q.name)}" title="${esc(dState.selectedDept)} birimine +1 ${esc(q.name)} ver">+ ${esc(q.short || q.name)}${rem !== null ? ` <span class="mono" style="opacity:0.75;">(${rem})</span>` : ''}</button>`;
+        const colCls = getQuickItemColorClass(q.name);
+        return `
+          <button type="button" class="distro-instant-tile ${colCls}" data-instant-item="${esc(q.name)}" title="${esc(dState.selectedDept)} birimine +${curMult} ${esc(q.name)} ver">
+            <span class="dit-top">
+              <span class="dit-plus mono">+${curMult}</span>
+              <span class="dit-name">${esc(q.short || q.name)}</span>
+            </span>
+            <span class="dit-sub mono">${rem !== null ? `Kamyon: ${rem}` : 'Hızlı Ver'}</span>
+          </button>
+        `;
       }).join('');
       itemPicker.querySelectorAll('[data-instant-item]').forEach((b) => {
         b.addEventListener('click', () => {
@@ -508,7 +563,7 @@
           const note = noteInp ? noteInp.value.trim() : '';
           const inp = document.getElementById('distroCustomItemInput');
           if (inp) inp.value = itemName;
-          addLoan(dState.selectedDept, itemName, 1, note);
+          addLoan(dState.selectedDept, itemName, dState.fastMult || 1, note);
         });
       });
     }
@@ -601,23 +656,27 @@
              <span class="tag ${overStock ? 'tag-danger' : 'tag-safe'} mono">Kamyonda: ${remaining}/${truckQty}</span>`
           : `<span class="tag tag-caution mono">Dışarıda: ${g.totalOut} adet</span>`;
 
-        const rows = g.entries.map((l) => `
+        const rows = g.entries.map((l) => {
+          const dm = getDeptVisualMeta(l.dept);
+          return `
           <div class="distro-entry-row">
             <div style="flex:1; min-width:110px;">
               <div class="inv-item-line">
                 <span class="inv-qty-box mono">${l.qty}×</span>
-                <strong style="font-size:13px;">📍 ${esc(l.dept)}</strong>
+                <strong style="font-size:13px;">${dm.icon} ${esc(l.dept)}</strong>
               </div>
               <div class="mono" style="font-size:10.5px; color:var(--text-muted); margin-top:2px;">
                 Saat ${l.time}${l.note ? ` · ${esc(l.note)}` : ''}
               </div>
             </div>
-            <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+            <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
               ${l.qty > 1 ? `<button type="button" class="btn btn-soft btn-xs mono" data-ln-dec="${l.id}" title="1 adet azalt">−1</button>` : ''}
+              <button type="button" class="btn btn-soft btn-xs mono" data-ln-inc="${l.id}" title="1 adet daha ekle">+1</button>
               <button type="button" class="st-pill active-ok" data-ln-ret="${l.id}">✓ Geldi</button>
             </div>
           </div>
-        `).join('');
+        `;
+        }).join('');
 
         return `
           <div class="distro-group-card ${overStock ? 'over-stock' : ''}">
@@ -641,6 +700,7 @@
 
       listContainer.innerHTML = Array.from(groupedDept.entries()).map(([dept, entries]) => {
         const sum = entries.reduce((s, x) => s + x.qty, 0);
+        const dm = getDeptVisualMeta(dept);
         const rows = entries.map((l) => {
           const totalOutForItem = getOutCountForLoanName(l.itemName);
           const truckQty = findTruckTotalQty(l.itemName);
@@ -659,8 +719,9 @@
                   ${esc(stockSub)} · Saat ${l.time}${l.note ? ` · ${esc(l.note)}` : ''}
                 </div>
               </div>
-              <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+              <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
                 ${l.qty > 1 ? `<button type="button" class="btn btn-soft btn-xs mono" data-ln-dec="${l.id}" title="1 adet azalt">−1</button>` : ''}
+                <button type="button" class="btn btn-soft btn-xs mono" data-ln-inc="${l.id}" title="1 adet daha ekle">+1</button>
                 <button type="button" class="st-pill active-ok" data-ln-ret="${l.id}">✓ Geldi</button>
               </div>
             </div>
@@ -668,9 +729,9 @@
         }).join('');
 
         return `
-          <div class="distro-group-card">
+          <div class="distro-group-card ${dm.cls}">
             <div class="distro-group-head">
-              <div style="font-weight:700; font-size:13.5px;">📍 ${esc(dept)} <span class="tag tag-caution mono" style="margin-left:5px;">${sum} adet</span></div>
+              <div style="font-weight:700; font-size:13.5px;">${dm.icon} ${esc(dept)} <span class="tag tag-caution mono" style="margin-left:5px;">${sum} adet</span></div>
               <button type="button" class="btn btn-soft btn-xs" data-dept-ret-all="${esc(dept)}">Tümünü Geri Al</button>
             </div>
             <div class="distro-entries">${rows}</div>

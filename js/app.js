@@ -419,7 +419,7 @@
       const cp = Calc.calcCablePower(c);
       const isActive = c.id === activeCableId;
       return `
-        <button class="cable-card-btn ${isActive ? 'active' : ''}" data-cbtn="${c.id}">
+        <button class="cable-card-btn cab-col-${c.id} ${isActive ? 'active' : ''}" data-cbtn="${c.id}">
           <div class="cc-top">
             <span class="cc-amp mono">${c.id === 'turk-uclu' ? 'Üçlü' : `${c.ratedAmps}A`}</span>
             <span class="cc-phase mono">${c.id === 'turk-uclu' ? 'Türk' : '230V'}</span>
@@ -836,13 +836,25 @@
         list.push(fixtureMap[fid]);
       }
     }
+    const connectedMap = new Map();
+    for (const li of state.loadItems) {
+      connectedMap.set(li.fixtureId, (connectedMap.get(li.fixtureId) || 0) + (Number(li.qty) || 0));
+    }
     el.innerHTML = list.slice(0, 12).map((f) => {
       const cap = Calc.calcMaxUnitsForCable(cable, f, phaseAmps);
       const fits = cap.compatible && cap.remainingSafeAdd > 0;
+      const connQty = connectedMap.get(f.id) || 0;
+      const kwTxt = Calc.formatKW(f.watts);
       return `
-        <button type="button" class="quick-strip-chip qset-chip ${fits ? 'can-fit' : 'over-fit'}" data-qset-add="${f.id}" title="${esc(f.brand)} ${esc(f.model)}">
-          <span>+ ${esc(formatShortLampLabel(f))}</span>
-          <span class="mono qset-amp">${cap.unitAmps.toFixed(1)}A</span>
+        <button type="button" class="qset-tile ${fits ? 'can-fit' : 'over-fit'} ${connQty > 0 ? 'is-on-line' : ''}" data-qset-add="${f.id}" title="${esc(f.brand)} ${esc(f.model)}">
+          <div class="qset-tile-top">
+            <span class="qset-tile-name">+ ${esc(formatShortLampLabel(f))}</span>
+            ${connQty > 0 ? `<span class="qset-conn-badge mono">${connQty}×</span>` : ''}
+          </div>
+          <div class="qset-tile-sub mono">
+            <span>${cap.unitAmps.toFixed(1)}A · ${kwTxt}</span>
+            <span class="qset-fit-tag">${fits ? `+${cap.remainingSafeAdd}` : 'Dolu'}</span>
+          </div>
         </button>
       `;
     }).join('');
@@ -1442,7 +1454,46 @@
 
   function renderTruckLocationSummary() {
     const el = document.getElementById('truckLocationSummary');
-    if (el) el.innerHTML = '';
+    if (!el) return;
+    const totalKinds = state.truckItems.length;
+    const totalOut = window.SetDistroUI?.getTotalOutCount?.() || 0;
+    const activeDepts = window.SetDistroUI?.getActiveDeptCount?.() || 0;
+    const lampCount = state.truckItems.filter((i) => i.category === 'Lamba').length;
+    const cableCount = state.truckItems.filter((i) => i.category === 'Kablo + Pano').length;
+
+    el.innerHTML = `
+      <button type="button" class="truck-where-box tw-col-all ${ui.truckSubtab === 'inventory' && ui.truckCatFilter === 'Tümü' ? 'active' : ''}" data-tw-jump="all">
+        <span class="tw-lbl">📦 Tüm Liste</span>
+        <span class="tw-val mono">${totalKinds} çeşit</span>
+      </button>
+      <button type="button" class="truck-where-box tw-col-out ${ui.truckSubtab === 'distro' ? 'active' : ''}" data-tw-jump="distro">
+        <span class="tw-lbl">📤 Ekiplerde</span>
+        <span class="tw-val mono">${totalOut} adet (${activeDepts} ekip)</span>
+      </button>
+      <button type="button" class="truck-where-box tw-col-lamp ${ui.truckSubtab === 'inventory' && ui.truckCatFilter === 'Lamba' ? 'active' : ''}" data-tw-jump="cat:Lamba">
+        <span class="tw-lbl">💡 Lambalar</span>
+        <span class="tw-val mono">${lampCount} çeşit</span>
+      </button>
+      <button type="button" class="truck-where-box tw-col-cable ${ui.truckSubtab === 'inventory' && ui.truckCatFilter === 'Kablo + Pano' ? 'active' : ''}" data-tw-jump="cat:Kablo + Pano">
+        <span class="tw-lbl">⚡ Kablo & Pano</span>
+        <span class="tw-val mono">${cableCount} çeşit</span>
+      </button>
+    `;
+    el.querySelectorAll('[data-tw-jump]').forEach((b) => {
+      b.addEventListener('click', () => {
+        const act = b.dataset.twJump;
+        if (act === 'distro') {
+          setTruckSubtab('distro');
+        } else if (act.startsWith('cat:')) {
+          ui.truckCatFilter = act.slice(4);
+          setTruckSubtab('inventory');
+        } else {
+          ui.truckCatFilter = 'Tümü';
+          setTruckSubtab('inventory');
+        }
+        renderTruckLocationSummary();
+      });
+    });
   }
 
   function renderTruckTab() {
@@ -1488,13 +1539,24 @@
     if (tiEl) tiEl.textContent = countIssues;
 
     const catPills = document.getElementById('truckCategoryPills');
+    const catIcons = {
+      'Tümü': '📦',
+      'Lamba': '💡',
+      'Ayak': '🗼',
+      'Aksesuar': '🔩',
+      'Kablo + Pano': '⚡',
+      'Grip & Çerçeve': '⬛'
+    };
     catPills.innerHTML = TRUCK_CATEGORIES.map((c) => {
       const lbl = TRUCK_CAT_LABELS[c] || c;
-      return `<button class="chip ${ui.truckCatFilter === c ? 'active' : ''}" data-tcat="${esc(c)}">${esc(lbl)}</button>`;
+      const meta = c === 'Tümü' ? { cls: 'cat-all' } : getTruckCategoryMeta(c);
+      const ic = catIcons[c] || '';
+      return `<button class="chip chip-colorful ${meta.cls} ${ui.truckCatFilter === c ? 'active' : ''}" data-tcat="${esc(c)}">${ic ? `<span>${ic}</span> ` : ''}${esc(lbl)}</button>`;
     }).join('');
     catPills.querySelectorAll('[data-tcat]').forEach((b) => {
       b.addEventListener('click', () => {
         ui.truckCatFilter = b.dataset.tcat;
+        renderTruckLocationSummary();
         renderTruckTab();
       });
     });
@@ -1522,6 +1584,17 @@
       'Prodüksiyon',
       'Grip'
     ];
+    const lendMult = ui.truckFastLendMult || 1;
+    const deptIcons = {
+      'Kamera': '🎥',
+      'Ronin': '🎯',
+      'Reji': '🎬',
+      'Ses': '🎙️',
+      'Jeneratör': '⚡',
+      'Sanat': '🎨',
+      'Prodüksiyon': '📋',
+      'Grip': '🔧'
+    };
 
     const renderSingleTruckItem = (item) => {
       const outInfo = outInfoById.get(item.id);
@@ -1554,16 +1627,25 @@
               ` : ''}
             </div>
             <button type="button" class="inv-action-pill mono ${isOpen ? 'open' : ''}" data-inv-toggle="${item.id}" aria-label="Ekibe ver veya düzenle">
-              ${isOpen ? 'Kapat ▴' : 'Ver / Düzenle ▾'}
+              ${isOpen ? 'Kapat ▴' : '📤 Ver ▾'}
             </button>
           </div>
 
           ${isOpen ? `
             <div class="inv-expand-panel">
               <div class="inv-quick-lend-bar">
-                <span class="inv-quick-lend-lbl">📤 TEK TIKLA EKİBE VER (+1 ADET):</span>
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; flex-wrap:wrap;">
+                  <span class="inv-quick-lend-lbl">📤 EKİBE VER (ADET SEÇ &amp; BİRİME DOKUN):</span>
+                  <div class="distro-mult-bar">
+                    ${[1, 2, 3, 5, 10].map((m) => `<button type="button" class="distro-mult-btn mono ${lendMult === m ? 'active' : ''}" data-inv-lmult="${m}">+${m}</button>`).join('')}
+                  </div>
+                </div>
                 <div class="inv-quick-lend-chips">
-                  ${quickDepts.map((d) => `<button type="button" class="quick-strip-chip inv-dept-chip" data-inv-quick-dept="${esc(d)}" data-inv-quick-item="${esc(item.name)}">+ ${esc(d.split('/')[0].trim())}</button>`).join('')}
+                  ${quickDepts.map((d) => {
+                    const sName = d.split('/')[0].trim();
+                    const ic = deptIcons[sName] || '📍';
+                    return `<button type="button" class="quick-strip-chip inv-dept-chip" data-inv-quick-dept="${esc(d)}" data-inv-quick-item="${esc(item.name)}">${ic} ${esc(sName)} (+${lendMult})</button>`;
+                  }).join('')}
                 </div>
               </div>
               <div class="inv-expand-controls">
@@ -1625,10 +1707,16 @@
         renderTruckTab();
       });
     });
+    listEl.querySelectorAll('[data-inv-lmult]').forEach((b) => {
+      b.addEventListener('click', () => {
+        ui.truckFastLendMult = Number(b.dataset.invLmult) || 1;
+        renderTruckTab();
+      });
+    });
     listEl.querySelectorAll('[data-inv-quick-dept]').forEach((b) => {
       b.addEventListener('click', () => {
         if (window.SetDistroUI?.quickLend) {
-          window.SetDistroUI.quickLend(b.dataset.invQuickDept, b.dataset.invQuickItem, 1);
+          window.SetDistroUI.quickLend(b.dataset.invQuickDept, b.dataset.invQuickItem, ui.truckFastLendMult || 1);
           renderTruckTab();
         }
       });
@@ -2518,7 +2606,7 @@
     setTab(state.activeTab);
 
     if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
-      navigator.serviceWorker.register('./sw.js?v=23').then((reg) => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=24').then((reg) => reg.update()).catch(() => {});
     }
   });
 })();
