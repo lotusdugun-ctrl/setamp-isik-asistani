@@ -506,7 +506,7 @@
 
   function parseQuickLoanSentence(rawText, fallbackDept) {
     let work = String(rawText || '').trim();
-    if (!work) return { dept: fallbackDept || dState.selectedDept, explicitDept: false, note: '', items: [] };
+    if (!work) return { dept: fallbackDept || dState.selectedDept, explicitDept: false, isReturn: false, returnAllDept: false, note: '', items: [] };
 
     let detectedDept = fallbackDept || dState.selectedDept;
     let explicitDept = false;
@@ -517,6 +517,12 @@
         work = work.replace(rule.re, ' ');
         break;
       }
+    }
+
+    const isReturn = /\b(?:geri\s*geldi|geldi|iade|teslim\s*ett[iı]|getirdi)\b/i.test(work);
+    const returnAllDept = isReturn && /\b(?:hepsi|tamam[ıi]|t[üu]m[üu])\b/i.test(work);
+    if (isReturn) {
+      work = work.replace(/\b(?:geri\s*geldi|geldi|iade|teslim\s*ett[iı]|getirdi|hepsi|tamam[ıi]|t[üu]m[üu])\b/gi, ' ');
     }
 
     let note = '';
@@ -563,9 +569,39 @@
     return {
       dept: detectedDept,
       explicitDept,
+      isReturn,
+      returnAllDept,
       note,
       items: extracted
     };
+  }
+
+  function applyReturnFromSentence(parsed) {
+    if (parsed.returnAllDept) {
+      returnAllForDept(parsed.dept);
+      return true;
+    }
+    let returnedCount = 0;
+    for (const it of parsed.items) {
+      const idx = dState.loans.findIndex(
+        (l) => ( !parsed.explicitDept || l.dept === parsed.dept ) && doesLoanMatchTruckItem(l.itemName, it.name)
+      );
+      const fallbackIdx = idx !== -1 ? idx : dState.loans.findIndex((l) => doesLoanMatchTruckItem(l.itemName, it.name));
+      if (fallbackIdx !== -1) {
+        dState.loans[fallbackIdx].qty -= it.qty;
+        if (dState.loans[fallbackIdx].qty <= 0) dState.loans.splice(fallbackIdx, 1);
+        returnedCount += 1;
+      }
+    }
+    if (returnedCount > 0) {
+      saveDistroState();
+      renderDistroPanel();
+      if (window.SetAppRefreshBadges) window.SetAppRefreshBadges();
+      toast(`✓ Geri alındı (${returnedCount} kalem)`);
+      return true;
+    }
+    toast('Eşleşen dışarıda malzeme bulunamadı');
+    return false;
   }
 
   function renderDistroPanel() {
@@ -1006,15 +1042,58 @@
       });
     }
 
-    // 0. Başka Ekibe Verilen sekmesi içindeki Tek Cümleyle Çoklu Kayıt
+    // 0. Başka Ekibe Verilen sekmesi içindeki Birleşik Akıllı Çubuk (Hem Tek Cümle Hem Malzeme Arama)
     const dSentInp = document.getElementById('distroSentenceInput');
     const dSentPrev = document.getElementById('distroSentencePreview');
     const dSentCommit = document.getElementById('distroSentenceCommitBtn');
     const dVoiceBtn = document.getElementById('distroVoiceBtn');
+    const dSugBox = document.getElementById('distroItemSuggest');
+
+    const renderOmniSuggest = (raw) => {
+      if (!dSugBox) return;
+      const q = raw.trim().toLowerCase();
+      // Sadece tekil malzeme araması gibi görünüyorsa öneri menüsü aç
+      if (q.length < 2 || q.split(/\s+/).length > 3) {
+        dSugBox.style.display = 'none';
+        return;
+      }
+      const candidates = buildDistroSuggestCandidates()
+        .filter((c) => `${c.name} ${c.category}`.toLowerCase().includes(q))
+        .slice(0, 6);
+      if (candidates.length === 0) {
+        dSugBox.style.display = 'none';
+        return;
+      }
+      const mult = dState.fastMult || 1;
+      dSugBox.style.display = 'block';
+      dSugBox.innerHTML = candidates.map((c, idx) => {
+        const truckQty = findTruckTotalQty(c.name);
+        const outQty = getOutCountForLoanName(c.name);
+        const stockTxt = truckQty !== null ? `Kalan: ${truckQty - outQty}/${truckQty}` : c.category;
+        return `
+          <button type="button" class="pro-suggest-item" data-domni-idx="${idx}">
+            <span class="pro-suggest-name">+${mult}× ${esc(c.name)} → ${esc(dState.selectedDept.split('/')[0].trim())}</span>
+            <span class="pro-suggest-meta mono">${esc(stockTxt)}</span>
+          </button>
+        `;
+      }).join('');
+      dSugBox.querySelectorAll('[data-domni-idx]').forEach((btn) => {
+        btn.addEventListener('mousedown', (e) => e.preventDefault());
+        btn.addEventListener('click', () => {
+          const picked = candidates[Number(btn.dataset.domniIdx)];
+          if (!picked) return;
+          addLoan(dState.selectedDept, picked.name, dState.fastMult || 1, '');
+          if (dSentInp) dSentInp.value = '';
+          if (dSentPrev) dSentPrev.style.display = 'none';
+          dSugBox.style.display = 'none';
+        });
+      });
+    };
 
     const updateInlineSentencePreview = () => {
       if (!dSentInp || !dSentPrev) return;
       const raw = dSentInp.value.trim();
+      renderOmniSuggest(raw);
       if (!raw) {
         dSentPrev.style.display = 'none';
         dSentPrev.innerHTML = '';
@@ -1023,6 +1102,11 @@
       const parsed = parseQuickLoanSentence(raw, dState.selectedDept);
       if (parsed.explicitDept) dState.selectedDept = parsed.dept;
       const dm = getDeptVisualMeta(parsed.dept);
+      if (parsed.returnAllDept) {
+        dSentPrev.style.display = 'flex';
+        dSentPrev.innerHTML = `<span class="tag tag-safe mono">✓ İADE: ${dm.icon} ${esc(parsed.dept)} tüm malzemeler geri alınacak</span>`;
+        return;
+      }
       if (parsed.items.length === 0) {
         dSentPrev.style.display = 'block';
         dSentPrev.innerHTML = `<span style="color:var(--text-muted);">Birim: <strong>${dm.icon} ${esc(parsed.dept)}</strong> — malzeme adını yazmaya devam edin...</span>`;
@@ -1030,9 +1114,9 @@
       }
       dSentPrev.style.display = 'flex';
       dSentPrev.innerHTML = `
-        <span class="tag tag-brand mono">${dm.icon} ${esc(parsed.dept)}</span>
+        <span class="tag ${parsed.isReturn ? 'tag-safe' : 'tag-brand'} mono">${parsed.isReturn ? '↩ İADE:' : ''} ${dm.icon} ${esc(parsed.dept)}</span>
         ${parsed.note ? `<span class="tag mono">📝 ${esc(parsed.note)}</span>` : ''}
-        ${parsed.items.map((it) => `<span class="tag tag-safe mono">+${it.qty}× ${esc(it.name)}</span>`).join('')}
+        ${parsed.items.map((it) => `<span class="tag ${parsed.isReturn ? 'tag-caution' : 'tag-safe'} mono">${parsed.isReturn ? '✓' : '+'}${it.qty}× ${esc(it.name)}</span>`).join('')}
       `;
     };
 
@@ -1041,23 +1125,36 @@
       const raw = dSentInp.value.trim();
       if (!raw) return;
       const parsed = parseQuickLoanSentence(raw, dState.selectedDept);
+      if (parsed.isReturn) {
+        if (applyReturnFromSentence(parsed)) {
+          dSentInp.value = '';
+          if (dSentPrev) dSentPrev.style.display = 'none';
+          if (dSugBox) dSugBox.style.display = 'none';
+        }
+        return;
+      }
       if (parsed.items.length === 0) {
         toast('Malzeme algılanamadı — örn: prodüksiyon 1000 lik mizar türk kablo');
         return;
       }
+      const mult = parsed.items.length === 1 && !/\d/.test(raw) ? (dState.fastMult || 1) : 1;
       for (const it of parsed.items) {
-        addLoan(parsed.dept, it.name, it.qty, parsed.note);
+        addLoan(parsed.dept, it.name, it.qty * mult, parsed.note);
       }
       dSentInp.value = '';
       if (dSentPrev) {
         dSentPrev.style.display = 'none';
         dSentPrev.innerHTML = '';
       }
+      if (dSugBox) dSugBox.style.display = 'none';
       toast(`${parsed.dept}: ${parsed.items.length} çeşit malzeme kaydedildi`);
     };
 
     if (dSentInp) {
       dSentInp.addEventListener('input', updateInlineSentencePreview);
+      dSentInp.addEventListener('blur', () => {
+        setTimeout(() => { if (dSugBox) dSugBox.style.display = 'none'; }, 160);
+      });
       dSentInp.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
@@ -1144,12 +1241,48 @@
     for (const it of parsed.items) mergeItem(it.name, it.qty, 'sentence');
     for (const it of qcState.manualItems) mergeItem(it.name, it.qty, 'manual');
 
-    return { dept: finalDept, note: finalNote, items: combined };
+    return {
+      dept: finalDept,
+      explicitDept: parsed.explicitDept,
+      isReturn: parsed.isReturn,
+      returnAllDept: parsed.returnAllDept,
+      note: finalNote,
+      items: combined
+    };
   }
 
   function renderQuickCaptureModal() {
     const draft = getCombinedQcDraft();
     qcState.dept = draft.dept;
+
+    // 0. Dışarıda Olanlar Hızlı İade Şeridi
+    const activeLoansBox = document.getElementById('qcActiveLoansStrip');
+    if (activeLoansBox) {
+      if (dState.loans.length === 0) {
+        activeLoansBox.style.display = 'none';
+        activeLoansBox.innerHTML = '';
+      } else {
+        activeLoansBox.style.display = 'block';
+        activeLoansBox.innerHTML = `
+          <div class="qc-aloans-head">
+            <span>📤 ŞU AN DIŞARIDA OLANLAR (DOKUN → ✓ GELDİ)</span>
+            <span class="mono">${getTotalOutCount()} adet</span>
+          </div>
+          <div class="qc-aloans-chips">
+            ${dState.loans.slice(0, 10).map((l) => {
+              const sDept = l.dept.split('/')[0].trim();
+              return `<button type="button" class="qc-aloan-chip mono" data-qc-retloan="${l.id}" title="Tek tıkla geri alındı işaretle"><strong>${esc(sDept)}:</strong> ${l.qty}× ${esc(l.itemName)} <span class="qc-ret-check">✓ Geldi</span></button>`;
+            }).join('')}
+          </div>
+        `;
+        activeLoansBox.querySelectorAll('[data-qc-retloan]').forEach((b) => {
+          b.addEventListener('click', () => {
+            returnAllForLoan(b.dataset.qcRetloan);
+            renderQuickCaptureModal();
+          });
+        });
+      }
+    }
 
     const deptGrid = document.getElementById('qcDeptGrid');
     if (deptGrid) {
@@ -1251,9 +1384,15 @@
       }
     }
     if (commitBtn) {
-      commitBtn.textContent = draft.items.length > 0
-        ? `✓ ${draft.dept.split('/')[0].trim()} İçin Kaydet (${draft.items.length} Kalem) ve İşe Dön`
-        : '✓ Kaydet ve İşe Dön';
+      if (draft.isReturn) {
+        commitBtn.textContent = draft.returnAllDept
+          ? `↩ ${draft.dept.split('/')[0].trim()} Tümünü Geri Al ve İşe Dön`
+          : `↩ Geri Alındı İşaretle (${draft.items.length} Kalem) ve İşe Dön`;
+      } else {
+        commitBtn.textContent = draft.items.length > 0
+          ? `✓ ${draft.dept.split('/')[0].trim()} İçin Kaydet (${draft.items.length} Kalem) ve İşe Dön`
+          : '✓ Kaydet ve İşe Dön';
+      }
     }
   }
 
@@ -1280,6 +1419,16 @@
 
     const commitQcDraft = () => {
       const draft = getCombinedQcDraft();
+      if (draft.isReturn && (draft.returnAllDept || draft.items.length > 0)) {
+        if (applyReturnFromSentence(draft)) {
+          if (sentInp) sentInp.value = '';
+          if (noteInp) noteInp.value = '';
+          qcState.manualItems = [];
+          const modal = document.getElementById('quickCaptureModal');
+          if (modal) modal.classList.remove('open');
+        }
+        return;
+      }
       if (draft.items.length === 0) {
         toast('Önce malzeme yazın veya listeden dokunun');
         return;

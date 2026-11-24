@@ -7,7 +7,7 @@
   <title>SetAmp — Işık Ekibi</title>
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
-  <link rel="stylesheet" href="./css/styles.css?v=26" />
+  <link rel="stylesheet" href="./css/styles.css?v=27" />
 </head>
 <body>
   <div class="app-shell">
@@ -150,11 +150,11 @@
         </div>
         <span class="brand-name">SetAmp</span>
       </div>
-      <div style="display:flex; align-items:center; gap:5px;">
-        <button type="button" id="openQuickCaptureTopBtn" class="quick-cap-top-btn">⚡ Hızlı Ver</button>
+      <div class="mobile-topbar-actions">
+        <button type="button" id="openQuickCaptureTopBtn" class="quick-cap-top-btn" title="İşini bölmeden hızlı set notu / ekibe malzeme ver veya geri al">⚡ Hızlı Not</button>
         <button id="mobileLiveChip" class="live-chip mono">
           <span class="live-dot"></span>
-          <span id="mobileLiveText">16A • 0A / 0 kW</span>
+          <span id="mobileLiveText">16A • 0A</span>
         </button>
         <button id="mobileThemeBtn" class="icon-pill-btn" aria-label="Tema Değiştir">Stüdyo</button>
       </div>
@@ -183,6 +183,9 @@
             </button>
           </div>
         </div>
+
+        <!-- 0. Çoklu Hat / Jeneratör Çıkış Şeridi (Hat 1, Hat 2, + Hat Ekle & Toplam kW) -->
+        <div id="calcLinesBar" class="calc-lines-bar" aria-label="Elektrik Hatları"></div>
 
         <!-- 1. Temiz Kablo Şeridi (Amper + kW birlikte) -->
         <div id="calcCableSelector" class="cable-strip" role="listbox" aria-label="Kablo Seçimi"></div>
@@ -221,6 +224,10 @@
                   <button id="openMobilePickerBtn" class="btn btn-primary btn-sm mobile-picker-head-btn">🔍 Tüm Lambalar</button>
                   <button id="clearLoadBtn" class="btn btn-danger-soft btn-sm">Temizle</button>
                 </div>
+              </div>
+              <div class="calc-inline-search-wrap">
+                <input id="calcInlineSearchInput" class="input" type="search" autocomplete="off" placeholder="🔍 Hızlı lamba ekle (M40, 1200d, Par64, Vortex, Dedo)..." />
+                <div id="calcInlineSuggest" class="pro-suggest-menu" style="display:none;"></div>
               </div>
               <div id="calcQuickAddStrip" class="qset-grid" style="margin-bottom:10px;"></div>
               <div id="connectedList" class="clean-list"></div>
@@ -275,6 +282,7 @@
               <input id="catalogSearch" class="input" type="search" placeholder="Marka, model veya güç ara..." />
               <select id="catalogTypeSelect" class="select"></select>
             </div>
+            <div id="catalogWattPills" class="chip-row" style="margin-bottom:6px;"></div>
             <div id="catalogBrandPills" class="brand-grid brand-grid-scroll" style="margin-bottom:0;"></div>
           </div>
 
@@ -363,67 +371,59 @@
           </div>
         </div>
 
-        <!-- ALT SEKME 2: BAŞKA EKİBE VERİLEN (TEK CÜMLE / 2 TIKLA ANINDA KAYIT + KİMDE NE VAR?) -->
+        <!-- ALT SEKME 2: BAŞKA EKİBE VERİLEN (TEK KOMPAKT KART + KİMDE NE VAR?) -->
         <div id="truck-subtab-distro" style="display:none;">
-          <div class="section-card quick-list-card" style="margin-bottom:8px;">
-            <!-- 0. Tek Cümle veya Sesle Çoklu Hızlı Not -->
-            <div class="distro-step-box step-box-smart">
-              <div class="distro-step-head">
-                <span class="distro-step-label">⚡ TEK CÜMLEDE ÇOKLU NOT AL (YAZ VEYA SÖYLE)</span>
-              </div>
-              <div class="qc-sentence-row">
-                <input id="distroSentenceInput" class="input" autocomplete="off" placeholder="Ör: prodüksiyon yemek için 1000 lik mizar türk kablo ve a100 ayak..." />
-                <button type="button" id="distroVoiceBtn" class="btn btn-soft qc-mic-btn" title="Sesle Söyle">🎙️</button>
-                <button type="button" id="distroSentenceCommitBtn" class="btn btn-safe" style="height:37px; padding:0 12px; font-weight:800;">✓ Kaydet</button>
-              </div>
-              <div id="distroSentencePreview" class="qc-inline-preview" style="display:none;"></div>
-            </div>
-
+          <div class="section-card quick-list-card distro-unified-card" style="margin-bottom:8px;">
             <form id="distroAddForm" class="distro-simple-form">
               <select id="distroDeptSelect" class="select" aria-label="Birim Seç" style="display:none;"></select>
 
-              <!-- 1. Ekip Seç (Ayrı Kutu - Renkli Izgara) -->
-              <div class="distro-step-box step-box-dept">
+              <!-- Satır 1: Akıllı Tek Cümle / Hızlı Arama Çubuğu -->
+              <div class="qc-sentence-row" style="position:relative;">
+                <input id="distroSentenceInput" class="input" autocomplete="off" placeholder="⚡ Tek cümle yaz (prodüksiyon mizar türk kablo) veya malzeme ara..." />
+                <div id="distroItemSuggest" class="pro-suggest-menu" style="display:none;"></div>
+                <button type="button" id="distroVoiceBtn" class="btn btn-soft qc-mic-btn" title="Sesle Söyle">🎙️</button>
+                <button type="button" id="distroSentenceCommitBtn" class="btn btn-primary" style="height:37px; padding:0 13px; font-weight:800;">📤 Ver</button>
+              </div>
+              <div id="distroSentencePreview" class="qc-inline-preview" style="display:none;"></div>
+
+              <!-- Satır 2: Kompakt Ekip Seçici + Yeni Ekip -->
+              <div class="distro-compact-row">
                 <div class="distro-step-head">
-                  <span class="distro-step-label">1. HANGİ EKİBE VERİYORSUN?</span>
-                  <button type="button" id="distroToggleNewDeptBtn" class="distro-note-toggle">+ Yeni Ekip</button>
+                  <span class="distro-step-label">1. EKİP SEÇ</span>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <button type="button" id="distroToggleNoteBtn" class="distro-note-toggle">+ Not / Özel Adet</button>
+                    <button type="button" id="distroToggleNewDeptBtn" class="distro-note-toggle">+ Yeni Ekip</button>
+                  </div>
                 </div>
                 <div id="distroDeptQuickStrip" class="distro-dept-grid" aria-label="Hızlı ekip seç"></div>
-                <div id="distroNewDeptWrap" style="display:none; gap:6px; margin-top:6px;">
+                <div id="distroNewDeptWrap" style="display:none; gap:6px; margin-top:5px;">
                   <input id="distroNewDeptInput" class="input" placeholder="Yeni ekip adı (ör. VFX, 2. Ünite)..." />
-                  <button type="button" id="distroSaveNewDeptBtn" class="btn btn-primary btn-sm" style="height:36px;">Ekle</button>
+                  <button type="button" id="distroSaveNewDeptBtn" class="btn btn-primary btn-sm" style="height:35px;">Ekle</button>
                 </div>
               </div>
 
-              <!-- 2. Dokun -> Anında Ver (Ayrı Kutu - Tek Başlıkta Adet Çarpanlı & Renkli) -->
-              <div class="distro-step-box step-box-items">
-                <div class="distro-step-head">
-                  <span class="distro-step-label">2. DOKUN → VER <span id="distroActiveDeptHint" class="distro-target-pill mono">→ Kamera</span></span>
-                  <div id="distroFastMultRow" class="distro-mult-bar"></div>
+              <!-- Satır 3: Dokun -> Anında Ver (+1 / +2 / +3 / +5) -->
+              <div class="distro-compact-row">
+                <div class="distro-step-head" style="flex-wrap:nowrap;">
+                  <span class="distro-step-label" style="display:inline-flex; align-items:center; gap:5px; min-width:0; white-space:nowrap;">2. DOKUN → VER <span id="distroActiveDeptHint" class="distro-target-pill mono">Kamera</span></span>
+                  <div id="distroFastMultRow" class="distro-mult-bar" style="flex-wrap:nowrap; flex-shrink:0;"></div>
                 </div>
                 <div id="distroQuickItemPicker" class="distro-quick-grid" aria-label="Tek tıkla malzeme ver"></div>
               </div>
 
-              <!-- 3. Farklı Malzeme / Çoklu Adet (Ayrı Kutu) -->
-              <div class="distro-step-box">
-                <div class="distro-step-head">
-                  <span class="distro-step-label">3. FARKLI MALZEME VEYA ADETLİ VER</span>
-                  <button type="button" id="distroToggleNoteBtn" class="distro-note-toggle">+ Not</button>
-                </div>
-                <div class="distro-action-row" style="position:relative;">
-                  <input id="distroCustomItemInput" class="input" autocomplete="off" required placeholder="Başka malzeme ara veya yaz..." />
-                  <div id="distroItemSuggest" class="pro-suggest-menu" style="display:none;"></div>
+              <!-- Açılır Özel Adet & Kişi/Yer Notu Satırı (Varsayılan Gizli — Ekranı Kalabalıklaştırmaz) -->
+              <div id="distroNoteWrap" style="display:none;" class="distro-extra-drawer">
+                <div class="distro-action-row" style="margin-bottom:6px;">
+                  <input id="distroCustomItemInput" class="input" autocomplete="off" placeholder="Özel malzeme adı..." />
                   <div class="stepper distro-qty-stepper">
                     <button type="button" id="distroQtyDec" aria-label="Azalt">−</button>
                     <span id="distroQtyVal" class="mono">1</span>
                     <button type="button" id="distroQtyInc" aria-label="Artır">+</button>
                   </div>
-                  <button type="submit" class="btn btn-primary" style="height:37px; padding:0 14px;">📤 Ver</button>
+                  <button type="submit" class="btn btn-primary" style="height:35px; padding:0 12px;">Ekle</button>
                 </div>
-                <div id="distroLiveStockHint" class="distro-stock-hint mono" style="margin-top:5px;">Kamyon stoğu kontrol ediliyor...</div>
-                <div id="distroNoteWrap" style="display:none; margin-top:6px;">
-                  <input id="distroNoteInput" class="input" placeholder="Kişi veya yer notu (ör. Ahmet - Kamera arabası)..." />
-                </div>
+                <input id="distroNoteInput" class="input" placeholder="Kişi veya yer notu (ör. Ahmet - Yemek çadırı)..." />
+                <div id="distroLiveStockHint" class="distro-stock-hint mono" style="margin-top:4px;"></div>
               </div>
             </form>
           </div>
@@ -654,24 +654,25 @@
       </button>
     </nav>
 
-    <!-- HER EKRANDAN TEK DOKUNUŞLA HIZLI EKİP NOTU / ÇOKLU VERME BUTONU -->
-    <button type="button" id="fabQuickCaptureBtn" class="fab-quick-note" title="İşini bölmeden hızlıca ekibe verilen malzemeleri not al">
-      <span>⚡ Hızlı Not / Ekibe Ver</span>
-    </button>
+    <!-- Eski yüzen buton gizlendi (Üst bardaki ⚡ Hızlı Not hiçbir satırın üzerini kapatmaz) -->
+    <button type="button" id="fabQuickCaptureBtn" class="fab-quick-note" style="display:none;" aria-hidden="true"></button>
   </div>
 
-  <!-- ==================== MODAL: HIZLI SET NOTU & ÇOKLU EKİBE VERME ==================== -->
+  <!-- ==================== MODAL: HIZLI SET NOTU & ÇOKLU EKİBE VERME / GERİ ALMA ==================== -->
   <div id="quickCaptureModal" class="modal-backdrop">
     <div class="modal qc-modal" style="max-width:520px;">
       <div class="section-head" style="margin-bottom:8px;">
         <div>
-          <h3 class="section-title" style="font-size:15.5px; color:#fbbf24;">⚡ Hızlı Set Notu / Çoklu Ekibe Ver</h3>
-          <div style="font-size:11.5px; color:var(--text-muted);">Tek cümle yaz/söyle veya aşağıdan arka arkaya dokunup işine dön.</div>
+          <h3 class="section-title" style="font-size:15.5px; color:#fbbf24;">⚡ Hızlı Set Notu (Ver veya Geri Al)</h3>
+          <div style="font-size:11.5px; color:var(--text-muted);">Tek cümle yaz/söyle veya dokunarak seç — kaydettiğin an işine dönersin.</div>
         </div>
         <button class="icon-pill-btn" data-close-modal="quickCaptureModal">✕</button>
       </div>
 
-      <div class="modal-form" style="gap:9px;">
+      <div class="modal-form" style="gap:8px;">
+        <!-- 0. Dışarıda Olanlar (Varsa 1 Tıkla Geri Al!) -->
+        <div id="qcActiveLoansStrip" class="qc-active-loans-box" style="display:none;"></div>
+
         <!-- 1. Tek Cümle veya Sesle Yaz -->
         <div class="distro-step-box step-box-smart">
           <div class="distro-step-head">
@@ -683,8 +684,8 @@
             <button type="button" id="qcVoiceBtn" class="btn btn-soft qc-mic-btn" title="Mikrofonla Söyle">🎙️</button>
           </div>
           <div class="qc-examples-row">
-            <span style="font-size:10.5px; color:var(--text-dim);">Örnek (dokun):</span>
-            <button type="button" class="qc-example-chip" data-qc-sample="prodüksiyon yemek için 1000 lik mizar türk kablo ve a100 ayak">Prodüksiyon: 1000'lik Mizar + Türk Kablo + A100</button>
+            <span style="font-size:10.5px; color:var(--text-dim);">Örnek:</span>
+            <button type="button" class="qc-example-chip" data-qc-sample="prodüksiyon yemek için 1000 lik mizar türk kablo ve a100 ayak">Prodüksiyon: Mizar + Türk + A100</button>
             <button type="button" class="qc-example-chip" data-qc-sample="kamera 2 türk kablo 2 16a kablo">Kamera: 2 Türk + 2 16A</button>
           </div>
         </div>
@@ -924,13 +925,13 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script src="./js/data-cables.js?v=26"></script>
-  <script src="./js/data-fixtures.js?v=26"></script>
-  <script src="./js/data-templates.js?v=26"></script>
-  <script src="./js/calc.js?v=26"></script>
-  <script src="./js/solar.js?v=26"></script>
-  <script src="./js/solar-ui.js?v=26"></script>
-  <script src="./js/distro-ui.js?v=26"></script>
-  <script src="./js/app.js?v=26"></script>
+  <script src="./js/data-cables.js?v=27"></script>
+  <script src="./js/data-fixtures.js?v=27"></script>
+  <script src="./js/data-templates.js?v=27"></script>
+  <script src="./js/calc.js?v=27"></script>
+  <script src="./js/solar.js?v=27"></script>
+  <script src="./js/solar-ui.js?v=27"></script>
+  <script src="./js/distro-ui.js?v=27"></script>
+  <script src="./js/app.js?v=27"></script>
 </body>
 </html>

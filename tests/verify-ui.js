@@ -9,6 +9,13 @@ const appJs = fs.readFileSync(path.join(rootDir, 'js/app.js'), 'utf8');
 const solarUiJs = fs.readFileSync(path.join(rootDir, 'js/solar-ui.js'), 'utf8');
 const distroUiJs = fs.readFileSync(path.join(rootDir, 'js/distro-ui.js'), 'utf8');
 
+// 0. Tüm JS dosyalarının sözdizimi (syntax) doğruluğunu kontrol et
+for (const rel of ['js/calc.js', 'js/solar.js', 'js/solar-ui.js', 'js/distro-ui.js', 'js/app.js', 'sw.js']) {
+  const src = fs.readFileSync(path.join(rootDir, rel), 'utf8');
+  new vm.Script(src, { filename: rel });
+}
+console.log('✅ Tüm JS dosyalarının sözdizimi (syntax) doğrulandı.');
+
 // 1. Tüm getElementById çağrılarının index.html içinde karşılığı olduğunu doğrula
 const ids = [...(appJs + '\n' + solarUiJs + '\n' + distroUiJs).matchAll(/getElementById\(['"]([^'"]+)['"]\)/g)].map((m) => m[1]);
 const dynamicIds = new Set([

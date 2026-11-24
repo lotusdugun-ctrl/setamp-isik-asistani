@@ -3,24 +3,24 @@
 
 :root {
   /* Varsayılan: Stüdyo Grafit — ne aşırı karanlık ne göz yoran, yüksek okunaklılık */
-  --bg: #171a21;
-  --sidebar-bg: #1e222b;
-  --surface: #222731;
-  --surface-2: #2a303d;
-  --surface-hover: #313847;
-  --input-bg: #181c24;
+  --bg: #11151d;
+  --sidebar-bg: #161b25;
+  --surface: #1b2230;
+  --surface-2: #242d3e;
+  --surface-hover: #2d384d;
+  --input-bg: #131823;
 
-  --border: #313847;
-  --border-strong: #424b5e;
+  --border: #2a3447;
+  --border-strong: #3b4861;
 
-  --text: #f3f5f8;
-  --text-muted: #b5bdd0;
-  --text-dim: #8892a6;
+  --text: #f5f7fb;
+  --text-muted: #b6c0d4;
+  --text-dim: #8491aa;
 
   --accent: #f5b71a;
   --accent-soft: rgba(245, 183, 26, 0.14);
   --accent-border: rgba(245, 183, 26, 0.55);
-  --accent-text: #151208;
+  --accent-text: #141004;
 
   --safe: #22c55e;
   --safe-soft: rgba(34, 197, 94, 0.13);
@@ -37,11 +37,11 @@
   --info: #38bdf8;
   --info-soft: rgba(56, 189, 248, 0.13);
 
-  --thumb-bg: #141820;
+  --thumb-bg: #10141d;
 
-  --radius-lg: 8px;
-  --radius: 6px;
-  --radius-sm: 4px;
+  --radius-lg: 10px;
+  --radius: 8px;
+  --radius-sm: 6px;
 
   --sidebar-w: 252px;
   --topbar-h: 56px;
@@ -3806,6 +3806,8 @@ body.night-red .lightbox-img {
   font-weight: 800;
   color: #141004;
   background: #f5b71a;
+  white-space: nowrap;
+  display: inline-block;
 }
 
 .distro-mult-bar {
@@ -4257,6 +4259,280 @@ body.night-red .lightbox-img {
 }
 .qc-pill-rem:hover {
   color: var(--danger);
+}
+
+/* ==================== V27 HIZLI ÇOKLU HAT, BİRLEŞİK AKILLI ÇUBUK & PRO GÖRSEL CİLA ==================== */
+
+/* Mobil üst bar taşmasız hizalama */
+.mobile-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+@media (max-width: 420px) {
+  .mobile-topbar .brand-name {
+    font-size: 12.5px;
+  }
+  .quick-cap-top-btn {
+    height: 26px;
+    padding: 0 8px;
+    font-size: 10.5px;
+  }
+  .mobile-topbar .live-chip {
+    max-width: 128px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0 6px;
+    font-size: 10px;
+  }
+  .mobile-topbar .icon-pill-btn {
+    padding: 0 7px;
+    font-size: 10.5px;
+  }
+}
+
+/* Çoklu Hat / Jeneratör Çıkış Şeridi */
+.calc-lines-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.calc-lines-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  max-width: 100%;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.calc-lines-left::-webkit-scrollbar { display: none; }
+
+.line-tab-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.line-tab-pill.active {
+  border-color: var(--accent);
+  background: linear-gradient(180deg, rgba(245, 183, 26, 0.20), var(--surface-2));
+  box-shadow: 0 2px 10px rgba(245, 183, 26, 0.14);
+}
+.line-tab-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 9px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+.line-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.line-dot.dot-empty { background: var(--text-dim); }
+.line-dot.dot-safe { background: var(--safe); box-shadow: 0 0 6px rgba(34, 197, 94, 0.6); }
+.line-dot.dot-caution { background: var(--caution); box-shadow: 0 0 6px rgba(245, 158, 11, 0.6); }
+.line-dot.dot-danger { background: var(--danger); box-shadow: 0 0 6px rgba(239, 68, 68, 0.7); }
+
+.line-tab-meta {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.line-tab-pill.active .line-tab-meta {
+  color: #fde68a;
+}
+.line-tab-del {
+  height: 30px;
+  padding: 0 7px;
+  font-size: 10.5px;
+  color: var(--text-dim);
+  border-left: 1px solid var(--border);
+}
+.line-tab-del:hover {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+.line-add-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--border-strong);
+  background: var(--input-bg);
+  color: var(--accent);
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.line-add-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.calc-lines-total {
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+.calc-lines-total strong {
+  color: var(--accent);
+}
+
+/* Hat Yükü satır içi anında lamba arama + kart üstü -/+ kontrolleri */
+.calc-inline-search-wrap {
+  position: relative;
+  margin-bottom: 8px;
+}
+.calc-inline-search-wrap .input {
+  height: 35px;
+  font-size: 12.5px;
+}
+
+.qset-tile {
+  position: relative;
+  padding: 0 !important;
+  overflow: hidden;
+}
+.qset-tile-main {
+  width: 100%;
+  padding: 6px 8px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.qset-inline-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(245, 183, 26, 0.35);
+  background: rgba(0, 0, 0, 0.22);
+  height: 24px;
+}
+.qset-dec-btn,
+.qset-inc-btn {
+  width: 30px;
+  height: 100%;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+  display: grid;
+  place-items: center;
+}
+.qset-dec-btn:hover { background: var(--danger-soft); color: var(--danger); }
+.qset-inc-btn:hover { background: var(--safe-soft); color: var(--safe); }
+
+/* Başka Ekibe Verilen — Tek Kompakt Birleşik Kart (4 Kutu Yığını Kaldırıldı) */
+.distro-unified-card {
+  padding: 10px 12px !important;
+}
+.distro-unified-card .distro-simple-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.distro-compact-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-top: 7px;
+  border-top: 1px solid var(--border);
+}
+.distro-extra-drawer {
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-strong);
+}
+
+/* Global Hızlı Set Notu içindeki Dışarıdakiler (1 Tıkla Geri Al) şeridi */
+.qc-active-loans-box {
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.36);
+}
+.qc-aloans-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #7dd3fc;
+  margin-bottom: 5px;
+}
+.qc-aloans-chips {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 5px;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.qc-aloans-chips::-webkit-scrollbar { display: none; }
+.qc-aloan-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 11px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@media (max-width: 720px) {
+  /* Üst barda ⚡ Hızlı Not varken Kamyon başlığında ikinci kez yer kaplamasın */
+  #openQuickCaptureTruckBtn {
+    display: none !important;
+  }
+  #qcDeptGrid .distro-dept-btn .dd-left > span:first-child {
+    display: none;
+  }
+  .qc-multi-chip {
+    font-size: 10.5px;
+    padding: 0 5px;
+    height: 28px;
+  }
+}
+.qc-aloan-chip:hover {
+  border-color: var(--safe);
+  background: var(--safe-soft);
+}
+.qc-ret-check {
+  color: var(--safe);
+  font-weight: 800;
+}
+
+/* Kartlara hafif derinlik ve keskinlik */
+.section-card,
+.hero-card {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+body.theme-light .section-card,
+body.theme-light .hero-card {
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
 }
 
 /* ==================== YAZDIR ==================== */

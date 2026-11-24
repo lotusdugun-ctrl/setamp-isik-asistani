@@ -128,15 +128,42 @@
               ? parsed.truckItems.map((it) => ({ ...it, category: normalizeTruckCategory(it.category, it.name) }))
               : buildInitialTruckItems());
 
+        const initItems = Array.isArray(parsed.loadItems) ? mergeSinglePhaseLoad(parsed.loadItems) : [];
+        const rawLines = Array.isArray(parsed.powerLines) && parsed.powerLines.length > 0
+          ? parsed.powerLines.map((ln, idx) => {
+              const lcId = normalizeCableId(ln.cableId || selId);
+              const lcObj = CABLES.find((c) => c.id === lcId) || selCable;
+              const lSec = Number(ln.cableSection);
+              return {
+                id: ln.id || `line-${idx + 1}`,
+                name: String(ln.name || `Hat ${idx + 1}`).trim(),
+                cableId: lcId,
+                cableLength: Number(ln.cableLength) || lcObj.defaultLength,
+                cableSection: lcObj.availableSections.includes(lSec) ? lSec : lcObj.defaultCrossSection,
+                loadItems: Array.isArray(ln.loadItems) ? mergeSinglePhaseLoad(ln.loadItems) : []
+              };
+            })
+          : [{
+              id: 'line-1',
+              name: 'Hat 1',
+              cableId: selId,
+              cableLength: Number(parsed.cableLength) || selCable.defaultLength,
+              cableSection: selCable.availableSections.includes(savedSection) ? savedSection : selCable.defaultCrossSection,
+              loadItems: initItems
+            }];
+        const activeLine = rawLines.find((l) => l.id === parsed.activeLineId) || rawLines[0];
+
         return {
           activeTab: parsed.activeTab || 'calc',
           catalogSubtab: parsed.catalogSubtab || 'lamps',
           theme: ['studio', 'light', 'night'].includes(parsed.theme) ? parsed.theme : (parsed.nightRed ? 'night' : 'studio'),
-          selectedCableId: selId,
-          catalogCableId: normalizeCableId(parsed.catalogCableId || selId),
-          cableLength: Number(parsed.cableLength) || selCable.defaultLength,
-          cableSection: selCable.availableSections.includes(savedSection) ? savedSection : selCable.defaultCrossSection,
-          loadItems: Array.isArray(parsed.loadItems) ? mergeSinglePhaseLoad(parsed.loadItems) : [],
+          powerLines: rawLines,
+          activeLineId: activeLine.id,
+          selectedCableId: activeLine.cableId,
+          catalogCableId: normalizeCableId(parsed.catalogCableId || activeLine.cableId),
+          cableLength: activeLine.cableLength,
+          cableSection: activeLine.cableSection,
+          loadItems: activeLine.loadItems,
           customFixtures: Array.isArray(parsed.customFixtures) ? parsed.customFixtures : [],
           projectName: shouldSeedEnfes ? 'Enfes Bir Akşam' : (parsed.projectName ?? 'Enfes Bir Akşam'),
           rentalHouse: shouldSeedEnfes ? 'Tam Set Malzeme Listesi' : (parsed.rentalHouse ?? 'Tam Set Malzeme Listesi'),
@@ -149,18 +176,23 @@
       // ignore storage errors
     }
 
+    const defaultItems = [
+      { uid: uid('ld'), fixtureId: 'arri-m18', qty: 1, phase: 0 },
+      { uid: uid('ld'), fixtureId: 'aputure-600d-pro', qty: 1, phase: 0 }
+    ];
     return {
       activeTab: 'calc',
       catalogSubtab: 'lamps',
       theme: 'studio',
+      powerLines: [
+        { id: 'line-1', name: 'Hat 1', cableId: '16a-mono', cableLength: 20, cableSection: 2.5, loadItems: defaultItems }
+      ],
+      activeLineId: 'line-1',
       selectedCableId: '16a-mono',
       catalogCableId: '16a-mono',
       cableLength: 20,
       cableSection: 2.5,
-      loadItems: [
-        { uid: uid('ld'), fixtureId: 'arri-m18', qty: 1, phase: 0 },
-        { uid: uid('ld'), fixtureId: 'aputure-600d-pro', qty: 1, phase: 0 }
-      ],
+      loadItems: defaultItems,
       customFixtures: [],
       projectName: 'Enfes Bir Akşam',
       rentalHouse: 'Tam Set Malzeme Listesi',
@@ -178,6 +210,7 @@
     catalogSearch: '',
     catalogBrand: 'Tümü',
     catalogType: 'Tümü',
+    catalogWattRange: 'all',
     truckStatusFilter: 'all',
     truckCatFilter: 'Tümü',
     truckSubtab: 'inventory',
@@ -192,12 +225,83 @@
     lightboxFixtureId: null
   };
 
+  function syncActiveLineFromState() {
+    if (!Array.isArray(state.powerLines) || state.powerLines.length === 0) {
+      state.powerLines = [{
+        id: state.activeLineId || 'line-1',
+        name: 'Hat 1',
+        cableId: state.selectedCableId,
+        cableLength: state.cableLength,
+        cableSection: state.cableSection,
+        loadItems: state.loadItems
+      }];
+      state.activeLineId = state.powerLines[0].id;
+      return;
+    }
+    const ln = state.powerLines.find((l) => l.id === state.activeLineId) || state.powerLines[0];
+    ln.cableId = state.selectedCableId;
+    ln.cableLength = state.cableLength;
+    ln.cableSection = state.cableSection;
+    ln.loadItems = state.loadItems;
+  }
+
   function saveState() {
+    syncActiveLineFromState();
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (_) {
       // ignore quota errors
     }
+  }
+
+  function switchActiveLine(lineId) {
+    syncActiveLineFromState();
+    const target = state.powerLines.find((l) => l.id === lineId);
+    if (!target) return;
+    state.activeLineId = target.id;
+    state.selectedCableId = target.cableId;
+    state.cableLength = target.cableLength;
+    state.cableSection = target.cableSection;
+    state.loadItems = target.loadItems;
+    saveState();
+    renderCalcTab();
+    renderLiveBadges();
+  }
+
+  function addNewPowerLine() {
+    syncActiveLineFromState();
+    const nextNum = state.powerLines.length + 1;
+    const newLine = {
+      id: uid('line'),
+      name: `Hat ${nextNum}`,
+      cableId: '16a-mono',
+      cableLength: 20,
+      cableSection: 2.5,
+      loadItems: []
+    };
+    state.powerLines.push(newLine);
+    switchActiveLine(newLine.id);
+    showToast(`${newLine.name} eklendi`);
+  }
+
+  function deletePowerLine(lineId) {
+    if (state.powerLines.length <= 1) return;
+    const idx = state.powerLines.findIndex((l) => l.id === lineId);
+    if (idx === -1) return;
+    const removed = state.powerLines[idx];
+    state.powerLines.splice(idx, 1);
+    if (state.activeLineId === lineId) {
+      const fallback = state.powerLines[Math.max(0, idx - 1)] || state.powerLines[0];
+      state.activeLineId = fallback.id;
+      state.selectedCableId = fallback.cableId;
+      state.cableLength = fallback.cableLength;
+      state.cableSection = fallback.cableSection;
+      state.loadItems = fallback.loadItems;
+    }
+    saveState();
+    renderCalcTab();
+    renderLiveBadges();
+    showToast(`${removed.name} silindi`);
   }
 
   function getAllFixtures() {
@@ -497,9 +601,64 @@
   }
 
   // ==================== RENDER: TAB 1 (HESAPLAYICI) ====================
+  function renderCalcLinesBar(fixtureMap) {
+    const bar = document.getElementById('calcLinesBar');
+    if (!bar) return;
+    syncActiveLineFromState();
+
+    let grandTotalWatts = 0;
+    let grandTotalAmps = 0;
+    const lineCardsHtml = state.powerLines.map((ln) => {
+      const lc = getCable(ln.cableId);
+      const lev = Calc.evaluateLineLoad(lc, ln.loadItems, fixtureMap, {
+        lengthMeters: ln.cableLength,
+        crossSection: ln.cableSection
+      });
+      grandTotalWatts += lev.totalWatts;
+      grandTotalAmps += lev.maxPhaseAmps;
+      const isAct = ln.id === state.activeLineId;
+      const dotCls = lev.status === 'DANGER' ? 'dot-danger' : lev.status === 'CAUTION' ? 'dot-caution' : lev.status === 'SAFE' ? 'dot-safe' : 'dot-empty';
+      return `
+        <div class="line-tab-pill ${isAct ? 'active' : ''}">
+          <button type="button" class="line-tab-select" data-switch-line="${ln.id}">
+            <span class="line-dot ${dotCls}"></span>
+            <span class="line-tab-name">${esc(ln.name)}</span>
+            <span class="line-tab-meta mono">${esc(lc.badge)} · ${lev.totalKWText}</span>
+          </button>
+          ${state.powerLines.length > 1 ? `<button type="button" class="line-tab-del" data-del-line="${ln.id}" title="Hattı Sil">✕</button>` : ''}
+        </div>
+      `;
+    }).join('');
+
+    bar.innerHTML = `
+      <div class="calc-lines-left">
+        ${lineCardsHtml}
+        <button type="button" class="line-add-btn" id="addPowerLineBtn">+ Yeni Hat</button>
+      </div>
+      ${state.powerLines.length > 1 ? `
+        <div class="calc-lines-total mono">
+          Toplam (${state.powerLines.length} Hat): <strong>${Calc.formatKW(grandTotalWatts)}</strong> · ${grandTotalAmps.toFixed(1)}A
+        </div>
+      ` : ''}
+    `;
+
+    bar.querySelectorAll('[data-switch-line]').forEach((b) => {
+      b.addEventListener('click', () => switchActiveLine(b.dataset.switchLine));
+    });
+    bar.querySelectorAll('[data-del-line]').forEach((b) => {
+      b.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deletePowerLine(b.dataset.delLine);
+      });
+    });
+    const addBtn = bar.querySelector('#addPowerLineBtn');
+    if (addBtn) addBtn.addEventListener('click', addNewPowerLine);
+  }
+
   function renderCalcTab() {
     const cable = getCable(state.selectedCableId);
     const fixtureMap = getFixtureMap();
+    renderCalcLinesBar(fixtureMap);
     const ev = Calc.evaluateLineLoad(
       cable,
       state.loadItems,
@@ -846,20 +1005,74 @@
       const connQty = connectedMap.get(f.id) || 0;
       const kwTxt = Calc.formatKW(f.watts);
       return `
-        <button type="button" class="qset-tile ${fits ? 'can-fit' : 'over-fit'} ${connQty > 0 ? 'is-on-line' : ''}" data-qset-add="${f.id}" title="${esc(f.brand)} ${esc(f.model)}">
-          <div class="qset-tile-top">
-            <span class="qset-tile-name">+ ${esc(formatShortLampLabel(f))}</span>
-            ${connQty > 0 ? `<span class="qset-conn-badge mono">${connQty}×</span>` : ''}
-          </div>
-          <div class="qset-tile-sub mono">
-            <span>${cap.unitAmps.toFixed(1)}A · ${kwTxt}</span>
-            <span class="qset-fit-tag">${fits ? `+${cap.remainingSafeAdd}` : 'Dolu'}</span>
-          </div>
-        </button>
+        <div class="qset-tile ${fits ? 'can-fit' : 'over-fit'} ${connQty > 0 ? 'is-on-line' : ''}">
+          <button type="button" class="qset-tile-main" data-qset-add="${f.id}" title="${esc(f.brand)} ${esc(f.model)} (+1 ekle)">
+            <div class="qset-tile-top">
+              <span class="qset-tile-name">+ ${esc(formatShortLampLabel(f))}</span>
+              ${connQty === 0 ? `<span class="qset-fit-tag mono">${fits ? `+${cap.remainingSafeAdd}` : 'Dolu'}</span>` : ''}
+            </div>
+            <div class="qset-tile-sub mono">
+              <span>${cap.unitAmps.toFixed(1)}A · ${kwTxt}</span>
+            </div>
+          </button>
+          ${connQty > 0 ? `
+            <div class="qset-inline-stepper mono">
+              <button type="button" class="qset-dec-btn" data-qset-dec="${f.id}" aria-label="1 azalt">−</button>
+              <span class="qset-conn-badge">${connQty}×</span>
+              <button type="button" class="qset-inc-btn" data-qset-add="${f.id}" aria-label="1 artır">+</button>
+            </div>
+          ` : ''}
+        </div>
       `;
     }).join('');
     el.querySelectorAll('[data-qset-add]').forEach((b) => {
       b.addEventListener('click', () => addFixtureToLoad(b.dataset.qsetAdd));
+    });
+    el.querySelectorAll('[data-qset-dec]').forEach((b) => {
+      b.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const target = state.loadItems.find((li) => li.fixtureId === b.dataset.qsetDec);
+        if (target) updateLoadItemQty(target.uid, -1);
+      });
+    });
+  }
+
+  function renderCalcInlineSuggest(queryText = '') {
+    const box = document.getElementById('calcInlineSuggest');
+    if (!box) return;
+    const q = queryText.trim().toLowerCase();
+    if (!q) {
+      box.style.display = 'none';
+      box.innerHTML = '';
+      return;
+    }
+    const cable = getCable(state.selectedCableId);
+    const matches = getAllFixtures()
+      .filter((f) => `${f.brand} ${f.model} ${f.type} ${f.watts}w`.toLowerCase().includes(q))
+      .slice(0, 7);
+    if (matches.length === 0) {
+      box.style.display = 'none';
+      box.innerHTML = '';
+      return;
+    }
+    box.style.display = 'block';
+    box.innerHTML = matches.map((f) => {
+      const fc = Calc.calcFixtureAmps(f, cable.voltage);
+      return `
+        <button type="button" class="pro-suggest-item" data-csug-fix="${f.id}">
+          <span class="pro-suggest-name">+ ${esc(f.brand)} ${esc(f.model)}</span>
+          <span class="pro-suggest-meta mono">${fc.continuousAmps.toFixed(1)}A · ${fc.kwText}</span>
+        </button>
+      `;
+    }).join('');
+    box.querySelectorAll('[data-csug-fix]').forEach((btn) => {
+      btn.addEventListener('mousedown', (e) => e.preventDefault());
+      btn.addEventListener('click', () => {
+        addFixtureToLoad(btn.dataset.csugFix);
+        const inp = document.getElementById('calcInlineSearchInput');
+        if (inp) inp.value = '';
+        box.style.display = 'none';
+      });
     });
   }
 
@@ -970,6 +1183,26 @@
     }
     typeSel.value = ui.catalogType;
 
+    // Güç (Watt) aralığı hızlı filtre hapları
+    const wattBox = document.getElementById('catalogWattPills');
+    if (wattBox) {
+      const wattRanges = [
+        { id: 'all', label: 'Tüm Güçler' },
+        { id: 'low', label: '≤ 500W (Küçük/Tüp)' },
+        { id: 'mid', label: '600W – 1.8kW' },
+        { id: 'high', label: '2kW+ (Ana Işık)' }
+      ];
+      wattBox.innerHTML = wattRanges.map((w) =>
+        `<button type="button" class="chip ${ui.catalogWattRange === w.id ? 'active' : ''}" data-cwatt="${w.id}">${esc(w.label)}</button>`
+      ).join('');
+      wattBox.querySelectorAll('[data-cwatt]').forEach((b) => {
+        b.addEventListener('click', () => {
+          ui.catalogWattRange = b.dataset.cwatt;
+          renderCatalogTab();
+        });
+      });
+    }
+
     // Marka butonları (adetli, sarılı ızgara)
     const counts = getBrandCounts();
     const brandBox = document.getElementById('catalogBrandPills');
@@ -988,9 +1221,13 @@
     const filtered = getAllFixtures().filter((f) => {
       const bOk = ui.catalogBrand === 'Tümü' || f.brand === ui.catalogBrand || (ui.catalogBrand === 'Diğer' && !NAMED_BRANDS.includes(f.brand));
       const tOk = ui.catalogType === 'Tümü' || f.type === ui.catalogType;
+      let wOk = true;
+      if (ui.catalogWattRange === 'low') wOk = f.watts <= 500;
+      else if (ui.catalogWattRange === 'mid') wOk = f.watts > 500 && f.watts <= 1850;
+      else if (ui.catalogWattRange === 'high') wOk = f.watts > 1850;
       const kwStr = Calc.formatKW(f.watts);
       const sOk = !q || `${f.brand} ${f.model} ${f.type} ${f.watts}w ${kwStr} ${f.notes || ''}`.toLowerCase().includes(q);
-      return bOk && tOk && sOk;
+      return bOk && tOk && wOk && sOk;
     });
 
     const grid = document.getElementById('catalogGrid');
@@ -1538,6 +1775,7 @@
     const tiEl = document.getElementById('truckIssueTabCount');
     if (tiEl) tiEl.textContent = countIssues;
 
+    const outItemsCount = state.truckItems.filter((i) => (outInfoById.get(i.id)?.totalOut || 0) > 0).length;
     const catPills = document.getElementById('truckCategoryPills');
     const catIcons = {
       'Tümü': '📦',
@@ -1547,12 +1785,19 @@
       'Kablo + Pano': '⚡',
       'Grip & Çerçeve': '⬛'
     };
+    const extraFilters = [];
+    if (outItemsCount > 0 || ui.truckCatFilter === '__out') {
+      extraFilters.push(`<button class="chip chip-colorful cat-kablo ${ui.truckCatFilter === '__out' ? 'active' : ''}" data-tcat="__out">📤 Dışarıda (${outItemsCount})</button>`);
+    }
+    if (countIssues > 0 || ui.truckCatFilter === '__issues') {
+      extraFilters.push(`<button class="chip chip-colorful cat-grip ${ui.truckCatFilter === '__issues' ? 'active' : ''}" data-tcat="__issues">⚠️ Notlu (${countIssues})</button>`);
+    }
     catPills.innerHTML = TRUCK_CATEGORIES.map((c) => {
       const lbl = TRUCK_CAT_LABELS[c] || c;
       const meta = c === 'Tümü' ? { cls: 'cat-all' } : getTruckCategoryMeta(c);
       const ic = catIcons[c] || '';
       return `<button class="chip chip-colorful ${meta.cls} ${ui.truckCatFilter === c ? 'active' : ''}" data-tcat="${esc(c)}">${ic ? `<span class="cat-chip-ic">${ic} </span>` : ''}${esc(lbl)}</button>`;
-    }).join('');
+    }).join('') + extraFilters.join('');
     catPills.querySelectorAll('[data-tcat]').forEach((b) => {
       b.addEventListener('click', () => {
         ui.truckCatFilter = b.dataset.tcat;
@@ -1563,7 +1808,11 @@
 
     const q = ui.truckSearch.trim().toLowerCase();
     const list = state.truckItems.filter((item) => {
-      const cOk = ui.truckCatFilter === 'Tümü' || item.category === ui.truckCatFilter;
+      const outQty = outInfoById.get(item.id)?.totalOut || 0;
+      let cOk = true;
+      if (ui.truckCatFilter === '__out') cOk = outQty > 0;
+      else if (ui.truckCatFilter === '__issues') cOk = item.status === 'missing' || item.status === 'faulty' || Boolean(item.note);
+      else if (ui.truckCatFilter !== 'Tümü') cOk = item.category === ui.truckCatFilter;
       const qOk = !q || `${item.name} ${item.category} ${item.note || ''}`.toLowerCase().includes(q);
       return cOk && qOk;
     });
@@ -1877,8 +2126,11 @@
     }
 
     const catBox = document.getElementById('expCategoryPills');
-    catBox.innerHTML = EXP_CATEGORIES.map((c) =>
-      `<button class="chip ${ui.expCatFilter === c ? 'active' : ''}" data-ecat="${esc(c)}">${esc(c)}</button>`
+    const lowChipHtml = (lowItems.length > 0 || ui.expCatFilter === '__low')
+      ? `<button class="chip ${ui.expCatFilter === '__low' ? 'active' : ''}" data-ecat="__low">⚠️ Azalanlar (${lowItems.length})</button>`
+      : '';
+    catBox.innerHTML = EXP_CATEGORIES.map((c, idx) =>
+      `${idx === 1 ? lowChipHtml : ''}<button class="chip ${ui.expCatFilter === c ? 'active' : ''}" data-ecat="${esc(c)}">${esc(c)}</button>`
     ).join('');
     catBox.querySelectorAll('[data-ecat]').forEach((b) => {
       b.addEventListener('click', () => {
@@ -1887,7 +2139,10 @@
       });
     });
 
-    const list = state.expendables.filter((e) => ui.expCatFilter === 'Tümü' || e.category === ui.expCatFilter);
+    const list = state.expendables.filter((e) => {
+      if (ui.expCatFilter === '__low') return Number(e.qty) <= Number(e.minQty);
+      return ui.expCatFilter === 'Tümü' || e.category === ui.expCatFilter;
+    });
     const listEl = document.getElementById('expendablesList');
     if (list.length === 0) {
       listEl.innerHTML = `<div class="empty-box" style="padding:18px 10px;">Bu kategoride sarf malzeme yok.</div>`;
@@ -1988,6 +2243,7 @@
   }
 
   function buildLoadReport() {
+    syncActiveLineFromState();
     const cable = getCable(state.selectedCableId);
     const fMap = getFixtureMap();
     const ev = Calc.evaluateLineLoad(
@@ -2003,8 +2259,26 @@
       `SET ELEKTRİK, AMPER & kW RAPORU`,
       `Proje: ${state.projectName || '-'}`,
       `Tarih: ${now}`,
-      `────────────────────────────────`,
-      `Kablo / Hat: ${cable.name}`,
+      `────────────────────────────────`
+    ];
+
+    if (state.powerLines.length > 1) {
+      let totW = 0;
+      let totA = 0;
+      lines.push(`TÜM HATLAR ÖZETİ (${state.powerLines.length} Hat):`);
+      state.powerLines.forEach((ln) => {
+        const lc = getCable(ln.cableId);
+        const lev = Calc.evaluateLineLoad(lc, ln.loadItems, fMap, { lengthMeters: ln.cableLength, crossSection: ln.cableSection });
+        totW += lev.totalWatts;
+        totA += lev.maxPhaseAmps;
+        lines.push(`• ${ln.name} [${lc.shortName}]: ${lev.maxPhaseAmps}A • ${lev.totalKWText} (%${lev.peakUsagePercent} - ${lev.verdict.badge})`);
+      });
+      lines.push(`TOPLAM JENERATÖR YÜKÜ: ${Calc.formatKW(totW)} (${totA.toFixed(1)}A)`);
+      lines.push(`────────────────────────────────`);
+    }
+
+    lines.push(
+      `Aktif Hat: ${cable.name}`,
       `Hat Kapasitesi: ${cable.phases === 3 ? `3×${cable.ratedAmps}A` : `${cable.ratedAmps}A`} (${cp.ratedTotalKWText}) | Güvenli (%${Math.round((cable.safeRatio || 0.8) * 100)}): ${cp.safeTotalKWText}`,
       `Mesafe / Kesit: ${ev.lengthMeters}m / ${ev.crossSection}mm²`,
       `Durum: ${ev.verdict.badge}`,
@@ -2012,7 +2286,7 @@
       `Toplam Güç: ${ev.totalKWText} (${ev.totalWatts}W / ${ev.totalKVA} kVA)`,
       `Hat Sonu Voltaj: ${ev.deliveredVoltage}V (-%${ev.voltageDropPercent})`,
       ``
-    ];
+    );
 
     if (cable.phases === 3) {
       lines.push(`FAZ DAĞILIMI (R-S-T):`);
@@ -2176,6 +2450,16 @@
       renderAll();
       showToast('Hat yükü temizlendi');
     });
+
+    const inlineCalcInp = document.getElementById('calcInlineSearchInput');
+    const inlineCalcSug = document.getElementById('calcInlineSuggest');
+    if (inlineCalcInp) {
+      inlineCalcInp.addEventListener('input', (e) => renderCalcInlineSuggest(e.target.value));
+      inlineCalcInp.addEventListener('focus', () => renderCalcInlineSuggest(inlineCalcInp.value));
+      inlineCalcInp.addEventListener('blur', () => {
+        setTimeout(() => { if (inlineCalcSug) inlineCalcSug.style.display = 'none'; }, 160);
+      });
+    }
 
     document.getElementById('quickLampSearch').addEventListener('input', (e) => {
       ui.quickSearch = e.target.value;
@@ -2603,7 +2887,7 @@
     setTab(state.activeTab);
 
     if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
-      navigator.serviceWorker.register('./sw.js?v=26').then((reg) => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=27').then((reg) => reg.update()).catch(() => {});
     }
   });
 })();
